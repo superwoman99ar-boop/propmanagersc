@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v10.3</div>
+<div class="vbadge">PropManager SC v10.4</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -933,7 +933,7 @@ function attachEvents() {
   document.getElementById("btn-issue-notice").addEventListener("click", function() { goDash("nt"); });
   document.getElementById("btn-add-tenant").addEventListener("click", function() { openMo("addtenant"); });
   document.getElementById("add-tenant-btn2").addEventListener("click", function() { openMo("addtenant"); });
-  document.getElementById("log-payment-btn").addEventListener("click", function() { showOk("pay-ok"); });
+  document.getElementById("log-payment-btn").addEventListener("click", function() { openAddPaymentModal(); });
   document.getElementById("add-expense-btn").addEventListener("click", function() { openMo("addexpense"); });
   document.getElementById("save-maint-btn").addEventListener("click", saveMaintenance);
   document.getElementById("save-tenant-btn").addEventListener("click", addTenant);
@@ -988,8 +988,28 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","addtenant","addexpense"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant"].forEach(function(id) { closeMo(id); });
     }
+  });
+
+  // Payment modal
+  var closePayMo = document.getElementById("close-payment-mo");
+  if (closePayMo) closePayMo.addEventListener("click", function() { closeMo("addpayment"); });
+  var savePayBtn = document.getElementById("save-payment-btn");
+  if (savePayBtn) savePayBtn.addEventListener("click", savePayment);
+
+  // Edit tenant modal
+  var closeEditMo = document.getElementById("close-edittenant-mo");
+  if (closeEditMo) closeEditMo.addEventListener("click", function() { closeMo("edittenant"); });
+  var updateTenantBtn = document.getElementById("update-tenant-btn");
+  if (updateTenantBtn) updateTenantBtn.addEventListener("click", updateTenant);
+
+  // Backdrop closes for new modals
+  ["mo-addpayment","mo-edittenant"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener("click", function(e) {
+      if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
+    });
   });
 }
 
@@ -1279,6 +1299,7 @@ async function loadDashboardData() {
 }
 
 function renderTenantTable(tenants) {
+  window._tenantCache = tenants;
   var el = document.getElementById("ov-tenant-list");
   if (!tenants.length) { el.innerHTML = "<div class='empty'>No tenants yet. Add tenants to get started.</div>"; return; }
   var rows = tenants.map(function(t) {
@@ -1292,16 +1313,25 @@ function renderTenantTable(tenants) {
 }
 
 function renderTenantList(tenants) {
+  window._tenantCache = tenants;
   var el = document.getElementById("tenant-list");
-  if (!tenants.length) { el.innerHTML = "<div class='empty'>No tenants yet.</div>"; return; }
+  if (!tenants.length) { el.innerHTML = "<div class='empty'>No tenants yet. Click Add tenant above.</div>"; return; }
   var rows = tenants.map(function(t) {
     var p = t.properties;
     var ini = t.initials || t.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
     var bal = t.status === "overdue" ? "<span style='color:#c0392b;font-weight:500'>$" + ((t.monthly_rent||0)+80) + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
-    var badge = t.status === "current" ? "<span class='badge b-g'>Current</span>" : "<span class='badge b-r'>Overdue</span>";
-    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "&mdash;") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td></tr>";
+    var badge = t.status === "current" ? "<span class='badge b-g'>Current</span>" : t.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-a'>Vacating</span>";
+    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "&mdash;") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td><button class='btn' style='font-size:11px;padding:3px 8px' data-tenant-id='" + t.id + "'>Edit</button></td></tr>";
   }).join("");
-  el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:26%'>Tenant</th><th style='width:26%'>Address</th><th style='width:13%'>Rent</th><th style='width:16%'>Status</th><th style='width:13%'>Balance</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
+  el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:23%'>Tenant</th><th style='width:23%'>Address</th><th style='width:11%'>Rent</th><th style='width:14%'>Status</th><th style='width:11%'>Balance</th><th style='width:10%'>Edit</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
+  // Attach edit button events
+  el.querySelectorAll("[data-tenant-id]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var tid = btn.getAttribute("data-tenant-id");
+      var tenant = tenants.find(function(t) { return t.id === tid; });
+      if (tenant) openEditTenantModal(tenant);
+    });
+  });
 }
 
 function renderPropList(tenants) {
@@ -1456,6 +1486,91 @@ async function saveExpense() {
   if (!result.error) { showOk("ae-ok"); loadDashboardData(); }
 }
 
+// ---- PAYMENT & TENANT EDIT FUNCTIONS ----
+function openAddPaymentModal() {
+  document.getElementById("ap-date").value = new Date().toISOString().split("T")[0];
+  document.getElementById("ap-ok").classList.remove("on");
+  document.getElementById("ap-err").style.display = "none";
+  document.getElementById("ap-notes").value = "";
+  // Populate tenant dropdown from current data
+  var sel = document.getElementById("ap-tenant");
+  sel.innerHTML = "";
+  if (window._tenantCache) {
+    window._tenantCache.forEach(function(t) {
+      var opt = document.createElement("option");
+      opt.value = t.id;
+      opt.textContent = t.full_name + " — $" + (t.monthly_rent||0).toLocaleString() + "/mo";
+      sel.appendChild(opt);
+    });
+  }
+  openMo("addpayment");
+}
+
+async function savePayment() {
+  if (!sb) { alert("Database not connected"); return; }
+  var tenantId = document.getElementById("ap-tenant").value;
+  var amount = parseFloat(document.getElementById("ap-amount").value);
+  var date = document.getElementById("ap-date").value;
+  if (!tenantId || !amount || !date) {
+    document.getElementById("ap-err").style.display = "block";
+    document.getElementById("ap-err").textContent = "Please fill in tenant, amount, and date.";
+    return;
+  }
+  // Get tenant's property_id
+  var tenant = window._tenantCache ? window._tenantCache.find(function(t) { return t.id === tenantId; }) : null;
+  var result = await sb.from("payments").insert({
+    tenant_id: tenantId,
+    property_id: tenant ? tenant.property_id : null,
+    amount: amount,
+    payment_date: date,
+    method: document.getElementById("ap-method").value,
+    status: document.getElementById("ap-status").value,
+    notes: document.getElementById("ap-notes").value || "Rent payment"
+  });
+  if (result.error) {
+    document.getElementById("ap-err").style.display = "block";
+    document.getElementById("ap-err").textContent = result.error.message;
+    console.error("Payment error:", result.error);
+  } else {
+    document.getElementById("ap-ok").classList.add("on");
+    setTimeout(function() { closeMo("addpayment"); loadDashboardData(); }, 1500);
+  }
+}
+
+function openEditTenantModal(tenant) {
+  document.getElementById("et-id").value = tenant.id;
+  document.getElementById("et-name").value = tenant.full_name || "";
+  document.getElementById("et-email").value = tenant.email || "";
+  document.getElementById("et-phone").value = tenant.phone || "";
+  document.getElementById("et-rent").value = tenant.monthly_rent || "";
+  document.getElementById("et-status").value = tenant.status || "current";
+  document.getElementById("et-notes").value = tenant.notes || "";
+  document.getElementById("et-ok").classList.remove("on");
+  document.getElementById("et-err").style.display = "none";
+  openMo("edittenant");
+}
+
+async function updateTenant() {
+  if (!sb) { alert("Database not connected"); return; }
+  var id = document.getElementById("et-id").value;
+  var result = await sb.from("tenants").update({
+    full_name: document.getElementById("et-name").value,
+    email: document.getElementById("et-email").value,
+    phone: document.getElementById("et-phone").value,
+    monthly_rent: parseFloat(document.getElementById("et-rent").value) || 0,
+    status: document.getElementById("et-status").value,
+    notes: document.getElementById("et-notes").value
+  }).eq("id", id);
+  if (result.error) {
+    document.getElementById("et-err").style.display = "block";
+    document.getElementById("et-err").textContent = result.error.message;
+    console.error("Update tenant error:", result.error);
+  } else {
+    document.getElementById("et-ok").classList.add("on");
+    setTimeout(function() { closeMo("edittenant"); loadDashboardData(); }, 1500);
+  }
+}
+
 // ---- FORM SUBMITS ----
 function submitVacancy() {
   var n = document.getElementById("vi-name").value;
@@ -1478,5 +1593,71 @@ document.addEventListener("DOMContentLoaded", function() {
   initSupabase();
 });
 </script>
+
+<!-- LOG PAYMENT MODAL -->
+<div class="mo-overlay" id="mo-addpayment">
+  <div class="mo-box" style="max-width:460px">
+    <button class="mo-close" id="close-payment-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Log payment</div>
+    <div class="mo-sub">Record a rent payment received.</div>
+    <label class="mo-lbl">Tenant</label>
+    <select class="mo-inp" id="ap-tenant"></select>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+      <div><label class="mo-lbl" style="margin:0 0 5px">Amount ($)</label>
+        <input class="mo-inp" type="number" id="ap-amount" placeholder="1000" style="margin:0"></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">Date paid</label>
+        <input class="mo-inp" type="date" id="ap-date" style="margin:0"></div>
+    </div>
+    <label class="mo-lbl">Method</label>
+    <select class="mo-inp" id="ap-method">
+      <option>ACH</option><option>Check</option><option>Card</option>
+      <option>Cash</option><option>Zelle</option><option>Other</option>
+    </select>
+    <label class="mo-lbl">Status</label>
+    <select class="mo-inp" id="ap-status">
+      <option value="paid">Paid</option>
+      <option value="late">Late</option>
+      <option value="partial">Partial</option>
+    </select>
+    <label class="mo-lbl">Notes (optional)</label>
+    <input class="mo-inp" type="text" id="ap-notes" placeholder="e.g. May 2026 rent">
+    <button class="mo-btn" id="save-payment-btn">Save payment</button>
+    <div class="ok-msg" id="ap-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Payment recorded!</div>
+    <div class="mo-err" id="ap-err">Error saving payment.</div>
+  </div>
+</div>
+
+<!-- EDIT TENANT MODAL -->
+<div class="mo-overlay" id="mo-edittenant">
+  <div class="mo-box" style="max-width:480px">
+    <button class="mo-close" id="close-edittenant-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Edit tenant</div>
+    <div class="mo-sub">Update tenant information.</div>
+    <input type="hidden" id="et-id">
+    <label class="mo-lbl">Full name</label>
+    <input class="mo-inp" type="text" id="et-name" placeholder="Full name">
+    <label class="mo-lbl">Email</label>
+    <input class="mo-inp" type="email" id="et-email" placeholder="tenant@email.com">
+    <label class="mo-lbl">Phone</label>
+    <input class="mo-inp" type="tel" id="et-phone" placeholder="(864) 555-0100">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+      <div><label class="mo-lbl" style="margin:0 0 5px">Monthly rent</label>
+        <input class="mo-inp" type="number" id="et-rent" placeholder="1000" style="margin:0"></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">Status</label>
+        <select class="mo-inp" id="et-status" style="margin:0">
+          <option value="current">Current</option>
+          <option value="overdue">Overdue</option>
+          <option value="vacating">Vacating</option>
+        </select>
+      </div>
+    </div>
+    <label class="mo-lbl">Notes</label>
+    <textarea class="mo-inp" id="et-notes" placeholder="Any notes..." style="height:60px;resize:vertical"></textarea>
+    <button class="mo-btn" id="update-tenant-btn">Save changes</button>
+    <div class="ok-msg" id="et-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Tenant updated!</div>
+    <div class="mo-err" id="et-err">Error updating tenant.</div>
+  </div>
+</div>
+
 </body>
 </html>
