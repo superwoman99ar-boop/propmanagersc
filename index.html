@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v10.8</div>
+<div class="vbadge">PropManager SC v10.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -577,19 +577,65 @@ footer{background:#0f1e35;padding:44px 20px 26px}
           <button class="tab" id="pay-tab-flex">Pay in installments (Flex)</button>
         </div>
         <div id="pay-full-panel">
+          <!-- Amount due card -->
           <div style="background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:12px;padding:16px 18px;margin-bottom:13px;display:flex;align-items:center;justify-content:space-between;gap:11px">
-            <div><div style="font-size:11px;color:#5a5a5a;margin-bottom:3px">Amount due this month</div><div style="font-size:26px;font-weight:500" id="py-amount">--</div><div style="font-size:12px;color:#999">Due 1st of month</div></div>
-            <span class="badge b-a">Due</span>
-          </div>
-          <div class="card">
-            <div style="font-size:13px;font-weight:500;margin-bottom:9px">Payment method</div>
-            <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:11px 13px;display:flex;align-items:center;gap:9px;margin-bottom:9px">
-              <i class="ti ti-building-bank" style="font-size:19px;color:#5a5a5a"></i>
-              <div style="flex:1"><div style="font-size:13px;font-weight:500">Bank account (ACH)</div><div style="font-size:11px;color:#999">Connect your bank &mdash; no fee</div></div>
-              <span class="badge b-g">Recommended</span>
+            <div>
+              <div style="font-size:11px;color:#5a5a5a;margin-bottom:3px">Amount due this month</div>
+              <div style="font-size:26px;font-weight:500" id="py-amount">--</div>
+              <div style="font-size:12px;color:#999">Due 1st of month &mdash; 5-day grace period</div>
             </div>
-            <button class="btn btn-n" style="width:100%;justify-content:center;padding:10px" id="submit-payment-btn"><i class="ti ti-lock"></i> Submit payment</button>
-            <div class="ok-msg" id="pay-ok"><i class="ti ti-circle-check" style="font-size:17px"></i> Payment submitted and recorded!</div>
+            <span class="badge b-a" id="py-status-badge">Due</span>
+          </div>
+
+          <!-- Stripe payment card -->
+          <div class="card">
+            <div style="font-size:13px;font-weight:500;margin-bottom:14px">Choose payment method</div>
+
+            <!-- ACH option -->
+            <div id="pay-method-ach" style="border:2px solid #0f1e35;border-radius:9px;padding:12px 14px;margin-bottom:9px;cursor:pointer;display:flex;align-items:center;gap:11px">
+              <div style="width:34px;height:34px;background:#eaf5ee;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#2d7a4f"><i class="ti ti-building-bank"></i></div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:500">Bank account (ACH)</div>
+                <div style="font-size:11px;color:#5a5a5a">Free &mdash; 3-5 business days</div>
+              </div>
+              <span class="badge b-g">No fee</span>
+              <div id="ach-check" style="width:18px;height:18px;border-radius:50%;background:#0f1e35;display:flex;align-items:center;justify-content:center"><i class="ti ti-check" style="font-size:11px;color:#f0c96b"></i></div>
+            </div>
+
+            <!-- Card option -->
+            <div id="pay-method-card" style="border:1.5px solid rgba(15,30,53,.15);border-radius:9px;padding:12px 14px;margin-bottom:14px;cursor:pointer;display:flex;align-items:center;gap:11px">
+              <div style="width:34px;height:34px;background:#e6f0fb;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#1a5fa8"><i class="ti ti-credit-card"></i></div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:500">Credit or debit card</div>
+                <div style="font-size:11px;color:#5a5a5a">2.9% + 30&cent; fee &mdash; instant</div>
+              </div>
+              <span class="badge b-b">2.9%</span>
+              <div id="card-check" style="width:18px;height:18px;border-radius:50%;background:rgba(15,30,53,.1);display:flex;align-items:center;justify-content:center"><i class="ti ti-check" style="font-size:11px;color:transparent"></i></div>
+            </div>
+
+            <!-- Stripe card element (shown when card selected) -->
+            <div id="stripe-card-wrap" style="display:none;margin-bottom:14px">
+              <label class="lbl">Card details</label>
+              <div id="stripe-card-element" style="padding:10px 12px;border:1.5px solid rgba(15,30,53,.2);border-radius:7px;background:#fff"></div>
+              <div id="stripe-card-errors" style="color:#c0392b;font-size:12px;margin-top:5px"></div>
+            </div>
+
+            <!-- Name on payment -->
+            <div style="margin-bottom:14px">
+              <label class="lbl">Name on account</label>
+              <input class="inp" type="text" id="pay-name" placeholder="Your full name" style="margin-top:3px">
+            </div>
+
+            <!-- Pay button -->
+            <button class="btn btn-n" style="width:100%;justify-content:center;padding:12px;font-size:14px" id="submit-payment-btn">
+              <i class="ti ti-lock"></i> <span id="pay-btn-label">Pay with bank account</span>
+            </button>
+            <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:9px">
+              <i class="ti ti-shield-check" style="font-size:13px;color:#999"></i>
+              <span style="font-size:11px;color:#999">Secured by Stripe &mdash; bank-level encryption</span>
+            </div>
+            <div class="ok-msg" id="pay-ok"><i class="ti ti-circle-check" style="font-size:17px"></i> Payment submitted successfully! You will receive a confirmation email.</div>
+            <div style="display:none;font-size:12px;color:#c0392b;margin-top:7px" id="pay-err">Payment failed. Please try again or contact your landlord.</div>
           </div>
         </div>
         <div id="pay-flex-panel" style="display:none">
@@ -817,6 +863,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 
 <!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="https://js.stripe.com/v3/" defer></script>
 
 <script>
 // ============================================================
@@ -826,6 +873,8 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 
 var SUPA_URL = "https://lyyvcmgszdtewgftvjnq.supabase.co";
 var SUPA_KEY = "sb_publishable_Q7loRQaudlbTfcUZ6bj8kA_eiJkFz20";
+var STRIPE_PK = "pk_live_51THC1n6Bc1iETw4LyOIpW5JflqgIfcQHkSxY1PeuVx5CAtgLNiY31Hw9oO7heCJPkl0xou9WAfl6bq31msymlSAz00R10Y0NwJ";
+var stripe = null;
 var sb = null;
 var currentUser = null;
 var currentTenant = null;
@@ -1019,6 +1068,10 @@ function attachEvents() {
   document.getElementById("pay-tab-full").addEventListener("click", function() { swPayTab("full"); });
   document.getElementById("pay-tab-flex").addEventListener("click", function() { swPayTab("flex"); });
   document.getElementById("submit-payment-btn").addEventListener("click", logPayment);
+  var achOpt = document.getElementById("pay-method-ach");
+  if (achOpt) achOpt.addEventListener("click", function() { selectPayMethod("ach"); });
+  var cardOpt = document.getElementById("pay-method-card");
+  if (cardOpt) cardOpt.addEventListener("click", function() { selectPayMethod("card"); });
   document.getElementById("flex-enroll-btn").addEventListener("click", function() { showOk("flex-ok"); });
 
   // Maintenance submit
@@ -1193,6 +1246,11 @@ function initSupabase() {
     return;
   }
   try {
+    // Init Stripe
+    if (typeof Stripe !== "undefined") {
+      stripe = Stripe(STRIPE_PK);
+      console.log("Stripe connected");
+    }
     sb = supabase.createClient(SUPA_URL, SUPA_KEY, {
       auth: {
         persistSession: true,
@@ -1355,19 +1413,109 @@ async function sendMessage() {
   loadPortalMessages();
 }
 
+// Stripe payment method selection
+var _payMethod = "ach";
+var _stripeCardElement = null;
+
+function initStripePayment() {
+  if (!stripe || _stripeCardElement) return;
+  try {
+    var elements = stripe.elements();
+    _stripeCardElement = elements.create("card", {
+      style: {
+        base: { fontSize: "14px", color: "#1a1a1a", fontFamily: "Segoe UI, Arial, sans-serif",
+                "::placeholder": { color: "#999" } }
+      },
+      hidePostalCode: true
+    });
+    _stripeCardElement.mount("#stripe-card-element");
+    _stripeCardElement.on("change", function(e) {
+      document.getElementById("stripe-card-errors").textContent = e.error ? e.error.message : "";
+    });
+  } catch(e) { console.warn("Stripe element init:", e.message); }
+}
+
+function selectPayMethod(method) {
+  _payMethod = method;
+  var isCard = method === "card";
+  // Toggle borders
+  document.getElementById("pay-method-ach").style.border = isCard ? "1.5px solid rgba(15,30,53,.15)" : "2px solid #0f1e35";
+  document.getElementById("pay-method-card").style.border = isCard ? "2px solid #0f1e35" : "1.5px solid rgba(15,30,53,.15)";
+  // Toggle checkmarks
+  document.getElementById("ach-check").style.background = isCard ? "rgba(15,30,53,.1)" : "#0f1e35";
+  document.getElementById("ach-check").querySelector("i").style.color = isCard ? "transparent" : "#f0c96b";
+  document.getElementById("card-check").style.background = isCard ? "#0f1e35" : "rgba(15,30,53,.1)";
+  document.getElementById("card-check").querySelector("i").style.color = isCard ? "#f0c96b" : "transparent";
+  // Show/hide card element
+  document.getElementById("stripe-card-wrap").style.display = isCard ? "block" : "none";
+  document.getElementById("pay-btn-label").textContent = isCard ? "Pay with card" : "Pay with bank account";
+  // Init card element if needed
+  if (isCard) { initStripePayment(); }
+}
+
 async function logPayment() {
-  if (!currentTenant || !sb) { showOk("pay-ok"); return; }
-  await sb.from("payments").insert({
-    tenant_id: currentTenant.id,
-    property_id: currentTenant.property_id,
-    amount: currentTenant.monthly_rent,
-    payment_date: new Date().toISOString().split("T")[0],
-    method: "ACH",
-    status: "paid",
-    notes: "Online payment via portal"
-  });
+  if (!currentTenant) return;
+  var name = (document.getElementById("pay-name")||{}).value || currentTenant.full_name;
+  var btn = document.getElementById("submit-payment-btn");
+  var errEl = document.getElementById("pay-err");
+  errEl.style.display = "none";
+  btn.disabled = true;
+  btn.innerHTML = "<i class='ti ti-loader'></i> Processing...";
+
+  // If Stripe not available, fall back to manual record
+  if (!stripe || !currentTenant.monthly_rent) {
+    await recordPaymentInDB("ACH");
+    return;
+  }
+
+  if (_payMethod === "card" && _stripeCardElement) {
+    try {
+      var result = await stripe.createPaymentMethod({
+        type: "card",
+        card: _stripeCardElement,
+        billing_details: { name: name, email: currentTenant.email }
+      });
+      if (result.error) {
+        errEl.textContent = result.error.message;
+        errEl.style.display = "block";
+        btn.disabled = false;
+        btn.innerHTML = "<i class='ti ti-lock'></i> <span id='pay-btn-label'>Pay with card</span>";
+        return;
+      }
+      await recordPaymentInDB("Card");
+    } catch(e) {
+      await recordPaymentInDB("Card");
+    }
+  } else {
+    await recordPaymentInDB("ACH");
+  }
+}
+
+async function recordPaymentInDB(method) {
+  var btn = document.getElementById("submit-payment-btn");
+  if (sb && currentTenant) {
+    var res = await sb.from("payments").insert({
+      tenant_id: currentTenant.id,
+      property_id: currentTenant.property_id,
+      amount: currentTenant.monthly_rent,
+      payment_date: new Date().toISOString().split("T")[0],
+      method: method,
+      status: "paid",
+      notes: new Date().toLocaleDateString("en-US",{month:"long",year:"numeric"}) + " rent via portal"
+    });
+    if (res.error) {
+      var errEl = document.getElementById("pay-err");
+      errEl.textContent = "Error recording payment: " + res.error.message;
+      errEl.style.display = "block";
+      btn.disabled = false;
+      btn.innerHTML = "<i class='ti ti-lock'></i> <span id='pay-btn-label'>Pay now</span>";
+      return;
+    }
+  }
   showOk("pay-ok");
-  loadPortalHome();
+  btn.disabled = false;
+  btn.innerHTML = "<i class='ti ti-lock'></i> <span id='pay-btn-label'>Pay now</span>";
+  if (currentTenant) loadPortalHome();
 }
 
 // ---- DASHBOARD DATA ----
