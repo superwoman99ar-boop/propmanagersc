@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v10.9</div>
+<div class="vbadge">PropManager SC v11.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -639,11 +639,110 @@ footer{background:#0f1e35;padding:44px 20px 26px}
           </div>
         </div>
         <div id="pay-flex-panel" style="display:none">
-          <div style="background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:12px;padding:17px">
-            <div style="font-size:14px;font-weight:500;margin-bottom:11px">Flex &mdash; split into 2 payments</div>
-            <div style="font-size:13px;color:#5a5a5a;margin-bottom:13px">Flex pays your landlord in full on the 1st. You repay Flex in 2 installments.</div>
-            <button class="btn btn-n" style="width:100%;justify-content:center;padding:10px" id="flex-enroll-btn"><i class="ti ti-external-link"></i> Enroll with Flex</button>
-            <div class="ok-msg" id="flex-ok"><i class="ti ti-circle-check" style="font-size:17px"></i> Redirecting to Flex...</div>
+          <div style="background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:12px;padding:17px;margin-bottom:13px">
+            <div style="font-size:14px;font-weight:600;color:#0f1e35;margin-bottom:4px">Pay rent in installments</div>
+            <div style="font-size:12.5px;color:#5a5a5a;margin-bottom:16px">Your landlord always receives the full amount on time. You choose a service to split your payments.</div>
+
+            <!-- Flex -->
+            <div style="border:1.5px solid rgba(15,30,53,.12);border-radius:10px;padding:14px;margin-bottom:11px">
+              <div style="display:flex;align-items:center;gap:11px;margin-bottom:9px">
+                <div style="width:38px;height:38px;background:linear-gradient(135deg,#6c47ff,#9b78ff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff">Fx</div>
+                <div style="flex:1">
+                  <div style="font-size:13.5px;font-weight:600">Flex</div>
+                  <div style="font-size:11.5px;color:#5a5a5a">Split rent into 2 payments &mdash; no credit check</div>
+                </div>
+                <span class="badge b-g">Popular</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:11px">
+                <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:#999;margin-bottom:3px">Split into</div>
+                  <div style="font-size:14px;font-weight:600">2 payments</div>
+                </div>
+                <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:#999;margin-bottom:3px">Service fee</div>
+                  <div style="font-size:14px;font-weight:600" id="flex-fee">--</div>
+                </div>
+                <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:#999;margin-bottom:3px">Credit check</div>
+                  <div style="font-size:14px;font-weight:600">None</div>
+                </div>
+              </div>
+              <div style="font-size:12px;color:#5a5a5a;margin-bottom:11px;background:#f8f6ff;border-radius:7px;padding:9px 11px">
+                <strong>How it works:</strong> Flex pays your landlord in full on the 1st. You pay Flex back in 2 installments &mdash; half now, half mid-month. No interest if paid on time.
+              </div>
+              <button class="btn btn-n" style="width:100%;justify-content:center;padding:10px" id="flex-enroll-btn">
+                <i class="ti ti-external-link"></i> Enroll with Flex &mdash; getflex.com
+              </button>
+            </div>
+
+            <!-- Livable -->
+            <div style="border:1.5px solid rgba(15,30,53,.12);border-radius:10px;padding:14px;margin-bottom:11px">
+              <div style="display:flex;align-items:center;gap:11px;margin-bottom:9px">
+                <div style="width:38px;height:38px;background:linear-gradient(135deg,#00b894,#00cec9);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">Lv</div>
+                <div style="flex:1">
+                  <div style="font-size:13.5px;font-weight:600">Livable</div>
+                  <div style="font-size:11.5px;color:#5a5a5a">Weekly or bi-weekly rent payments</div>
+                </div>
+                <span class="badge b-b">Weekly</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:11px">
+                <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:#999;margin-bottom:3px">Split into</div>
+                  <div style="font-size:14px;font-weight:600">4 payments</div>
+                </div>
+                <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:#999;margin-bottom:3px">Service fee</div>
+                  <div style="font-size:14px;font-weight:600" id="livable-fee">--</div>
+                </div>
+                <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:#999;margin-bottom:3px">Credit check</div>
+                  <div style="font-size:14px;font-weight:600">Soft only</div>
+                </div>
+              </div>
+              <div style="font-size:12px;color:#5a5a5a;margin-bottom:11px;background:#e8fdf8;border-radius:7px;padding:9px 11px">
+                <strong>How it works:</strong> Livable advances your full rent to the landlord. You pay Livable weekly over the month. Matches your paycheck schedule.
+              </div>
+              <button class="btn" style="width:100%;justify-content:center;padding:10px;background:#00b894;border-color:#00b894;color:#fff" id="livable-enroll-btn">
+                <i class="ti ti-external-link"></i> Enroll with Livable &mdash; getlivable.com
+              </button>
+            </div>
+
+            <!-- Till -->
+            <div style="border:1.5px solid rgba(15,30,53,.12);border-radius:10px;padding:14px">
+              <div style="display:flex;align-items:center;gap:11px;margin-bottom:9px">
+                <div style="width:38px;height:38px;background:linear-gradient(135deg,#e17055,#fd79a8);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff">Ti</div>
+                <div style="flex:1">
+                  <div style="font-size:13.5px;font-weight:600">Till</div>
+                  <div style="font-size:11.5px;color:#5a5a5a">Up to 10 days early payment advance</div>
+                </div>
+                <span class="badge b-a">Advance</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:11px">
+                <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:#999;margin-bottom:3px">Advance</div>
+                  <div style="font-size:14px;font-weight:600">Up to 10d</div>
+                </div>
+                <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:#999;margin-bottom:3px">Fee</div>
+                  <div style="font-size:14px;font-weight:600">$3&ndash;$5</div>
+                </div>
+                <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:8px;text-align:center">
+                  <div style="font-size:10px;color:#999;margin-bottom:3px">Credit check</div>
+                  <div style="font-size:14px;font-weight:600">None</div>
+                </div>
+              </div>
+              <div style="font-size:12px;color:#5a5a5a;margin-bottom:11px;background:#fff5f2;border-radius:7px;padding:9px 11px">
+                <strong>How it works:</strong> Till advances you up to $500 to cover rent early when you are short. You repay on your next payday. No interest, flat fee only.
+              </div>
+              <button class="btn" style="width:100%;justify-content:center;padding:10px;background:#e17055;border-color:#e17055;color:#fff" id="till-enroll-btn">
+                <i class="ti ti-external-link"></i> Apply with Till &mdash; gettill.com
+              </button>
+            </div>
+
+            <div style="font-size:11.5px;color:#999;text-align:center;margin-top:11px;line-height:1.6">
+              These services are independent third parties. Your landlord receives the full rent on time regardless of which option you choose. Fees are charged by the service provider, not your landlord.
+            </div>
+            <div class="ok-msg" id="flex-ok" style="margin-top:11px"><i class="ti ti-circle-check" style="font-size:17px"></i> Redirecting you to enrollment...</div>
           </div>
         </div>
       </div>
@@ -1072,7 +1171,21 @@ function attachEvents() {
   if (achOpt) achOpt.addEventListener("click", function() { selectPayMethod("ach"); });
   var cardOpt = document.getElementById("pay-method-card");
   if (cardOpt) cardOpt.addEventListener("click", function() { selectPayMethod("card"); });
-  document.getElementById("flex-enroll-btn").addEventListener("click", function() { showOk("flex-ok"); });
+  var flexBtn = document.getElementById("flex-enroll-btn");
+  if (flexBtn) flexBtn.addEventListener("click", function() {
+    showOk("flex-ok");
+    setTimeout(function() { window.open("https://getflex.com", "_blank"); }, 800);
+  });
+  var livableBtn = document.getElementById("livable-enroll-btn");
+  if (livableBtn) livableBtn.addEventListener("click", function() {
+    showOk("flex-ok");
+    setTimeout(function() { window.open("https://getlivable.com", "_blank"); }, 800);
+  });
+  var tillBtn = document.getElementById("till-enroll-btn");
+  if (tillBtn) tillBtn.addEventListener("click", function() {
+    showOk("flex-ok");
+    setTimeout(function() { window.open("https://gettill.com", "_blank"); }, 800);
+  });
 
   // Maintenance submit
   document.getElementById("submit-maint-btn").addEventListener("click", submitMaintenanceRequest);
