@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v11.0</div>
+<div class="vbadge">PropManager SC v11.1</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -357,7 +357,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 
       <div class="dsec" id="ds-rn">
         <div class="g3">
-          <div class="mc"><div class="mc-l">Collected this month</div><div class="mc-v" id="rn-col">--</div></div>
+          <div class="mc"><div class="mc-l">Collected — <span id="rn-month-title" style="color:var(--gold,#c9962a)">this month</span></div><div class="mc-v" id="rn-col">--</div></div>
           <div class="mc"><div class="mc-l">Outstanding</div><div class="mc-v mc-r" id="rn-out">--</div></div>
           <div class="mc"><div class="mc-l">Total payments</div><div class="mc-v" id="rn-cnt">--</div></div>
         </div>
@@ -978,7 +978,8 @@ var sb = null;
 var currentUser = null;
 var currentTenant = null;
 var currentRole = null;
-var LANDLORD_EMAIL = "superwoman99.ar@gmail.com";
+var LANDLORD_EMAILS = ["superwoman99.ar@gmail.com", "HUSBAND_EMAIL_PLACEHOLDER"];
+var LANDLORD_EMAIL = "superwoman99.ar@gmail.com"; // primary
 
 var PAGES = ["home","dashboard","portal","vacancy","contact"];
 var DASH_SECS = ["ov","pr","tn","rn","mn","ls","gl","nt","tx"];
@@ -1378,9 +1379,10 @@ function initSupabase() {
     sb.auth.onAuthStateChange(function(event, session) {
       if (session && session.user) {
         currentUser = session.user;
-        if (currentUser.email === LANDLORD_EMAIL) {
+        if (LANDLORD_EMAILS.indexOf(currentUser.email) !== -1) {
           currentRole = "landlord";
-          showNavUser("LL", "Landlord");
+          var llName = currentUser.email === LANDLORD_EMAIL ? "Landlord" : "Co-landlord";
+          showNavUser("LL", llName);
           closeMo("landlord");
           goPage("dashboard");
           loadDashboardData();
@@ -1663,11 +1665,24 @@ async function loadDashboardData() {
   document.getElementById("tx-exp").textContent = "$" + (totalExp * 2).toLocaleString() + " est.";
   document.getElementById("tx-net").textContent = "$" + Math.max(0, totalRent * 12 - totalExp * 2 - 10400).toLocaleString() + " est.";
 
-  var monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
-  var monthPay = payments.filter(function(p) { return new Date(p.payment_date) >= monthStart; });
-  var monthTotal = monthPay.reduce(function(s,p) { return s + p.amount; }, 0);
+  // Always use current real month/year
+  var now = new Date();
+  var curYear = now.getFullYear();
+  var curMonth = now.getMonth(); // 0-indexed
+  var monthStart = new Date(curYear, curMonth, 1);
+  var monthEnd = new Date(curYear, curMonth + 1, 0); // last day of current month
+  var monthStartStr = curYear + "-" + String(curMonth+1).padStart(2,"0") + "-01";
+  var monthEndStr = curYear + "-" + String(curMonth+1).padStart(2,"0") + "-" + String(monthEnd.getDate()).padStart(2,"0");
+  var monthName = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  var monthPay = payments.filter(function(p) {
+    return p.payment_date >= monthStartStr && p.payment_date <= monthEndStr;
+  });
+  var monthTotal = monthPay.reduce(function(s,p) { return s + Number(p.amount); }, 0);
   var outstanding = tenants.filter(function(t) { return t.status === "overdue"; }).reduce(function(s,t) { return s + t.monthly_rent; }, 0);
   document.getElementById("rn-col").textContent = "$" + monthTotal.toLocaleString();
+  // Update section title with current month name
+  var rnTitle = document.getElementById("rn-month-title");
+  if (rnTitle) rnTitle.textContent = monthName;
   document.getElementById("rn-out").textContent = "$" + outstanding.toLocaleString();
   document.getElementById("rn-cnt").textContent = payments.length + " total";
 
