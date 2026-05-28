@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v10.7</div>
+<div class="vbadge">PropManager SC v10.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -396,14 +396,66 @@ footer{background:#0f1e35;padding:44px 20px 26px}
       </div>
 
       <div class="dsec" id="ds-gl">
-        <div class="g3">
+        <div class="g4">
           <div class="mc"><div class="mc-l">Total income YTD</div><div class="mc-v mc-g" id="gl-inc">--</div></div>
           <div class="mc"><div class="mc-l">Total expenses YTD</div><div class="mc-v mc-r" id="gl-exp">--</div></div>
           <div class="mc"><div class="mc-l">Net profit YTD</div><div class="mc-v" id="gl-net">--</div></div>
+          <div class="mc"><div class="mc-l">Recurring / month</div><div class="mc-v mc-r" id="gl-recurring">--</div></div>
         </div>
-        <div class="card">
-          <div class="card-head"><div class="card-title">Expense log</div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn" id="pnl-btn"><i class="ti ti-chart-bar"></i> P&amp;L Report</button><button class="btn" id="import-expense-btn"><i class="ti ti-brand-databricks"></i> Import Innago</button><button class="btn btn-n" id="add-expense-btn"><i class="ti ti-plus"></i> Log expense</button></div></div>
-          <div id="expense-list"><div class="spin-wrap"><div class="spinner"></div> Loading...</div></div>
+
+        <!-- LEDGER FILTERS -->
+        <div style="background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:12px;padding:14px 16px;margin-bottom:13px">
+          <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500"><i class="ti ti-filter" style="color:#5a5a5a"></i> Filter:</div>
+            <select class="inp" id="gl-filter-type" style="width:auto;font-size:12px;padding:5px 9px">
+              <option value="all">All transactions</option>
+              <option value="income">Income only</option>
+              <option value="expense">Expenses only</option>
+              <option value="recurring">Recurring only</option>
+            </select>
+            <select class="inp" id="gl-filter-cat" style="width:auto;font-size:12px;padding:5px 9px">
+              <option value="all">All categories</option>
+              <option value="Repairs">Repairs</option>
+              <option value="Insurance">Insurance</option>
+              <option value="Property Tax">Property Tax</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Professional Fees">Professional Fees</option>
+              <option value="Other">Other</option>
+            </select>
+            <div style="display:flex;align-items:center;gap:5px">
+              <input class="inp" type="date" id="gl-date-from" style="width:130px;font-size:12px;padding:5px 9px">
+              <span style="font-size:12px;color:#999">to</span>
+              <input class="inp" type="date" id="gl-date-to" style="width:130px;font-size:12px;padding:5px 9px">
+            </div>
+            <button class="btn" id="gl-filter-btn" style="padding:5px 12px;font-size:12px"><i class="ti ti-search"></i> Apply</button>
+            <button class="btn" id="gl-clear-btn" style="padding:5px 12px;font-size:12px"><i class="ti ti-x"></i> Clear</button>
+          </div>
+        </div>
+
+        <!-- SORT BAR -->
+        <div style="display:flex;gap:7px;margin-bottom:11px;flex-wrap:wrap">
+          <span style="font-size:12px;color:#5a5a5a;align-self:center">Sort by:</span>
+          <button class="btn gl-sort on" id="gl-sort-date" data-sort="date" style="font-size:11px;padding:4px 10px">Date <i class="ti ti-arrow-down"></i></button>
+          <button class="btn gl-sort" id="gl-sort-amt" data-sort="amount" style="font-size:11px;padding:4px 10px">Amount</button>
+          <button class="btn gl-sort" id="gl-sort-cat" data-sort="category" style="font-size:11px;padding:4px 10px">Category</button>
+          <div style="margin-left:auto;display:flex;gap:7px;flex-wrap:wrap">
+            <button class="btn" id="pnl-btn"><i class="ti ti-chart-bar"></i> P&amp;L</button>
+            <button class="btn" id="import-expense-btn"><i class="ti ti-brand-databricks"></i> Import Innago</button>
+            <button class="btn" id="add-recurring-btn"><i class="ti ti-repeat"></i> Add recurring</button>
+            <button class="btn btn-n" id="add-expense-btn"><i class="ti ti-plus"></i> Log expense</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:0">
+          <div id="ledger-income-section">
+            <div style="font-size:11px;font-weight:600;color:#2d7a4f;letter-spacing:1px;text-transform:uppercase;padding:0 0 7px;border-bottom:1px solid rgba(15,30,53,.07);margin-bottom:7px">Income</div>
+            <div id="income-list"><div class="spin-wrap"><div class="spinner"></div></div></div>
+          </div>
+          <div id="ledger-expense-section" style="margin-top:14px">
+            <div style="font-size:11px;font-weight:600;color:#c0392b;letter-spacing:1px;text-transform:uppercase;padding:0 0 7px;border-bottom:1px solid rgba(15,30,53,.07);margin-bottom:7px">Expenses</div>
+            <div id="expense-list"><div class="spin-wrap"><div class="spinner"></div></div></div>
+          </div>
         </div>
       </div>
 
@@ -995,7 +1047,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -1046,7 +1098,39 @@ function attachEvents() {
   var closePnl = document.getElementById("close-pnl-mo");
   if (closePnl) closePnl.addEventListener("click", function() { closeMo("pnl"); });
 
-  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl"].forEach(function(id) {
+  // Recurring modal
+  var closeRecMo = document.getElementById("close-recurring-mo");
+  if (closeRecMo) closeRecMo.addEventListener("click", function() { closeMo("recurring"); });
+  var saveRecBtn = document.getElementById("save-recurring-btn");
+  if (saveRecBtn) saveRecBtn.addEventListener("click", saveRecurringExpense);
+  var addRecBtn = document.getElementById("add-recurring-btn");
+  if (addRecBtn) addRecBtn.addEventListener("click", function() {
+    var now = new Date();
+    document.getElementById("rec-start").value = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+    document.getElementById("rec-ok").classList.remove("on");
+    document.getElementById("rec-err").style.display = "none";
+    openMo("recurring");
+  });
+  // Ledger filter + sort buttons
+  var glFilterBtn = document.getElementById("gl-filter-btn");
+  if (glFilterBtn) glFilterBtn.addEventListener("click", applyLedgerFilter);
+  var glClearBtn = document.getElementById("gl-clear-btn");
+  if (glClearBtn) glClearBtn.addEventListener("click", function() {
+    document.getElementById("gl-filter-type").value = "all";
+    document.getElementById("gl-filter-cat").value = "all";
+    document.getElementById("gl-date-from").value = "";
+    document.getElementById("gl-date-to").value = "";
+    renderLedger(window._ledgerCache);
+  });
+  document.querySelectorAll(".gl-sort").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      document.querySelectorAll(".gl-sort").forEach(function(b) { b.classList.remove("on"); });
+      btn.classList.add("on");
+      renderLedger(window._ledgerCache, btn.getAttribute("data-sort"));
+    });
+  });
+
+  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", function(e) {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
@@ -1332,7 +1416,12 @@ async function loadDashboardData() {
   renderPaymentList(payments, tenants);
   renderMaintList(maints);
   renderLeaseList(tenants);
-  renderExpenseList(expenses);
+  // New unified ledger renderer
+  var recurring = expenses.filter(function(e){ return (e.notes||"") === "recurring"; });
+  var recurringMonthly = recurring.reduce(function(s,e){ return s+(Number(e.amount)||0); },0) / 12;
+  var glRec = document.getElementById("gl-recurring");
+  if (glRec) glRec.textContent = "$" + Math.round(recurringMonthly).toLocaleString();
+  renderLedger({ payments: payments, expenses: expenses });
   renderNoticeButtons(tenants);
 
   var alertEl = document.getElementById("overdue-alert");
@@ -1494,11 +1583,7 @@ function renderLeaseList(tenants) {
 }
 
 function renderExpenseList(expenses) {
-  var el = document.getElementById("expense-list");
-  if (!expenses.length) { el.innerHTML = "<div class='empty'>No expenses logged yet.</div>"; return; }
-  el.innerHTML = expenses.slice(0,15).map(function(e) {
-    return "<div class='lr'><div class='l-ico' style='background:#fdecea;color:#c0392b'><i class='ti ti-arrow-up-right' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + e.description + "</div><div class='l-sub'>" + e.expense_date + " &middot; " + e.category + "</div></div><div class='l-dr'>-$" + e.amount.toLocaleString() + "</div></div>";
-  }).join("");
+  // Legacy function — renderLedger handles this now
 }
 
 function renderNoticeButtons(tenants) {
@@ -2119,6 +2204,152 @@ async function generatePnL() {
   }, 100);
 }
 
+
+// ---- RECURRING EXPENSES ----
+async function saveRecurringExpense() {
+  if (!sb) return;
+  var desc = document.getElementById("rec-desc").value.trim();
+  var amt = parseFloat(document.getElementById("rec-amount").value);
+  var cat = document.getElementById("rec-cat").value;
+  var day = parseInt(document.getElementById("rec-day").value) || 1;
+  var startMonth = document.getElementById("rec-start").value;
+  if (!desc || !amt || !startMonth) {
+    document.getElementById("rec-err").style.display = "block";
+    document.getElementById("rec-err").textContent = "Please fill in description, amount, and start month.";
+    return;
+  }
+  // Generate 12 months of expenses from start month
+  var records = [];
+  var parts = startMonth.split("-");
+  var yr = parseInt(parts[0]), mo = parseInt(parts[1]);
+  for (var i = 0; i < 12; i++) {
+    var m = mo + i;
+    var y = yr + Math.floor((m-1)/12);
+    var month = ((m-1) % 12) + 1;
+    var dateStr = y + "-" + String(month).padStart(2,"0") + "-" + String(Math.min(day,28)).padStart(2,"0");
+    records.push({ description: desc, amount: amt, category: cat, expense_date: dateStr, notes: "recurring" });
+  }
+  var result = await sb.from("expenses").insert(records);
+  if (result.error) {
+    document.getElementById("rec-err").style.display = "block";
+    document.getElementById("rec-err").textContent = result.error.message;
+  } else {
+    document.getElementById("rec-ok").classList.add("on");
+    setTimeout(function() { closeMo("recurring"); loadDashboardData(); }, 1500);
+  }
+}
+
+// ---- LEDGER FILTER & SORT ----
+window._ledgerCache = { payments: [], expenses: [] };
+
+function applyLedgerFilter() {
+  var type = document.getElementById("gl-filter-type").value;
+  var cat = document.getElementById("gl-filter-cat").value;
+  var from = document.getElementById("gl-date-from").value;
+  var to = document.getElementById("gl-date-to").value;
+  var sort = (document.querySelector(".gl-sort.on") || {}).getAttribute ? document.querySelector(".gl-sort.on").getAttribute("data-sort") : "date";
+  renderLedger(window._ledgerCache, sort, { type: type, cat: cat, from: from, to: to });
+}
+
+function renderLedger(data, sort, filters) {
+  if (!data) return;
+  window._ledgerCache = data;
+  sort = sort || "date";
+  filters = filters || { type: "all", cat: "all", from: "", to: "" };
+
+  var pays = (data.payments || []).slice();
+  var exps = (data.expenses || []).slice();
+
+  // Apply date filters
+  if (filters.from) {
+    pays = pays.filter(function(p) { return p.payment_date >= filters.from; });
+    exps = exps.filter(function(e) { return e.expense_date >= filters.from; });
+  }
+  if (filters.to) {
+    pays = pays.filter(function(p) { return p.payment_date <= filters.to; });
+    exps = exps.filter(function(e) { return e.expense_date <= filters.to; });
+  }
+  if (filters.cat !== "all") {
+    exps = exps.filter(function(e) { return e.category === filters.cat; });
+  }
+  if (filters.type === "recurring") {
+    exps = exps.filter(function(e) { return (e.notes||"") === "recurring"; });
+    pays = [];
+  } else if (filters.type === "income") {
+    exps = [];
+  } else if (filters.type === "expense") {
+    pays = [];
+  }
+
+  // Sort
+  function sortFn(arr, dateKey, amtKey) {
+    return arr.sort(function(a,b) {
+      if (sort === "amount") return Number(b[amtKey]||0) - Number(a[amtKey]||0);
+      if (sort === "category") return (a.category||"Income").localeCompare(b.category||"Income");
+      return (b[dateKey]||"").localeCompare(a[dateKey]||"");
+    });
+  }
+  pays = sortFn(pays, "payment_date", "amount");
+  exps = sortFn(exps, "expense_date", "amount");
+
+  // Render income
+  var incEl = document.getElementById("income-list");
+  var incSec = document.getElementById("ledger-income-section");
+  if (filters.type === "expense" || filters.type === "recurring") {
+    if (incSec) incSec.style.display = "none";
+  } else {
+    if (incSec) incSec.style.display = "block";
+    if (incEl) {
+      if (!pays.length) { incEl.innerHTML = "<div class='empty'>No income records for selected period.</div>"; }
+      else {
+        var tMap = {};
+        if (window._tenantCache) window._tenantCache.forEach(function(t) { tMap[t.id] = t.full_name; });
+        incEl.innerHTML = pays.map(function(p) {
+          var name = tMap[p.tenant_id] || "Unknown tenant";
+          var color = p.status === "paid" ? "#2d7a4f" : "#c0392b";
+          var badge = p.status === "paid" ? "<span class='badge b-g' style='font-size:10px'>Paid</span>" : "<span class='badge b-r' style='font-size:10px'>Late</span>";
+          return "<div class='lr'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-arrow-down-right' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + name + " &mdash; " + (p.notes||"Rent") + "</div><div class='l-sub'>" + p.payment_date + " &middot; " + p.method + "</div></div><div style='color:" + color + ";font-weight:500;margin-right:8px'>+$" + Number(p.amount).toLocaleString() + "</div>" + badge + "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:7px' data-pay-id='" + p.id + "' data-tenant-name='" + name + "'>Edit</button></div>";
+        }).join("");
+        // Re-attach edit events
+        incEl.querySelectorAll("[data-pay-id]").forEach(function(btn) {
+          btn.addEventListener("click", function() {
+            var pid = btn.getAttribute("data-pay-id");
+            var tname = btn.getAttribute("data-tenant-name");
+            var pay = pays.find(function(p) { return p.id === pid; });
+            if (pay) openEditPaymentModal(pay, tname);
+          });
+        });
+      }
+    }
+  }
+
+  // Render expenses
+  var expEl = document.getElementById("expense-list");
+  var expSec = document.getElementById("ledger-expense-section");
+  if (filters.type === "income") {
+    if (expSec) expSec.style.display = "none";
+  } else {
+    if (expSec) expSec.style.display = "block";
+    if (expEl) {
+      if (!exps.length) { expEl.innerHTML = "<div class='empty'>No expenses for selected period.</div>"; }
+      else {
+        expEl.innerHTML = exps.map(function(e) {
+          var isRec = (e.notes||"") === "recurring";
+          var recBadge = isRec ? "<span class='badge b-b' style='font-size:10px;margin-right:5px'><i class='ti ti-repeat' style='font-size:9px'></i> Recurring</span>" : "";
+          return "<div class='lr'><div class='l-ico' style='background:#fdecea;color:#c0392b'><i class='ti ti-arrow-up-right' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + e.description + "</div><div class='l-sub'>" + e.expense_date + " &middot; " + (e.category||"Other") + "</div></div>" + recBadge + "<div class='l-dr' style='margin-right:8px'>-$" + Number(e.amount).toLocaleString() + "</div><button class='btn btn-r' style='font-size:11px;padding:3px 8px' data-exp-id='" + e.id + "'>Del</button></div>";
+        }).join("");
+        expEl.querySelectorAll("[data-exp-id]").forEach(function(btn) {
+          btn.addEventListener("click", async function() {
+            if (!confirm("Delete this expense?")) return;
+            await sb.from("expenses").delete().eq("id", btn.getAttribute("data-exp-id"));
+            loadDashboardData();
+          });
+        });
+      }
+    }
+  }
+}
+
 // ---- FORM SUBMITS ----
 function submitVacancy() {
   var n = document.getElementById("vi-name").value;
@@ -2416,6 +2647,44 @@ document.addEventListener("DOMContentLoaded", function() {
         Uploaded documents are stored in your browser for this session. For permanent storage, save to Google Drive or your local files.
       </div>
     </div>
+  </div>
+</div>
+
+
+<!-- RECURRING EXPENSE MODAL -->
+<div class="mo-overlay" id="mo-recurring">
+  <div class="mo-box" style="max-width:460px">
+    <button class="mo-close" id="close-recurring-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Add recurring expense</div>
+    <div class="mo-sub">Automatically logs this expense every month.</div>
+    <label class="mo-lbl">Description</label>
+    <input class="mo-inp" type="text" id="rec-desc" placeholder="e.g. Property insurance — all units">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+      <div><label class="mo-lbl" style="margin:0 0 5px">Amount ($)</label>
+        <input class="mo-inp" type="number" id="rec-amount" placeholder="800" style="margin:0"></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">Day of month</label>
+        <input class="mo-inp" type="number" id="rec-day" placeholder="1" min="1" max="28" value="1" style="margin:0"></div>
+    </div>
+    <label class="mo-lbl">Category</label>
+    <select class="mo-inp" id="rec-cat">
+      <option>Insurance</option><option>Property Tax</option><option>Repairs</option>
+      <option>Maintenance</option><option>Utilities</option><option>Professional Fees</option>
+      <option>Mortgage</option><option>HOA</option><option>Other</option>
+    </select>
+    <label class="mo-lbl">Property (optional)</label>
+    <select class="mo-inp" id="rec-prop">
+      <option value="">All properties</option>
+      <option>510 11th St</option><option>602 11th St</option><option>608 11th St</option>
+      <option>282 W. Wood</option><option>284 W. Wood</option><option>288 W. Wood</option><option>290 W. Wood</option>
+    </select>
+    <label class="mo-lbl">Start month</label>
+    <input class="mo-inp" type="month" id="rec-start">
+    <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:10px 12px;font-size:12px;color:#5a5a5a;margin-bottom:11px">
+      <i class="ti ti-info-circle"></i> This will create expense records for each month going forward. You can delete individual months from the ledger.
+    </div>
+    <button class="mo-btn" id="save-recurring-btn">Save recurring expense</button>
+    <div class="ok-msg" id="rec-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Recurring expense saved!</div>
+    <div class="mo-err" id="rec-err">Error saving recurring expense.</div>
   </div>
 </div>
 
