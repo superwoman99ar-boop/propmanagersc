@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v10.6</div>
+<div class="vbadge">PropManager SC v10.7</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -336,9 +336,9 @@ footer{background:#0f1e35;padding:44px 20px 26px}
             <div class="spin-wrap"><div class="spinner"></div> Loading from database...</div>
           </div>
         </div>
-        <div id="overdue-alert" style="display:none;background:#fdecea;border:1px solid rgba(192,57,43,.2);border-radius:7px;padding:13px 16px;display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-top:4px">
+        <div id="overdue-alert" style="display:none;background:#fdecea;border:1px solid rgba(192,57,43,.2);border-radius:7px;padding:13px 16px;align-items:center;gap:11px;flex-wrap:wrap;margin-top:4px">
           <i class="ti ti-alert-triangle" style="font-size:20px;color:#c0392b"></i>
-          <div style="flex:1"><div style="font-size:13px;font-weight:500;color:#c0392b">Rudolph Glynn &mdash; 284 W. Wood &mdash; $1,180 overdue</div><div style="font-size:12px;color:#c0392b;opacity:.8;margin-top:2px">Grace period expired. Issue 5-day notice.</div></div>
+          <div style="flex:1"><div id="overdue-alert-msg" style="font-size:13px;font-weight:500;color:#c0392b"></div><div style="font-size:12px;color:#c0392b;opacity:.8;margin-top:2px">Grace period expired. Issue 5-day notice.</div></div>
           <button class="btn btn-r" id="ov-notice-btn"><i class="ti ti-file-alert"></i> Issue Notice</button>
         </div>
       </div>
@@ -402,7 +402,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
           <div class="mc"><div class="mc-l">Net profit YTD</div><div class="mc-v" id="gl-net">--</div></div>
         </div>
         <div class="card">
-          <div class="card-head"><div class="card-title">Expense log</div><div style="display:flex;gap:7px"><button class="btn" id="import-expense-btn"><i class="ti ti-upload"></i> Import CSV</button><button class="btn btn-n" id="add-expense-btn"><i class="ti ti-plus"></i> Log expense</button></div></div>
+          <div class="card-head"><div class="card-title">Expense log</div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn" id="pnl-btn"><i class="ti ti-chart-bar"></i> P&amp;L Report</button><button class="btn" id="import-expense-btn"><i class="ti ti-brand-databricks"></i> Import Innago</button><button class="btn btn-n" id="add-expense-btn"><i class="ti ti-plus"></i> Log expense</button></div></div>
           <div id="expense-list"><div class="spin-wrap"><div class="spinner"></div> Loading...</div></div>
         </div>
       </div>
@@ -938,14 +938,10 @@ function attachEvents() {
   document.getElementById("log-payment-btn").addEventListener("click", function() { openAddPaymentModal(); });
   document.getElementById("add-expense-btn").addEventListener("click", function() { openMo("addexpense"); });
   var impExpBtn = document.getElementById("import-expense-btn");
-  if (impExpBtn) impExpBtn.addEventListener("click", function() {
-    document.getElementById("imp-data").value = "";
-    document.getElementById("imp-preview").style.display = "none";
-    document.getElementById("confirm-imp-btn").style.display = "none";
-    document.getElementById("imp-ok").classList.remove("on");
-    document.getElementById("imp-err").style.display = "none";
-    openMo("importexpenses");
-  });
+  if (impExpBtn) impExpBtn.addEventListener("click", function() { openInnagoModal(); });
+
+  var pnlBtn = document.getElementById("pnl-btn");
+  if (pnlBtn) pnlBtn.addEventListener("click", function() { openPnlModal(); });
   document.getElementById("save-maint-btn").addEventListener("click", saveMaintenance);
   document.getElementById("save-tenant-btn").addEventListener("click", addTenant);
   document.getElementById("save-expense-btn").addEventListener("click", saveExpense);
@@ -999,7 +995,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -1044,7 +1040,13 @@ function attachEvents() {
   if (confirmImpBtn) confirmImpBtn.addEventListener("click", confirmImport);
 
   // Backdrop closes for new modals
-  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses"].forEach(function(id) {
+  // Innago + PnL modal listeners
+  var closeInnago = document.getElementById("close-innago-mo");
+  if (closeInnago) closeInnago.addEventListener("click", function() { closeMo("innagocsv"); });
+  var closePnl = document.getElementById("close-pnl-mo");
+  if (closePnl) closePnl.addEventListener("click", function() { closeMo("pnl"); });
+
+  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", function(e) {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
@@ -1333,9 +1335,17 @@ async function loadDashboardData() {
   renderExpenseList(expenses);
   renderNoticeButtons(tenants);
 
-  if (overdue > 0) {
-    var alert = document.getElementById("overdue-alert");
-    if (alert) { alert.style.display = "flex"; }
+  var alertEl = document.getElementById("overdue-alert");
+  if (overdue > 0 && alertEl) {
+    var overdueTenants = tenants.filter(function(t) { return t.status === "overdue"; });
+    var names = overdueTenants.map(function(t) {
+      return t.full_name + (t.properties ? " &mdash; " + t.properties.address : "") + " &mdash; $" + ((t.monthly_rent||0)+80).toLocaleString();
+    }).join(", ");
+    var msgEl = document.getElementById("overdue-alert-msg");
+    if (msgEl) msgEl.innerHTML = names;
+    alertEl.style.display = "flex";
+  } else if (alertEl) {
+    alertEl.style.display = "none";
   }
 }
 
@@ -1845,6 +1855,270 @@ async function confirmImport() {
   }
 }
 
+
+// ---- INNAGO CSV IMPORT ----
+var _csvHeaders = [];
+var _csvRows = [];
+var _csvMapped = [];
+
+function openInnagoModal() {
+  document.getElementById("innago-preview").style.display = "none";
+  document.getElementById("innago-col-map").style.display = "none";
+  document.getElementById("innago-final-preview").style.display = "none";
+  document.getElementById("import-innago-btn").style.display = "none";
+  document.getElementById("innago-ok").classList.remove("on");
+  document.getElementById("innago-err").style.display = "none";
+  openMo("innagocsv");
+
+  var dropZone = document.getElementById("innago-drop-zone");
+  var fileInput = document.getElementById("innago-file-input");
+
+  dropZone.onclick = function() { fileInput.click(); };
+  dropZone.ondragover = function(e) { e.preventDefault(); dropZone.style.background = "rgba(26,95,168,.08)"; };
+  dropZone.ondragleave = function() { dropZone.style.background = "rgba(15,30,53,.02)"; };
+  dropZone.ondrop = function(e) {
+    e.preventDefault(); dropZone.style.background = "rgba(15,30,53,.02)";
+    if (e.dataTransfer.files[0]) parseCSVFile(e.dataTransfer.files[0]);
+  };
+  fileInput.onchange = function() {
+    if (fileInput.files[0]) parseCSVFile(fileInput.files[0]);
+  };
+
+  var prevBtn = document.getElementById("preview-csv-btn");
+  if (prevBtn) prevBtn.onclick = previewMappedCSV;
+  var impBtn = document.getElementById("import-innago-btn");
+  if (impBtn) impBtn.onclick = importInnagoExpenses;
+}
+
+function parseCSVFile(file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = e.target.result;
+    var lines = text.split("\n").filter(function(l) { return l.trim(); });
+    if (lines.length < 2) {
+      document.getElementById("innago-err").style.display = "block";
+      document.getElementById("innago-err").textContent = "CSV file appears empty or invalid.";
+      return;
+    }
+    // Parse headers
+    _csvHeaders = parseCSVLine(lines[0]);
+    _csvRows = lines.slice(1).map(function(l) { return parseCSVLine(l); }).filter(function(r) { return r.length > 1; });
+
+    // Show preview of first 3 rows
+    var prev = "<div style='font-size:12px;font-weight:500;color:#2d7a4f;margin-bottom:7px'><i class='ti ti-circle-check'></i> File loaded: " + file.name + " (" + _csvRows.length + " rows)</div>";
+    prev += "<div style='overflow-x:auto'><table style='font-size:11px'><thead><tr>" + _csvHeaders.map(function(h) { return "<th>" + h + "</th>"; }).join("") + "</tr></thead><tbody>";
+    _csvRows.slice(0,3).forEach(function(r) { prev += "<tr>" + r.map(function(c) { return "<td style='max-width:120px;overflow:hidden;text-overflow:ellipsis'>" + (c||"") + "</td>"; }).join("") + "</tr>"; });
+    prev += "</tbody></table></div><div style='font-size:11px;color:#999;margin-top:4px'>Showing first 3 of " + _csvRows.length + " rows</div>";
+    document.getElementById("innago-preview-content").innerHTML = prev;
+    document.getElementById("innago-preview").style.display = "block";
+
+    // Populate column droppers
+    var opts = "<option value=''>— skip —</option>" + _csvHeaders.map(function(h,i) { return "<option value='" + i + "'>" + h + "</option>"; }).join("");
+    ["col-date","col-amount","col-desc","col-cat"].forEach(function(id) {
+      document.getElementById(id).innerHTML = opts;
+    });
+    // Auto-detect common Innago column names
+    _csvHeaders.forEach(function(h, i) {
+      var hl = h.toLowerCase();
+      if (hl.includes("date")) document.getElementById("col-date").value = i;
+      if (hl.includes("amount") || hl.includes("total") || hl.includes("cost")) document.getElementById("col-amount").value = i;
+      if (hl.includes("desc") || hl.includes("name") || hl.includes("memo") || hl.includes("note")) document.getElementById("col-desc").value = i;
+      if (hl.includes("cat") || hl.includes("type") || hl.includes("category")) document.getElementById("col-cat").value = i;
+    });
+    document.getElementById("innago-col-map").style.display = "block";
+    document.getElementById("innago-err").style.display = "none";
+  };
+  reader.readAsText(file);
+}
+
+function parseCSVLine(line) {
+  var result = [], current = "", inQuotes = false;
+  for (var i = 0; i < line.length; i++) {
+    var ch = line[i];
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === "," && !inQuotes) { result.push(current.trim()); current = ""; }
+    else { current += ch; }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+function previewMappedCSV() {
+  var di = parseInt(document.getElementById("col-date").value);
+  var ai = parseInt(document.getElementById("col-amount").value);
+  var dsi = parseInt(document.getElementById("col-desc").value);
+  var ci = document.getElementById("col-cat").value;
+
+  if (isNaN(di) || isNaN(ai) || isNaN(dsi)) {
+    document.getElementById("innago-err").style.display = "block";
+    document.getElementById("innago-err").textContent = "Please map Date, Amount, and Description columns.";
+    return;
+  }
+
+  _csvMapped = [];
+  _csvRows.forEach(function(row) {
+    var amt = parseFloat((row[ai]||"").replace(/[$,]/g,""));
+    if (!isNaN(amt) && amt !== 0) {
+      _csvMapped.push({
+        expense_date: row[di] || new Date().toISOString().split("T")[0],
+        amount: Math.abs(amt),
+        description: row[dsi] || "Imported expense",
+        category: ci !== "" ? (row[parseInt(ci)] || "Other") : "Other"
+      });
+    }
+  });
+
+  if (!_csvMapped.length) {
+    document.getElementById("innago-err").style.display = "block";
+    document.getElementById("innago-err").textContent = "No valid expenses found after mapping. Check your column selections.";
+    return;
+  }
+
+  var total = _csvMapped.reduce(function(s,e) { return s + e.amount; }, 0);
+  var html = "<div style='font-size:12.5px;font-weight:500;margin-bottom:9px'>" + _csvMapped.length + " expenses ready to import — Total: $" + total.toLocaleString(undefined,{minimumFractionDigits:2}) + "</div>";
+  html += "<div style='max-height:200px;overflow-y:auto;border:1px solid rgba(15,30,53,.1);border-radius:7px;padding:7px'>";
+  _csvMapped.slice(0,20).forEach(function(e) {
+    html += "<div style='display:flex;justify-content:space-between;padding:4px 6px;border-bottom:1px solid rgba(15,30,53,.06);font-size:12px'><span>" + e.description + " <span style='color:#999'>(" + e.category + ")</span></span><span style='color:#c0392b;font-weight:500'>-$" + Number(e.amount).toLocaleString() + "</span></div>";
+  });
+  if (_csvMapped.length > 20) html += "<div style='font-size:11px;color:#999;padding:6px;text-align:center'>... and " + (_csvMapped.length - 20) + " more</div>";
+  html += "</div>";
+  document.getElementById("innago-final-content").innerHTML = html;
+  document.getElementById("innago-final-preview").style.display = "block";
+  document.getElementById("import-innago-btn").style.display = "flex";
+  document.getElementById("import-innago-btn").style.justifyContent = "center";
+  document.getElementById("innago-err").style.display = "none";
+}
+
+async function importInnagoExpenses() {
+  if (!sb || !_csvMapped.length) return;
+  document.getElementById("import-innago-btn").textContent = "Importing...";
+  var result = await sb.from("expenses").insert(_csvMapped);
+  if (result.error) {
+    document.getElementById("innago-err").style.display = "block";
+    document.getElementById("innago-err").textContent = result.error.message;
+    document.getElementById("import-innago-btn").innerHTML = "<i class='ti ti-upload'></i> Import expenses";
+  } else {
+    document.getElementById("innago-ok-msg").textContent = _csvMapped.length + " expenses imported successfully!";
+    document.getElementById("innago-ok").classList.add("on");
+    setTimeout(function() { closeMo("innagocsv"); loadDashboardData(); }, 2000);
+  }
+}
+
+// ---- P&L REPORT ----
+function openPnlModal() {
+  var now = new Date();
+  var y = now.getFullYear();
+  document.getElementById("pnl-start").value = y + "-01-01";
+  document.getElementById("pnl-end").value = y + "-12-31";
+  document.getElementById("pnl-report").style.display = "none";
+  document.getElementById("pnl-up-panel").style.display = "none";
+  document.getElementById("pnl-gen-panel").style.display = "block";
+  document.getElementById("pnl-tab-gen").classList.add("on");
+  document.getElementById("pnl-tab-up").classList.remove("on");
+
+  document.getElementById("pnl-tab-gen").onclick = function() {
+    document.getElementById("pnl-gen-panel").style.display = "block";
+    document.getElementById("pnl-up-panel").style.display = "none";
+    document.getElementById("pnl-tab-gen").classList.add("on");
+    document.getElementById("pnl-tab-up").classList.remove("on");
+  };
+  document.getElementById("pnl-tab-up").onclick = function() {
+    document.getElementById("pnl-gen-panel").style.display = "none";
+    document.getElementById("pnl-up-panel").style.display = "block";
+    document.getElementById("pnl-tab-up").classList.add("on");
+    document.getElementById("pnl-tab-gen").classList.remove("on");
+  };
+
+  var genBtn = document.getElementById("gen-pnl-btn");
+  genBtn.onclick = generatePnL;
+
+  // Upload drop zone
+  var pnlDrop = document.getElementById("pnl-drop-zone");
+  var pnlFile = document.getElementById("pnl-file-input");
+  pnlDrop.onclick = function() { pnlFile.click(); };
+  pnlFile.onchange = function() {
+    if (pnlFile.files[0]) {
+      document.getElementById("pnl-upload-status").innerHTML =
+        "<div class='ok-msg on' style='margin-top:9px'><i class='ti ti-circle-check' style='font-size:17px'></i> " + pnlFile.files[0].name + " loaded. Saved to session storage.</div>";
+      document.getElementById("pnl-upload-status").style.display = "block";
+    }
+  };
+
+  openMo("pnl");
+}
+
+async function generatePnL() {
+  if (!sb) return;
+  var start = document.getElementById("pnl-start").value;
+  var end = document.getElementById("pnl-end").value;
+  document.getElementById("gen-pnl-btn").textContent = "Generating...";
+
+  var payRes = await sb.from("payments").select("amount, payment_date, status").gte("payment_date", start).lte("payment_date", end);
+  var expRes = await sb.from("expenses").select("amount, expense_date, category, description").gte("expense_date", start).lte("expense_date", end);
+
+  var pays = payRes.data || [];
+  var exps = expRes.data || [];
+
+  var totalIncome = pays.filter(function(p) { return p.status === "paid"; }).reduce(function(s,p) { return s + Number(p.amount); }, 0);
+  var totalExp = exps.reduce(function(s,e) { return s + Number(e.amount); }, 0);
+  var netProfit = totalIncome - totalExp;
+  var margin = totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : 0;
+
+  // Group expenses by category
+  var expByCat = {};
+  exps.forEach(function(e) {
+    if (!expByCat[e.category]) expByCat[e.category] = 0;
+    expByCat[e.category] += Number(e.amount);
+  });
+
+  var catRows = Object.keys(expByCat).map(function(cat) {
+    return "<tr><td style='padding:6px 9px;font-size:12.5px'>" + cat + "</td><td style='padding:6px 9px;font-size:12.5px;color:#c0392b;text-align:right'>($" + expByCat[cat].toLocaleString() + ")</td></tr>";
+  }).join("");
+
+  var html = "<div style='border:1px solid rgba(15,30,53,.1);border-radius:9px;overflow:hidden'>";
+  html += "<div style='background:#0f1e35;padding:14px 16px;display:flex;justify-content:space-between;align-items:center'>";
+  html += "<div style='color:#fff;font-weight:500;font-size:14px'>PropManager SC &mdash; P&amp;L Report</div>";
+  html += "<div style='color:#f0c96b;font-size:12px'>" + start + " to " + end + "</div></div>";
+  html += "<div style='padding:14px 16px'>";
+  html += "<table style='width:100%;border-collapse:collapse'>";
+  html += "<tr style='background:rgba(15,30,53,.04)'><td style='padding:8px 9px;font-weight:500;font-size:13px'>INCOME</td><td></td></tr>";
+  html += "<tr><td style='padding:6px 9px;font-size:12.5px'>Rental income (" + pays.filter(function(p){return p.status==="paid";}).length + " payments)</td><td style='padding:6px 9px;font-size:12.5px;color:#2d7a4f;text-align:right'>$" + totalIncome.toLocaleString() + "</td></tr>";
+  html += "<tr style='border-top:1px solid rgba(15,30,53,.1);font-weight:500'><td style='padding:7px 9px;font-size:13px'>Total income</td><td style='padding:7px 9px;color:#2d7a4f;font-size:13px;text-align:right'>$" + totalIncome.toLocaleString() + "</td></tr>";
+  html += "<tr style='background:rgba(15,30,53,.04)'><td style='padding:8px 9px;font-weight:500;font-size:13px'>EXPENSES</td><td></td></tr>";
+  html += catRows;
+  html += "<tr style='border-top:1px solid rgba(15,30,53,.1);font-weight:500'><td style='padding:7px 9px;font-size:13px'>Total expenses</td><td style='padding:7px 9px;color:#c0392b;font-size:13px;text-align:right'>($" + totalExp.toLocaleString() + ")</td></tr>";
+  html += "<tr style='background:#0f1e35'><td style='padding:10px 9px;font-weight:600;font-size:14px;color:#fff'>NET PROFIT</td><td style='padding:10px 9px;font-weight:600;font-size:14px;color:#f0c96b;text-align:right'>$" + netProfit.toLocaleString() + " (" + margin + "% margin)</td></tr>";
+  html += "</table></div></div>";
+
+  // Download button
+  html += "<button class='btn btn-n' style='width:100%;justify-content:center;margin-top:11px;padding:9px' id='download-pnl-btn'><i class='ti ti-download'></i> Download P&amp;L as CSV</button>";
+
+  document.getElementById("pnl-report").innerHTML = html;
+  document.getElementById("pnl-report").style.display = "block";
+  document.getElementById("gen-pnl-btn").textContent = "Regenerate";
+
+  // CSV download
+  setTimeout(function() {
+    var dlBtn = document.getElementById("download-pnl-btn");
+    if (dlBtn) dlBtn.onclick = function() {
+      var csv = "PropManager SC P&L Report\n";
+      csv += "Period," + start + " to " + end + "\n\n";
+      csv += "INCOME\n";
+      csv += "Rental Income,$" + totalIncome + "\n";
+      csv += "\nEXPENSES\n";
+      Object.keys(expByCat).forEach(function(cat) { csv += cat + ",$" + expByCat[cat] + "\n"; });
+      csv += "\nTotal Expenses,$" + totalExp + "\n";
+      csv += "NET PROFIT,$" + netProfit + "\n";
+      csv += "Profit Margin," + margin + "%\n";
+      var blob = new Blob([csv], {type:"text/csv"});
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = "PropManagerSC_PnL_" + start + "_" + end + ".csv";
+      a.click(); URL.revokeObjectURL(url);
+    };
+  }, 100);
+}
+
 // ---- FORM SUBMITS ----
 function submitVacancy() {
   var n = document.getElementById("vi-name").value;
@@ -2060,6 +2334,88 @@ document.addEventListener("DOMContentLoaded", function() {
     </div>
     <div class="ok-msg" id="imp-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Expenses imported!</div>
     <div class="mo-err" id="imp-err">Error importing expenses.</div>
+  </div>
+</div>
+
+
+<!-- INNAGO CSV UPLOAD MODAL -->
+<div class="mo-overlay" id="mo-innagocsv">
+  <div class="mo-box" style="max-width:540px">
+    <button class="mo-close" id="close-innago-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Import from Innago</div>
+    <div class="mo-sub">Upload your Innago expense export CSV file directly.</div>
+    <div style="background:#e6f0fb;border:1px solid rgba(26,95,168,.2);border-radius:7px;padding:12px 14px;font-size:12.5px;color:#1a5fa8;margin-bottom:14px">
+      <strong>How to export from Innago:</strong><br>
+      Innago → Reports → Expenses → Export → Download CSV
+    </div>
+    <label class="mo-lbl">Upload CSV file</label>
+    <div id="innago-drop-zone" style="border:2px dashed rgba(15,30,53,.2);border-radius:9px;padding:28px;text-align:center;cursor:pointer;margin-bottom:11px;background:rgba(15,30,53,.02)">
+      <i class="ti ti-cloud-upload" style="font-size:32px;color:#999;display:block;margin-bottom:9px"></i>
+      <div style="font-size:13px;color:#5a5a5a">Drop your CSV here or <span style="color:#1a5fa8;font-weight:500">click to browse</span></div>
+      <div style="font-size:11px;color:#999;margin-top:4px">Supports Innago CSV exports and standard CSV files</div>
+      <input type="file" id="innago-file-input" accept=".csv,.txt" style="display:none">
+    </div>
+    <div id="innago-preview" style="display:none;margin-bottom:11px">
+      <div id="innago-preview-content"></div>
+    </div>
+    <div id="innago-col-map" style="display:none;margin-bottom:11px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:9px">Map CSV columns to expense fields:</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+        <div><label class="mo-lbl" style="margin:0 0 4px">Date column</label>
+          <select class="inp" id="col-date" style="font-size:12px"></select></div>
+        <div><label class="mo-lbl" style="margin:0 0 4px">Amount column</label>
+          <select class="inp" id="col-amount" style="font-size:12px"></select></div>
+        <div><label class="mo-lbl" style="margin:0 0 4px">Description column</label>
+          <select class="inp" id="col-desc" style="font-size:12px"></select></div>
+        <div><label class="mo-lbl" style="margin:0 0 4px">Category column (optional)</label>
+          <select class="inp" id="col-cat" style="font-size:12px"></select></div>
+      </div>
+      <button class="btn btn-n" id="preview-csv-btn" style="width:100%;justify-content:center;margin-top:11px;padding:9px"><i class="ti ti-eye"></i> Preview import</button>
+    </div>
+    <div id="innago-final-preview" style="display:none;margin-bottom:11px">
+      <div id="innago-final-content"></div>
+    </div>
+    <button class="btn btn-g" id="import-innago-btn" style="width:100%;justify-content:center;padding:9px;display:none"><i class="ti ti-upload"></i> Import expenses</button>
+    <div class="ok-msg" id="innago-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> <span id="innago-ok-msg">Expenses imported successfully!</span></div>
+    <div class="mo-err" id="innago-err">Error importing expenses.</div>
+  </div>
+</div>
+
+<!-- P&L / TAX DOCUMENT UPLOAD MODAL -->
+<div class="mo-overlay" id="mo-pnl">
+  <div class="mo-box" style="max-width:500px">
+    <button class="mo-close" id="close-pnl-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Profit &amp; Loss Report</div>
+    <div class="mo-sub">Generate your P&amp;L from database or upload an existing document.</div>
+
+    <div class="tab-row" style="margin-bottom:16px">
+      <button class="tab on" id="pnl-tab-gen">Generate from data</button>
+      <button class="tab" id="pnl-tab-up">Upload document</button>
+    </div>
+
+    <div id="pnl-gen-panel">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+        <div><label class="mo-lbl" style="margin:0 0 5px">From date</label>
+          <input class="mo-inp" type="date" id="pnl-start" style="margin:0"></div>
+        <div><label class="mo-lbl" style="margin:0 0 5px">To date</label>
+          <input class="mo-inp" type="date" id="pnl-end" style="margin:0"></div>
+      </div>
+      <button class="mo-btn" id="gen-pnl-btn">Generate P&amp;L report</button>
+      <div id="pnl-report" style="display:none;margin-top:14px"></div>
+    </div>
+
+    <div id="pnl-up-panel" style="display:none">
+      <div id="pnl-drop-zone" style="border:2px dashed rgba(15,30,53,.2);border-radius:9px;padding:28px;text-align:center;cursor:pointer;margin-bottom:11px">
+        <i class="ti ti-file-upload" style="font-size:32px;color:#999;display:block;margin-bottom:9px"></i>
+        <div style="font-size:13px;color:#5a5a5a">Drop your P&amp;L document or <span style="color:#1a5fa8;font-weight:500">click to browse</span></div>
+        <div style="font-size:11px;color:#999;margin-top:4px">PDF, Excel, or CSV formats accepted</div>
+        <input type="file" id="pnl-file-input" accept=".pdf,.xlsx,.xls,.csv" style="display:none">
+      </div>
+      <div id="pnl-upload-status" style="display:none"></div>
+      <div style="font-size:12px;color:#5a5a5a;background:rgba(15,30,53,.04);border-radius:7px;padding:10px 12px">
+        Uploaded documents are stored in your browser for this session. For permanent storage, save to Google Drive or your local files.
+      </div>
+    </div>
   </div>
 </div>
 
