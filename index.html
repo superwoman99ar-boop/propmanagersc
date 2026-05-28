@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v10.5</div>
+<div class="vbadge">PropManager SC v10.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -390,7 +390,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 
       <div class="dsec" id="ds-ls">
         <div class="card">
-          <div class="card-head"><div class="card-title">Lease agreements</div></div>
+          <div class="card-head"><div class="card-title">Lease agreements</div><button class="btn btn-n" id="new-lease-btn"><i class="ti ti-plus"></i> New lease</button></div>
           <div id="lease-list"><div class="spin-wrap"><div class="spinner"></div> Loading...</div></div>
         </div>
       </div>
@@ -402,7 +402,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
           <div class="mc"><div class="mc-l">Net profit YTD</div><div class="mc-v" id="gl-net">--</div></div>
         </div>
         <div class="card">
-          <div class="card-head"><div class="card-title">Expense log</div><button class="btn btn-n" id="add-expense-btn"><i class="ti ti-plus"></i> Log expense</button></div>
+          <div class="card-head"><div class="card-title">Expense log</div><div style="display:flex;gap:7px"><button class="btn" id="import-expense-btn"><i class="ti ti-upload"></i> Import CSV</button><button class="btn btn-n" id="add-expense-btn"><i class="ti ti-plus"></i> Log expense</button></div></div>
           <div id="expense-list"><div class="spin-wrap"><div class="spinner"></div> Loading...</div></div>
         </div>
       </div>
@@ -931,10 +931,21 @@ function attachEvents() {
 
   // Dashboard action buttons
   document.getElementById("btn-issue-notice").addEventListener("click", function() { goDash("nt"); });
+  var newLsBtn = document.getElementById("new-lease-btn");
+  if (newLsBtn) newLsBtn.addEventListener("click", function() { openLeaseModal(null); });
   document.getElementById("btn-add-tenant").addEventListener("click", function() { openMo("addtenant"); });
   document.getElementById("add-tenant-btn2").addEventListener("click", function() { openMo("addtenant"); });
   document.getElementById("log-payment-btn").addEventListener("click", function() { openAddPaymentModal(); });
   document.getElementById("add-expense-btn").addEventListener("click", function() { openMo("addexpense"); });
+  var impExpBtn = document.getElementById("import-expense-btn");
+  if (impExpBtn) impExpBtn.addEventListener("click", function() {
+    document.getElementById("imp-data").value = "";
+    document.getElementById("imp-preview").style.display = "none";
+    document.getElementById("confirm-imp-btn").style.display = "none";
+    document.getElementById("imp-ok").classList.remove("on");
+    document.getElementById("imp-err").style.display = "none";
+    openMo("importexpenses");
+  });
   document.getElementById("save-maint-btn").addEventListener("click", saveMaintenance);
   document.getElementById("save-tenant-btn").addEventListener("click", addTenant);
   document.getElementById("save-expense-btn").addEventListener("click", saveExpense);
@@ -988,7 +999,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -1012,8 +1023,28 @@ function attachEvents() {
   var deletePayBtn = document.getElementById("delete-payment-btn");
   if (deletePayBtn) deletePayBtn.addEventListener("click", deletePayment);
 
+  // Property edit modal
+  var closeEPr = document.getElementById("close-editprop-mo");
+  if (closeEPr) closeEPr.addEventListener("click", function() { closeMo("editprop"); });
+  var savePropBtn = document.getElementById("save-prop-btn");
+  if (savePropBtn) savePropBtn.addEventListener("click", saveProperty);
+
+  // Lease modal
+  var closeLsMo = document.getElementById("close-lease-mo");
+  if (closeLsMo) closeLsMo.addEventListener("click", function() { closeMo("lease"); });
+  var saveLsBtn = document.getElementById("save-lease-btn");
+  if (saveLsBtn) saveLsBtn.addEventListener("click", saveLease);
+
+  // Import expenses modal
+  var closeImpMo = document.getElementById("close-importexp-mo");
+  if (closeImpMo) closeImpMo.addEventListener("click", function() { closeMo("importexpenses"); });
+  var previewImpBtn = document.getElementById("preview-imp-btn");
+  if (previewImpBtn) previewImpBtn.addEventListener("click", previewImport);
+  var confirmImpBtn = document.getElementById("confirm-imp-btn");
+  if (confirmImpBtn) confirmImpBtn.addEventListener("click", confirmImport);
+
   // Backdrop closes for new modals
-  ["mo-addpayment","mo-edittenant","mo-editpayment"].forEach(function(id) {
+  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", function(e) {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
@@ -1257,6 +1288,8 @@ async function logPayment() {
 async function loadDashboardData() {
   if (!sb) return;
   var tRes = await sb.from("tenants").select("*, properties(*)").order("full_name");
+  var prRes = await sb.from("properties").select("*").order("address");
+  if (prRes.data) window._propCache = prRes.data;
   var pRes = await sb.from("payments").select("*").order("payment_date", { ascending: false });
   var mRes = await sb.from("maintenance").select("*, tenants(full_name), properties(address)").order("created_at", { ascending: false });
   var eRes = await sb.from("expenses").select("*").order("expense_date", { ascending: false });
@@ -1344,6 +1377,30 @@ function renderTenantList(tenants) {
 
 function renderPropList(tenants) {
   var el = document.getElementById("prop-list");
+  // Use live data from Supabase if available
+  if (window._propCache && window._propCache.length) {
+    var tByProp = {};
+    if (tenants) tenants.forEach(function(t) { if (t.property_id) tByProp[t.property_id] = t.full_name; });
+    el.innerHTML = window._propCache.map(function(p) {
+      var badge = p.status === "vacant" ? "<span class='badge b-a'>Vacant</span>" :
+                  p.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" :
+                  p.status === "maintenance" ? "<span class='badge b-b'>Maintenance</span>" :
+                  "<span class='badge b-g'>Occupied</span>";
+      var bg = p.status === "vacant" ? "#fdf3e0" : p.status === "overdue" ? "#fdecea" : "rgba(15,30,53,.08)";
+      var ic = p.status === "vacant" ? "#a06010" : p.status === "overdue" ? "#c0392b" : "#0f1e35";
+      var tenant = tByProp[p.id] ? "<span style='color:#5a5a5a'> &middot; " + tByProp[p.id] + "</span>" : "";
+      return "<div style='background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:13px'><div style='width:40px;height:40px;background:" + bg + ";border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;color:" + ic + "'><i class='ti ti-home'></i></div><div style='flex:1'><div style='font-size:14px;font-weight:500'>" + p.address + ", " + (p.city||"") + "</div><div style='font-size:12px;color:#5a5a5a'>" + (p.property_type||"") + " &middot; $" + Number(p.monthly_rent||0).toLocaleString() + "/mo" + tenant + "</div></div>" + badge + "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:8px' data-prop-id='" + p.id + "'>Edit</button></div>";
+    }).join("");
+    el.querySelectorAll("[data-prop-id]").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        var pid = btn.getAttribute("data-prop-id");
+        var prop = window._propCache.find(function(p) { return p.id === pid; });
+        if (prop) openEditPropModal(prop);
+      });
+    });
+    return;
+  }
+  // Fallback static list
   var props = [
     {addr:"510 11th Street, Gaffney SC",type:"Single-family"},
     {addr:"602 11th Street, Gaffney SC",type:"Single-family"},
@@ -1406,9 +1463,24 @@ function renderLeaseList(tenants) {
   if (!tenants.length) { el.innerHTML = "<div class='empty'>No tenants yet.</div>"; return; }
   el.innerHTML = tenants.map(function(t) {
     var p = t.properties;
-    var badge = t.status === "current" ? "<span class='badge b-g'>Active</span>" : "<span class='badge b-r'>Overdue</span>";
-    return "<div style='display:flex;align-items:center;gap:11px;padding:11px 13px;border:1px solid rgba(15,30,53,.1);border-radius:7px;margin-bottom:8px'><div style='width:34px;height:34px;background:#e6f0fb;color:#1a5fa8;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px'><i class='ti ti-file-text'></i></div><div style='flex:1'><div style='font-size:13px;font-weight:500'>" + t.full_name + " &mdash; " + (p ? p.address : "&mdash;") + "</div><div style='font-size:11.5px;color:#999'>$" + (t.monthly_rent||0).toLocaleString() + "/mo &middot; " + (t.lease_start||"2026-01-01") + " to " + (t.lease_end||"2026-12-31") + "</div></div>" + badge + "</div>";
+    var badge = t.status === "current" ? "<span class='badge b-g'>Active</span>" :
+                t.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" :
+                "<span class='badge b-a'>Vacating</span>";
+    var daysLeft = "";
+    if (t.lease_end) {
+      var days = Math.ceil((new Date(t.lease_end) - new Date()) / 86400000);
+      if (days <= 60 && days > 0) daysLeft = "<span style='font-size:11px;color:#a06010;margin-left:6px'>" + days + " days left</span>";
+      if (days <= 0) daysLeft = "<span style='font-size:11px;color:#c0392b;margin-left:6px'>Expired</span>";
+    }
+    return "<div style='display:flex;align-items:center;gap:11px;padding:11px 13px;border:1px solid rgba(15,30,53,.1);border-radius:7px;margin-bottom:8px'><div style='width:34px;height:34px;background:#e6f0fb;color:#1a5fa8;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px'><i class='ti ti-file-text'></i></div><div style='flex:1'><div style='font-size:13px;font-weight:500'>" + t.full_name + " &mdash; " + (p ? p.address : "&mdash;") + "</div><div style='font-size:11.5px;color:#999'>$" + Number(t.monthly_rent||0).toLocaleString() + "/mo &middot; " + (t.lease_start||"—") + " to " + (t.lease_end||"—") + daysLeft + "</div></div>" + badge + "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:8px' data-lease-tenant-id='" + t.id + "'>Edit</button></div>";
   }).join("");
+  el.querySelectorAll("[data-lease-tenant-id]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var tid = btn.getAttribute("data-lease-tenant-id");
+      var t = tenants.find(function(x) { return x.id === tid; });
+      if (t) openLeaseModal(t);
+    });
+  });
 }
 
 function renderExpenseList(expenses) {
@@ -1638,6 +1710,141 @@ function openEditPaymentModal(payment, tenantName) {
   openMo("editpayment");
 }
 
+
+// ---- PROPERTY EDIT ----
+function openEditPropModal(prop) {
+  document.getElementById("epr-id").value = prop.id;
+  document.getElementById("epr-address").value = prop.address || "";
+  document.getElementById("epr-city").value = prop.city || "";
+  document.getElementById("epr-zip").value = prop.zip || "";
+  document.getElementById("epr-type").value = prop.property_type || "Single-family";
+  document.getElementById("epr-rent").value = prop.monthly_rent || "";
+  document.getElementById("epr-status").value = prop.status || "occupied";
+  document.getElementById("epr-ok").classList.remove("on");
+  document.getElementById("epr-err").style.display = "none";
+  openMo("editprop");
+}
+
+async function saveProperty() {
+  if (!sb) return;
+  var id = document.getElementById("epr-id").value;
+  var result = await sb.from("properties").update({
+    address: document.getElementById("epr-address").value,
+    city: document.getElementById("epr-city").value,
+    zip: document.getElementById("epr-zip").value,
+    property_type: document.getElementById("epr-type").value,
+    monthly_rent: parseFloat(document.getElementById("epr-rent").value) || 0,
+    status: document.getElementById("epr-status").value
+  }).eq("id", id);
+  if (result.error) {
+    document.getElementById("epr-err").style.display = "block";
+    document.getElementById("epr-err").textContent = result.error.message;
+  } else {
+    document.getElementById("epr-ok").classList.add("on");
+    setTimeout(function() { closeMo("editprop"); loadDashboardData(); }, 1500);
+  }
+}
+
+// ---- LEASE MANAGEMENT ----
+function openLeaseModal(tenant) {
+  document.getElementById("lease-mo-title").textContent = tenant ? "Edit lease — " + tenant.full_name : "Create new lease";
+  document.getElementById("ls-start").value = tenant ? (tenant.lease_start || "") : "";
+  document.getElementById("ls-end").value = tenant ? (tenant.lease_end || "") : "";
+  document.getElementById("ls-rent").value = tenant ? (tenant.monthly_rent || "") : "";
+  document.getElementById("ls-deposit").value = tenant ? (tenant.security_deposit || "") : "";
+  document.getElementById("ls-ok").classList.remove("on");
+  document.getElementById("ls-err").style.display = "none";
+  // Populate tenant dropdown
+  var sel = document.getElementById("ls-tenant");
+  sel.innerHTML = "";
+  if (window._tenantCache) {
+    window._tenantCache.forEach(function(t) {
+      var opt = document.createElement("option");
+      opt.value = t.id;
+      opt.textContent = t.full_name + (t.properties ? " — " + t.properties.address : "");
+      if (tenant && t.id === tenant.id) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+  // Set tenant id hidden field
+  if (tenant) document.getElementById("ls-tenant").value = tenant.id;
+  openMo("lease");
+}
+
+async function saveLease() {
+  if (!sb) return;
+  var tenantId = document.getElementById("ls-tenant").value;
+  var start = document.getElementById("ls-start").value;
+  var end = document.getElementById("ls-end").value;
+  var rent = parseFloat(document.getElementById("ls-rent").value) || 0;
+  var deposit = parseFloat(document.getElementById("ls-deposit").value) || 0;
+  if (!tenantId || !start || !end) {
+    document.getElementById("ls-err").style.display = "block";
+    document.getElementById("ls-err").textContent = "Please fill in tenant, start date, and end date.";
+    return;
+  }
+  var result = await sb.from("tenants").update({
+    lease_start: start,
+    lease_end: end,
+    monthly_rent: rent,
+    security_deposit: deposit
+  }).eq("id", tenantId);
+  if (result.error) {
+    document.getElementById("ls-err").style.display = "block";
+    document.getElementById("ls-err").textContent = result.error.message;
+  } else {
+    document.getElementById("ls-ok").classList.add("on");
+    setTimeout(function() { closeMo("lease"); loadDashboardData(); }, 1500);
+  }
+}
+
+// ---- EXPENSE IMPORT ----
+var _parsedExpenses = [];
+
+function previewImport() {
+  var raw = document.getElementById("imp-data").value.trim();
+  if (!raw) { alert("Please paste some expense data first."); return; }
+  _parsedExpenses = [];
+  var lines = raw.split("\n").filter(function(l) { return l.trim(); });
+  var preview = "<div style=\"font-size:12px;margin-bottom:9px;font-weight:500\">Preview — " + lines.length + " expenses:</div>";
+  preview += "<div style=\"max-height:200px;overflow-y:auto\">";
+  var valid = 0;
+  lines.forEach(function(line) {
+    var parts = line.split(",").map(function(s) { return s.trim(); });
+    if (parts.length >= 4) {
+      var date = parts[0], cat = parts[1], desc = parts[2],
+          amt = parseFloat(parts[3]);
+      if (!isNaN(amt) && amt > 0) {
+        _parsedExpenses.push({ expense_date: date, category: cat, description: desc, amount: amt });
+        preview += "<div style=\"display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(15,30,53,.06);font-size:12px\"><span>" + desc + " (" + cat + ")</span><span style=\"color:#c0392b;font-weight:500\">-$" + amt.toLocaleString() + "</span></div>";
+        valid++;
+      }
+    }
+  });
+  preview += "</div>";
+  if (valid === 0) {
+    document.getElementById("imp-err").style.display = "block";
+    document.getElementById("imp-err").textContent = "Could not parse any expenses. Check the format.";
+    return;
+  }
+  document.getElementById("imp-preview").innerHTML = preview;
+  document.getElementById("imp-preview").style.display = "block";
+  document.getElementById("confirm-imp-btn").style.display = "flex";
+  document.getElementById("imp-err").style.display = "none";
+}
+
+async function confirmImport() {
+  if (!sb || !_parsedExpenses.length) return;
+  var result = await sb.from("expenses").insert(_parsedExpenses);
+  if (result.error) {
+    document.getElementById("imp-err").style.display = "block";
+    document.getElementById("imp-err").textContent = result.error.message;
+  } else {
+    document.getElementById("imp-ok").classList.add("on");
+    setTimeout(function() { closeMo("importexpenses"); loadDashboardData(); }, 1800);
+  }
+}
+
 // ---- FORM SUBMITS ----
 function submitVacancy() {
   var n = document.getElementById("vi-name").value;
@@ -1761,6 +1968,98 @@ document.addEventListener("DOMContentLoaded", function() {
     </div>
     <div class="ok-msg" id="ep-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Payment updated!</div>
     <div class="mo-err" id="ep-err">Error updating payment.</div>
+  </div>
+</div>
+
+
+<!-- EDIT PROPERTY MODAL -->
+<div class="mo-overlay" id="mo-editprop">
+  <div class="mo-box" style="max-width:480px">
+    <button class="mo-close" id="close-editprop-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Edit property</div>
+    <div class="mo-sub">Update property details and rent amount.</div>
+    <input type="hidden" id="epr-id">
+    <label class="mo-lbl">Street address</label>
+    <input class="mo-inp" type="text" id="epr-address" placeholder="510 11th Street">
+    <label class="mo-lbl">City, State</label>
+    <input class="mo-inp" type="text" id="epr-city" placeholder="Gaffney, SC">
+    <label class="mo-lbl">ZIP code</label>
+    <input class="mo-inp" type="text" id="epr-zip" placeholder="29340">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+      <div><label class="mo-lbl" style="margin:0 0 5px">Property type</label>
+        <select class="mo-inp" id="epr-type" style="margin:0">
+          <option>Single-family</option><option>Duplex</option>
+          <option>Apartment</option><option>Condo</option><option>Other</option>
+        </select></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">Monthly rent ($)</label>
+        <input class="mo-inp" type="number" id="epr-rent" placeholder="1000" style="margin:0"></div>
+    </div>
+    <label class="mo-lbl">Status</label>
+    <select class="mo-inp" id="epr-status">
+      <option value="occupied">Occupied</option>
+      <option value="vacant">Vacant</option>
+      <option value="overdue">Overdue</option>
+      <option value="maintenance">Maintenance</option>
+    </select>
+    <button class="mo-btn" id="save-prop-btn">Save changes</button>
+    <div class="ok-msg" id="epr-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Property updated!</div>
+    <div class="mo-err" id="epr-err">Error updating property.</div>
+  </div>
+</div>
+
+<!-- LEASE MODAL (create or edit) -->
+<div class="mo-overlay" id="mo-lease">
+  <div class="mo-box" style="max-width:500px">
+    <button class="mo-close" id="close-lease-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title" id="lease-mo-title">Create lease</div>
+    <div class="mo-sub">SC residential lease agreement.</div>
+    <input type="hidden" id="ls-tenant-id">
+    <label class="mo-lbl">Tenant</label>
+    <select class="mo-inp" id="ls-tenant"></select>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+      <div><label class="mo-lbl" style="margin:0 0 5px">Lease start</label>
+        <input class="mo-inp" type="date" id="ls-start" style="margin:0"></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">Lease end</label>
+        <input class="mo-inp" type="date" id="ls-end" style="margin:0"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+      <div><label class="mo-lbl" style="margin:0 0 5px">Monthly rent ($)</label>
+        <input class="mo-inp" type="number" id="ls-rent" placeholder="1000" style="margin:0"></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">Security deposit ($)</label>
+        <input class="mo-inp" type="number" id="ls-deposit" placeholder="1000" style="margin:0"></div>
+    </div>
+    <label class="mo-lbl">Late fee ($)</label>
+    <input class="mo-inp" type="number" id="ls-latefee" placeholder="80" value="80">
+    <label class="mo-lbl">Grace period (days)</label>
+    <input class="mo-inp" type="number" id="ls-grace" placeholder="5" value="5">
+    <label class="mo-lbl">Special terms (optional)</label>
+    <textarea class="mo-inp" id="ls-terms" placeholder="Any special terms or conditions..." style="height:65px;resize:vertical"></textarea>
+    <button class="mo-btn" id="save-lease-btn">Save lease</button>
+    <div class="ok-msg" id="ls-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Lease saved!</div>
+    <div class="mo-err" id="ls-err">Error saving lease.</div>
+  </div>
+</div>
+
+<!-- ADD EXPENSE MODAL (already exists but we'll add it here if missing) -->
+<!-- IMPORT EXPENSES MODAL -->
+<div class="mo-overlay" id="mo-importexpenses">
+  <div class="mo-box" style="max-width:500px">
+    <button class="mo-close" id="close-importexp-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Import expenses</div>
+    <div class="mo-sub">Paste your expense data from Innago or any spreadsheet (CSV format).</div>
+    <div style="font-size:12px;color:#5a5a5a;background:rgba(15,30,53,.04);border-radius:7px;padding:10px 12px;margin-bottom:11px">
+      <strong>Format:</strong> Date, Category, Description, Amount (one per line)<br>
+      <span style="color:#999">Example: 2026-01-15, Repairs, HVAC repair 510 11th St, 450</span>
+    </div>
+    <label class="mo-lbl">Paste expense data</label>
+    <textarea class="mo-inp" id="imp-data" placeholder="2026-01-15, Repairs, HVAC repair, 450&#10;2026-02-01, Insurance, Property insurance, 800&#10;2026-03-10, Property Tax, Cherokee County, 1200" style="height:160px;resize:vertical;font-family:monospace;font-size:12px"></textarea>
+    <div id="imp-preview" style="display:none;margin-bottom:11px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-n" id="preview-imp-btn" style="flex:1"><i class="ti ti-eye"></i> Preview</button>
+      <button class="btn btn-g" id="confirm-imp-btn" style="flex:1;display:none"><i class="ti ti-upload"></i> Import all</button>
+    </div>
+    <div class="ok-msg" id="imp-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Expenses imported!</div>
+    <div class="mo-err" id="imp-err">Error importing expenses.</div>
   </div>
 </div>
 
