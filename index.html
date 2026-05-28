@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v10.2</div>
+<div class="vbadge">PropManager SC v10.3</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1048,7 +1048,16 @@ function initSupabase() {
     return;
   }
   try {
-    sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+    sb = supabase.createClient(SUPA_URL, SUPA_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      },
+      global: {
+        headers: {}
+      }
+    });
     console.log("Supabase connected");
     sb.auth.onAuthStateChange(function(event, session) {
       if (session && session.user) {
@@ -1423,10 +1432,15 @@ async function addTenant() {
   if (result.error) {
     document.getElementById("at-err").style.display = "block";
     document.getElementById("at-err").textContent = result.error.message;
+    console.error("Add tenant error:", result.error);
   } else {
     showOk("at-ok");
     document.getElementById("at-name").value = "";
     document.getElementById("at-email").value = "";
+    document.getElementById("at-phone").value = "";
+    document.getElementById("at-rent").value = "";
+    document.getElementById("at-addr").value = "";
+    closeMo("addtenant");
     loadDashboardData();
   }
 }
