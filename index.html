@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v10.4</div>
+<div class="vbadge">PropManager SC v10.5</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -988,7 +988,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -1004,8 +1004,16 @@ function attachEvents() {
   var updateTenantBtn = document.getElementById("update-tenant-btn");
   if (updateTenantBtn) updateTenantBtn.addEventListener("click", updateTenant);
 
+  // Edit payment modal
+  var closeEPMo = document.getElementById("close-editpayment-mo");
+  if (closeEPMo) closeEPMo.addEventListener("click", function() { closeMo("editpayment"); });
+  var updatePayBtn = document.getElementById("update-payment-btn");
+  if (updatePayBtn) updatePayBtn.addEventListener("click", updatePayment);
+  var deletePayBtn = document.getElementById("delete-payment-btn");
+  if (deletePayBtn) deletePayBtn.addEventListener("click", deletePayment);
+
   // Backdrop closes for new modals
-  ["mo-addpayment","mo-edittenant"].forEach(function(id) {
+  ["mo-addpayment","mo-edittenant","mo-editpayment"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", function(e) {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
@@ -1354,14 +1362,26 @@ function renderPropList(tenants) {
 }
 
 function renderPaymentList(payments, tenants) {
+  window._paymentCache = payments;
   var el = document.getElementById("payment-list");
-  if (!payments.length) { el.innerHTML = "<div class='empty'>No payments yet.</div>"; return; }
+  if (!payments.length) { el.innerHTML = "<div class='empty'>No payments recorded yet. Click Log payment to add one.</div>"; return; }
   var tMap = {};
   tenants.forEach(function(t) { tMap[t.id] = t.full_name; });
-  el.innerHTML = payments.slice(0,20).map(function(p) {
+  el.innerHTML = payments.slice(0,50).map(function(p) {
     var name = tMap[p.tenant_id] || "Unknown";
-    return "<div class='lr'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + name + " &mdash; " + (p.notes||"Rent") + "</div><div class='l-sub'>" + p.payment_date + " &middot; " + p.method + "</div></div><div style='color:#2d7a4f;font-weight:500;margin-right:8px'>$" + p.amount.toLocaleString() + "</div><span class='badge b-g' style='font-size:10px'>Paid</span></div>";
+    var badge = p.status === "paid" ? "<span class='badge b-g' style='font-size:10px'>Paid</span>" : p.status === "late" ? "<span class='badge b-r' style='font-size:10px'>Late</span>" : "<span class='badge b-a' style='font-size:10px'>Partial</span>";
+    var color = p.status === "paid" ? "#2d7a4f" : p.status === "late" ? "#c0392b" : "#a06010";
+    return "<div class='lr' style='align-items:center'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + name + " &mdash; " + (p.notes||"Rent") + "</div><div class='l-sub'>" + p.payment_date + " &middot; " + p.method + "</div></div><div style='color:" + color + ";font-weight:500;margin-right:8px'>$" + Number(p.amount).toLocaleString() + "</div>" + badge + "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:7px' data-pay-id='" + p.id + "' data-tenant-name='" + name + "'>Edit</button></div>";
   }).join("");
+  // Attach edit events
+  el.querySelectorAll("[data-pay-id]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var pid = btn.getAttribute("data-pay-id");
+      var tname = btn.getAttribute("data-tenant-name");
+      var pay = payments.find(function(p) { return p.id === pid; });
+      if (pay) openEditPaymentModal(pay, tname);
+    });
+  });
 }
 
 function renderMaintList(maints) {
@@ -1571,6 +1591,53 @@ async function updateTenant() {
   }
 }
 
+async function updatePayment() {
+  if (!sb) return;
+  var id = document.getElementById("ep-id").value;
+  var result = await sb.from("payments").update({
+    amount: parseFloat(document.getElementById("ep-amount").value) || 0,
+    payment_date: document.getElementById("ep-date").value,
+    method: document.getElementById("ep-method").value,
+    status: document.getElementById("ep-status").value,
+    notes: document.getElementById("ep-notes").value
+  }).eq("id", id);
+  if (result.error) {
+    document.getElementById("ep-err").style.display = "block";
+    document.getElementById("ep-err").textContent = result.error.message;
+  } else {
+    document.getElementById("ep-ok").classList.add("on");
+    setTimeout(function() { closeMo("editpayment"); loadDashboardData(); }, 1500);
+  }
+}
+
+async function deletePayment() {
+  if (!sb) return;
+  var id = document.getElementById("ep-id").value;
+  var name = document.getElementById("ep-tenant-name").value;
+  if (!confirm("Delete this payment for " + name + "? This cannot be undone.")) return;
+  var result = await sb.from("payments").delete().eq("id", id);
+  if (result.error) {
+    document.getElementById("ep-err").style.display = "block";
+    document.getElementById("ep-err").textContent = result.error.message;
+  } else {
+    closeMo("editpayment");
+    loadDashboardData();
+  }
+}
+
+function openEditPaymentModal(payment, tenantName) {
+  document.getElementById("ep-id").value = payment.id;
+  document.getElementById("ep-tenant-name").value = tenantName;
+  document.getElementById("ep-amount").value = payment.amount;
+  document.getElementById("ep-date").value = payment.payment_date;
+  document.getElementById("ep-method").value = payment.method || "ACH";
+  document.getElementById("ep-status").value = payment.status || "paid";
+  document.getElementById("ep-notes").value = payment.notes || "";
+  document.getElementById("ep-ok").classList.remove("on");
+  document.getElementById("ep-err").style.display = "none";
+  openMo("editpayment");
+}
+
 // ---- FORM SUBMITS ----
 function submitVacancy() {
   var n = document.getElementById("vi-name").value;
@@ -1656,6 +1723,44 @@ document.addEventListener("DOMContentLoaded", function() {
     <button class="mo-btn" id="update-tenant-btn">Save changes</button>
     <div class="ok-msg" id="et-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Tenant updated!</div>
     <div class="mo-err" id="et-err">Error updating tenant.</div>
+  </div>
+</div>
+
+
+<!-- EDIT PAYMENT MODAL -->
+<div class="mo-overlay" id="mo-editpayment">
+  <div class="mo-box" style="max-width:460px">
+    <button class="mo-close" id="close-editpayment-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Edit payment</div>
+    <div class="mo-sub">Update or correct a payment record.</div>
+    <input type="hidden" id="ep-id">
+    <label class="mo-lbl">Tenant</label>
+    <input class="mo-inp" type="text" id="ep-tenant-name" disabled style="background:#f0f0f0">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+      <div><label class="mo-lbl" style="margin:0 0 5px">Amount ($)</label>
+        <input class="mo-inp" type="number" id="ep-amount" style="margin:0"></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">Date paid</label>
+        <input class="mo-inp" type="date" id="ep-date" style="margin:0"></div>
+    </div>
+    <label class="mo-lbl">Method</label>
+    <select class="mo-inp" id="ep-method">
+      <option>ACH</option><option>Check</option><option>Card</option>
+      <option>Cash</option><option>Zelle</option><option>Other</option>
+    </select>
+    <label class="mo-lbl">Status</label>
+    <select class="mo-inp" id="ep-status">
+      <option value="paid">Paid</option>
+      <option value="late">Late</option>
+      <option value="partial">Partial</option>
+    </select>
+    <label class="mo-lbl">Notes</label>
+    <input class="mo-inp" type="text" id="ep-notes" placeholder="Notes...">
+    <div style="display:flex;gap:8px;margin-top:3px">
+      <button class="mo-btn" id="update-payment-btn" style="flex:1">Save changes</button>
+      <button id="delete-payment-btn" style="padding:11px 14px;background:#fdecea;border:1px solid #c0392b;border-radius:7px;color:#c0392b;cursor:pointer;font-family:inherit;font-size:13px;font-weight:500">Delete</button>
+    </div>
+    <div class="ok-msg" id="ep-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Payment updated!</div>
+    <div class="mo-err" id="ep-err">Error updating payment.</div>
   </div>
 </div>
 
