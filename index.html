@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v12.3</div>
+<div class="vbadge">PropManager SC v13.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -204,6 +204,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
     <button class="nav-btn" id="nb-dashboard">Dashboard</button>
     <button class="nav-btn" id="nb-portal">Tenant Portal</button>
     <button class="nav-btn" id="nb-vacancy">Vacancy</button>
+    <button class="nav-btn" id="nb-pricing">Pricing</button>
     <button class="nav-btn" id="nb-contact">Contact</button>
   </div>
   <div class="nav-right" id="nav-btns">
@@ -223,6 +224,11 @@ footer{background:#0f1e35;padding:44px 20px 26px}
       <div class="hero-btns">
         <button class="btn-hp" id="hero-tenant-btn">Tenant portal</button>
         <button class="btn-hs" id="hero-vacancy-btn">View vacancy</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;padding:11px 14px;background:rgba(201,150,42,.1);border-radius:9px;border:1px solid rgba(201,150,42,.25)">
+        <i class="ti ti-building-estate" style="color:#f0c96b;font-size:18px;flex-shrink:0"></i>
+        <div style="flex:1;font-size:12.5px;color:rgba(255,255,255,.7)">Are you a landlord? Try PropManager SC free for 30 days.</div>
+        <button class="btn-gold" style="font-size:12px;padding:5px 12px;white-space:nowrap" id="hero-landlord-signup-btn">Start free</button>
       </div>
       <div class="hero-stats">
         <div><div class="stat-v">7</div><div class="stat-l">Units managed</div></div>
@@ -309,6 +315,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
     <div><div class="ft-col-h">Tenants</div>
       <span class="ft-link" id="ft-login-link">Tenant login</span>
       <span class="ft-link" id="ft-contact-link">Contact us</span>
+      <span class="ft-link" id="ft-pricing-link">Pricing</span>
       <span class="ft-link" id="ft-landlord-link">Landlord login</span>
     </div>
   </div>
@@ -880,6 +887,124 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </div>
 </div>
 
+
+<!-- PRICING PAGE -->
+<div class="page" id="page-pricing">
+<div style="max-width:1000px;margin:0 auto;padding:48px 20px">
+
+  <!-- Hero -->
+  <div style="text-align:center;margin-bottom:48px">
+    <div style="font-size:11px;font-weight:600;color:#c9962a;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">Pricing</div>
+    <div style="font-size:38px;color:#0f1e35;font-family:Georgia,serif;margin-bottom:14px">Simple pricing for SC landlords</div>
+    <div style="font-size:16px;color:#5a5a5a;max-width:560px;margin:0 auto;line-height:1.7">Start free for 30 days. No credit card required. Cancel anytime. Built specifically for South Carolina rental law.</div>
+  </div>
+
+  <!-- Plans grid -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:48px">
+
+    <!-- Starter -->
+    <div style="background:#fff;border:1px solid rgba(15,30,53,.12);border-radius:16px;padding:28px;display:flex;flex-direction:column">
+      <div style="font-size:13px;font-weight:600;color:#5a5a5a;text-transform:uppercase;letter-spacing:1px;margin-bottom:9px">Starter</div>
+      <div style="font-size:36px;font-weight:600;color:#0f1e35;margin-bottom:4px">$19<span style="font-size:16px;font-weight:400;color:#5a5a5a">/month</span></div>
+      <div style="font-size:13px;color:#5a5a5a;margin-bottom:20px">Up to 4 rental units</div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:9px;margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="ti ti-check" style="color:#2d7a4f;font-size:15px"></i> Online rent collection</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="ti ti-check" style="color:#2d7a4f;font-size:15px"></i> Tenant portal</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="ti ti-check" style="color:#2d7a4f;font-size:15px"></i> Maintenance requests</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="ti ti-check" style="color:#2d7a4f;font-size:15px"></i> SC 5-day notices</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="ti ti-check" style="color:#2d7a4f;font-size:15px"></i> Basic reporting</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#999"><i class="ti ti-x" style="font-size:15px"></i> Expense tracking</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#999"><i class="ti ti-x" style="font-size:15px"></i> Tax tools</div>
+      </div>
+      <button class="btn btn-n" style="width:100%;justify-content:center;padding:11px;font-size:14px" id="signup-starter-btn">Start free trial</button>
+    </div>
+
+    <!-- Growth (featured) -->
+    <div style="background:#0f1e35;border:2px solid #c9962a;border-radius:16px;padding:28px;display:flex;flex-direction:column;position:relative">
+      <div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:#c9962a;color:#0f1e35;font-size:11px;font-weight:700;padding:4px 16px;border-radius:20px;white-space:nowrap">Most popular</div>
+      <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:9px">Growth</div>
+      <div style="font-size:36px;font-weight:600;color:#fff;margin-bottom:4px">$49<span style="font-size:16px;font-weight:400;color:rgba(255,255,255,.6)">/month</span></div>
+      <div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:20px">Up to 15 rental units</div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:9px;margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#fff"><i class="ti ti-check" style="color:#7ddba0;font-size:15px"></i> Everything in Starter</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#fff"><i class="ti ti-check" style="color:#7ddba0;font-size:15px"></i> Expense tracking + Innago import</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#fff"><i class="ti ti-check" style="color:#7ddba0;font-size:15px"></i> P&amp;L reports + Schedule E</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#fff"><i class="ti ti-check" style="color:#7ddba0;font-size:15px"></i> Depreciation calculator</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#fff"><i class="ti ti-check" style="color:#7ddba0;font-size:15px"></i> Lease renewal tools</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#fff"><i class="ti ti-check" style="color:#7ddba0;font-size:15px"></i> Late fee automation</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#fff"><i class="ti ti-check" style="color:#7ddba0;font-size:15px"></i> White-label branding</div>
+      </div>
+      <button style="width:100%;padding:11px;font-size:14px;font-weight:600;background:#c9962a;border:none;border-radius:9px;color:#0f1e35;cursor:pointer;font-family:inherit" id="signup-growth-btn">Start free trial</button>
+    </div>
+
+    <!-- Portfolio -->
+    <div style="background:#fff;border:1px solid rgba(15,30,53,.12);border-radius:16px;padding:28px;display:flex;flex-direction:column">
+      <div style="font-size:13px;font-weight:600;color:#5a5a5a;text-transform:uppercase;letter-spacing:1px;margin-bottom:9px">Portfolio</div>
+      <div style="font-size:36px;font-weight:600;color:#0f1e35;margin-bottom:4px">$99<span style="font-size:16px;font-weight:400;color:#5a5a5a">/month</span></div>
+      <div style="font-size:13px;color:#5a5a5a;margin-bottom:20px">Unlimited units</div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:9px;margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="ti ti-check" style="color:#2d7a4f;font-size:15px"></i> Everything in Growth</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="ti ti-check" style="color:#2d7a4f;font-size:15px"></i> Unlimited units</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="ti ti-check" style="color:#2d7a4f;font-size:15px"></i> Priority support</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="ti ti-check" style="color:#2d7a4f;font-size:15px"></i> Custom onboarding</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="ti ti-check" style="color:#2d7a4f;font-size:15px"></i> API access</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="ti ti-check" style="color:#2d7a4f;font-size:15px"></i> Multi-user (property managers)</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px"><i class="ti ti-check" style="color:#2d7a4f;font-size:15px"></i> Volume payment discount</div>
+      </div>
+      <button class="btn btn-n" style="width:100%;justify-content:center;padding:11px;font-size:14px" id="signup-portfolio-btn">Start free trial</button>
+    </div>
+  </div>
+
+  <!-- Trust bar -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:48px">
+    <div style="text-align:center;padding:18px;background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:12px">
+      <div style="font-size:24px;font-weight:600;color:#0f1e35;margin-bottom:4px">30 days</div>
+      <div style="font-size:12px;color:#5a5a5a">Free trial, no card needed</div>
+    </div>
+    <div style="text-align:center;padding:18px;background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:12px">
+      <div style="font-size:24px;font-weight:600;color:#0f1e35;margin-bottom:4px">SC law</div>
+      <div style="font-size:12px;color:#5a5a5a">Built for South Carolina</div>
+    </div>
+    <div style="text-align:center;padding:18px;background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:12px">
+      <div style="font-size:24px;font-weight:600;color:#0f1e35;margin-bottom:4px">$0 setup</div>
+      <div style="font-size:12px;color:#5a5a5a">Cancel any time</div>
+    </div>
+    <div style="text-align:center;padding:18px;background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:12px">
+      <div style="font-size:24px;font-weight:600;color:#0f1e35;margin-bottom:4px">ACH free</div>
+      <div style="font-size:12px;color:#5a5a5a">0.5% platform fee only</div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div style="max-width:680px;margin:0 auto">
+    <div style="font-size:22px;color:#0f1e35;font-family:Georgia,serif;margin-bottom:20px;text-align:center">Common questions</div>
+    <div id="faq-list">
+      <div class="faq-item" style="border-bottom:1px solid rgba(15,30,53,.1);padding:16px 0">
+        <div style="font-size:14px;font-weight:500;color:#0f1e35;margin-bottom:7px">What happens after the 30-day trial?</div>
+        <div style="font-size:13px;color:#5a5a5a;line-height:1.7">Your account pauses — no charges, no data loss. Add a payment method and choose a plan to continue. We will email you 7 days before the trial ends.</div>
+      </div>
+      <div class="faq-item" style="border-bottom:1px solid rgba(15,30,53,.1);padding:16px 0">
+        <div style="font-size:14px;font-weight:500;color:#0f1e35;margin-bottom:7px">Is my data private from other landlords?</div>
+        <div style="font-size:13px;color:#5a5a5a;line-height:1.7">Yes. Every landlord account is completely isolated. Your tenants, payments, and documents are only visible to you and the tenants you invite.</div>
+      </div>
+      <div class="faq-item" style="border-bottom:1px solid rgba(15,30,53,.1);padding:16px 0">
+        <div style="font-size:14px;font-weight:500;color:#0f1e35;margin-bottom:7px">What is the 0.5% platform fee?</div>
+        <div style="font-size:13px;color:#5a5a5a;line-height:1.7">When a tenant pays rent online, we charge a small 0.5% platform fee on top of any Stripe processing fees. For a $1,000 rent payment: $5 platform fee + $0 ACH fee (or $29 card fee). Most landlords pass the card fee to tenants.</div>
+      </div>
+      <div class="faq-item" style="border-bottom:1px solid rgba(15,30,53,.1);padding:16px 0">
+        <div style="font-size:14px;font-weight:500;color:#0f1e35;margin-bottom:7px">Can I import from Innago or another platform?</div>
+        <div style="font-size:13px;color:#5a5a5a;line-height:1.7">Yes. We have a direct Innago CSV import for expenses. Tenant data can be imported via CSV or entered during onboarding. We will help you migrate at no extra cost.</div>
+      </div>
+      <div class="faq-item" style="padding:16px 0">
+        <div style="font-size:14px;font-weight:500;color:#0f1e35;margin-bottom:7px">Is this only for South Carolina?</div>
+        <div style="font-size:13px;color:#5a5a5a;line-height:1.7">Right now yes — we are purpose-built for SC landlord law (27-40-710, 5-day grace, etc.). We plan to add NC and GA in 2025. If you are outside SC, contact us and we will let you know when your state is available.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
 <!-- VACANCY PAGE -->
 <div class="page" id="page-vacancy">
 <div style="max-width:980px;margin:0 auto;padding:28px 20px">
@@ -1139,7 +1264,7 @@ var currentRole = null;
 var LANDLORD_EMAILS = ["superwoman99.ar@gmail.com", "j.rush45@yahoo.com"];
 var LANDLORD_EMAIL = "superwoman99.ar@gmail.com"; // primary
 
-var PAGES = ["home","dashboard","portal","vacancy","contact"];
+var PAGES = ["home","dashboard","portal","vacancy","pricing","contact"];
 var DASH_SECS = ["ov","pr","tn","rn","mn","ls","gl","nt","tx"];
 var DASH_NAMES = {ov:"Dashboard",pr:"Properties",tn:"Tenants",rn:"Rent Payments",mn:"Maintenance",ls:"Leases",gl:"General Ledger",nt:"5-Day Notices",tx:"Tax Summary"};
 var PORTAL_SECS = ["hm","py","ph","mn","ms","ls"];
@@ -1235,6 +1360,35 @@ function attachEvents() {
   document.getElementById("nb-portal").addEventListener("click", function() { openMo("tenant"); });
   document.getElementById("nb-vacancy").addEventListener("click", function() { goPage("vacancy"); initVacancyPage(); });
   document.getElementById("nb-contact").addEventListener("click", function() { goPage("contact"); });
+  document.getElementById("nb-pricing").addEventListener("click", function() { goPage("pricing"); });
+
+  // Pricing page signup buttons
+  ["signup-starter-btn","signup-growth-btn","signup-portfolio-btn"].forEach(function(btnId) {
+    var btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.addEventListener("click", function() {
+      var plan = btnId.includes("starter") ? "Starter — $19/mo" :
+                 btnId.includes("growth")  ? "Growth — $49/mo" :
+                                             "Portfolio — $99/mo";
+      var planKey = btnId.includes("starter") ? "starter" :
+                    btnId.includes("growth")  ? "growth" : "portfolio";
+      document.getElementById("reg-plan-label").textContent = plan;
+      document.getElementById("reg-step-1").style.display = "block";
+      document.getElementById("reg-step-2").style.display = "none";
+      document.getElementById("reg-err").style.display = "none";
+      document.getElementById("reg-name").value = "";
+      document.getElementById("reg-email").value = "";
+      document.getElementById("reg-pass").value = "";
+      openMo("register");
+    });
+  });
+
+  var closeRegMo = document.getElementById("close-register-mo");
+  if (closeRegMo) closeRegMo.addEventListener("click", function() { closeMo("register"); });
+  var regSubmit = document.getElementById("register-submit-btn");
+  if (regSubmit) regSubmit.addEventListener("click", registerNewLandlord);
+  var regLoginBtn = document.getElementById("reg-go-login-btn");
+  if (regLoginBtn) regLoginBtn.addEventListener("click", function() { closeMo("register"); openMo("landlord"); });
 
   // Nav right
   document.getElementById("btn-tenant-login").addEventListener("click", function() { openMo("tenant"); });
@@ -1244,6 +1398,13 @@ function attachEvents() {
   document.getElementById("hero-tenant-btn").addEventListener("click", function() { openMo("tenant"); });
   var heroPLogin = document.getElementById("hero-portal-login-btn");
   if (heroPLogin) heroPLogin.addEventListener("click", function() { openMo("tenant"); });
+  var heroLLSignup = document.getElementById("hero-landlord-signup-btn");
+  if (heroLLSignup) heroLLSignup.addEventListener("click", function() {
+    document.getElementById("reg-plan-label").textContent = "Growth — $49/mo";
+    document.getElementById("reg-step-1").style.display = "block";
+    document.getElementById("reg-step-2").style.display = "none";
+    openMo("register");
+  });
   document.getElementById("hero-vacancy-btn").addEventListener("click", function() { goPage("vacancy"); initVacancyPage(); });
   document.getElementById("cta-tenant-btn").addEventListener("click", function() { openMo("tenant"); });
 
@@ -1252,6 +1413,8 @@ function attachEvents() {
   document.getElementById("ft-login-link").addEventListener("click", function() { openMo("tenant"); });
   document.getElementById("ft-contact-link").addEventListener("click", function() { goPage("contact"); });
   document.getElementById("ft-landlord-link").addEventListener("click", function() { openMo("landlord"); });
+  var ftPricingLink = document.getElementById("ft-pricing-link");
+  if (ftPricingLink) ftPricingLink.addEventListener("click", function() { goPage("pricing"); });
 
   // Modal closes
   document.getElementById("close-tenant-mo").addEventListener("click", function() { closeMo("tenant"); });
@@ -1451,7 +1614,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -1567,7 +1730,7 @@ function attachEvents() {
     });
   });
 
-  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal","mo-vacancyedit","mo-markrente"].forEach(function(id) {
+  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal","mo-vacancyedit","mo-markrente","mo-register"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", function(e) {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
@@ -3889,6 +4052,79 @@ function markAsRented() {
   document.getElementById("vac-empty").style.display = "block";
 }
 
+
+// ════════════════════════════════════════════════════════════
+// LANDLORD REGISTRATION
+// ════════════════════════════════════════════════════════════
+async function registerNewLandlord() {
+  var name     = document.getElementById("reg-name").value.trim();
+  var business = document.getElementById("reg-business").value.trim();
+  var email    = document.getElementById("reg-email").value.trim();
+  var phone    = document.getElementById("reg-phone").value.trim();
+  var pass     = document.getElementById("reg-pass").value;
+  var city     = document.getElementById("reg-city").value.trim();
+  var errEl    = document.getElementById("reg-err");
+
+  if (!name || !email || !pass || pass.length < 8) {
+    errEl.style.display = "block";
+    errEl.textContent = !pass || pass.length < 8
+      ? "Password must be at least 8 characters."
+      : "Please fill in your name, email, and password.";
+    return;
+  }
+
+  if (!sb) { errEl.style.display = "block"; errEl.textContent = "Database not connected. Please refresh."; return; }
+
+  var btn = document.getElementById("register-submit-btn");
+  btn.textContent = "Creating your account...";
+  btn.disabled = true;
+  errEl.style.display = "none";
+
+  try {
+    // 1. Create Supabase auth account
+    var authResult = await sb.auth.signUp({
+      email: email,
+      password: pass,
+      options: {
+        data: { full_name: name, business_name: business || name + " Properties" }
+      }
+    });
+
+    if (authResult.error) {
+      errEl.style.display = "block";
+      errEl.textContent = authResult.error.message;
+      btn.textContent = "Create my free account";
+      btn.disabled = false;
+      return;
+    }
+
+    // 2. Create landlord_accounts record
+    var userId = authResult.data.user ? authResult.data.user.id : null;
+    if (userId && sb) {
+      await sb.from("landlord_accounts").insert({
+        user_id:          userId,
+        business_name:    business || name + " Properties",
+        email:            email,
+        phone:            phone,
+        city:             city,
+        plan:             "trial",
+        subscription_status: "trialing",
+        is_active:        true
+      });
+    }
+
+    // 3. Show success
+    document.getElementById("reg-step-1").style.display = "none";
+    document.getElementById("reg-step-2").style.display = "block";
+
+  } catch(e) {
+    errEl.style.display = "block";
+    errEl.textContent = e.message || "Registration failed. Please try again.";
+    btn.textContent = "Create my free account";
+    btn.disabled = false;
+  }
+}
+
 // ---- FORM SUBMITS ----
 function submitVacancy() {
   var n = document.getElementById("vi-name").value;
@@ -4453,6 +4689,68 @@ document.addEventListener("DOMContentLoaded", function() {
     <div style="display:flex;gap:9px;margin-top:5px">
       <button class="btn" style="flex:1" id="cancel-rented-btn">Cancel</button>
       <button class="mo-btn" id="confirm-rented-btn" style="flex:1;background:#2d7a4f">Yes, mark as rented</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- LANDLORD REGISTRATION MODAL -->
+<div class="mo-overlay" id="mo-register">
+  <div class="mo-box" style="max-width:500px;max-height:90vh;overflow-y:auto">
+    <button class="mo-close" id="close-register-mo"><i class="ti ti-x"></i></button>
+
+    <div id="reg-step-1">
+      <div style="text-align:center;margin-bottom:22px">
+        <div style="width:48px;height:48px;background:#c9962a;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#0f1e35;margin:0 auto 11px">P</div>
+        <div class="mo-title" style="margin-bottom:4px">Start your free 30-day trial</div>
+        <div class="mo-sub" style="margin-bottom:0">No credit card required. Cancel anytime.</div>
+      </div>
+      <div style="background:#eaf5ee;border:1px solid rgba(45,122,79,.2);border-radius:7px;padding:10px 13px;font-size:12.5px;color:#2d7a4f;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <i class="ti ti-shield-check" style="font-size:16px"></i>
+        <span>Your selected plan: <strong id="reg-plan-label">Growth — $49/mo</strong> (free for 30 days)</span>
+      </div>
+      <label class="mo-lbl">Your full name</label>
+      <input class="mo-inp" type="text" id="reg-name" placeholder="First and last name">
+      <label class="mo-lbl">Business name</label>
+      <input class="mo-inp" type="text" id="reg-business" placeholder="e.g. Smith Properties LLC">
+      <label class="mo-lbl">Email address</label>
+      <input class="mo-inp" type="email" id="reg-email" placeholder="your@email.com">
+      <label class="mo-lbl">Phone number</label>
+      <input class="mo-inp" type="tel" id="reg-phone" placeholder="(864) 555-0100">
+      <label class="mo-lbl">Password</label>
+      <input class="mo-inp" type="password" id="reg-pass" placeholder="At least 8 characters">
+      <label class="mo-lbl">City</label>
+      <input class="mo-inp" type="text" id="reg-city" placeholder="Gaffney, Spartanburg, Columbia...">
+      <label class="mo-lbl">How many rental units do you manage?</label>
+      <select class="mo-inp" id="reg-units">
+        <option value="1">1-2 units</option>
+        <option value="3">3-4 units</option>
+        <option value="5" selected>5-10 units</option>
+        <option value="11">11-15 units</option>
+        <option value="16">16+ units</option>
+      </select>
+      <div style="font-size:11.5px;color:#5a5a5a;margin-bottom:14px;line-height:1.6">
+        By registering you agree to our <span style="color:#1a5fa8;cursor:pointer">Terms of Service</span> and <span style="color:#1a5fa8;cursor:pointer">Privacy Policy</span>.
+      </div>
+      <button class="mo-btn" id="register-submit-btn">Create my free account</button>
+      <div class="mo-err" id="reg-err" style="margin-top:9px">Please fill in all fields.</div>
+    </div>
+
+    <!-- Success state -->
+    <div id="reg-step-2" style="display:none;text-align:center;padding:20px 0">
+      <div style="font-size:52px;margin-bottom:14px">🎉</div>
+      <div style="font-size:22px;font-weight:500;color:#0f1e35;font-family:Georgia,serif;margin-bottom:9px">Welcome to PropManager SC!</div>
+      <div style="font-size:14px;color:#5a5a5a;line-height:1.7;margin-bottom:20px">Your 30-day free trial has started. Check your email to verify your address, then log in to set up your first property.</div>
+      <div style="background:rgba(15,30,53,.04);border-radius:9px;padding:16px;margin-bottom:20px;text-align:left">
+        <div style="font-size:13px;font-weight:500;color:#0f1e35;margin-bottom:11px">Your next steps:</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:#5a5a5a">
+          <div><span style="background:#eaf5ee;color:#2d7a4f;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin-right:8px">1</span>Check your email and verify your address</div>
+          <div><span style="background:#eaf5ee;color:#2d7a4f;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin-right:8px">2</span>Log in and add your first property</div>
+          <div><span style="background:#eaf5ee;color:#2d7a4f;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin-right:8px">3</span>Invite your tenants by email</div>
+          <div><span style="background:#eaf5ee;color:#2d7a4f;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin-right:8px">4</span>Connect Stripe to collect rent online</div>
+        </div>
+      </div>
+      <button class="mo-btn" id="reg-go-login-btn">Log in now</button>
     </div>
   </div>
 </div>
