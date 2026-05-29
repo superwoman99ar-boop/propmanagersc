@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v11.4</div>
+<div class="vbadge">PropManager SC v11.5</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1159,6 +1159,10 @@ function attachEvents() {
   document.getElementById("pi-ms").addEventListener("click", function() { goPortal("ms"); });
   document.getElementById("pi-ls").addEventListener("click", function() { goPortal("ls"); });
   document.getElementById("portal-signout-btn").addEventListener("click", signOut);
+  // Delegated signout for dynamically created nav button
+  document.addEventListener("click", function(e) {
+    if (e.target && e.target.id === "nav-signout-live") { signOut(); }
+  });
 
   // Portal home cards
   document.getElementById("home-maint-card").addEventListener("click", function() { goPortal("mn"); });
