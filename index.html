@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v11.2</div>
+<div class="vbadge">PropManager SC v11.3</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -243,7 +243,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
       </div>
       <div class="rent-row"><div class="r-av" style="background:rgba(219,232,255,.2);color:#b8cff5">JK</div><div class="r-name">Jonathan Knight &middot; 510 11th St</div><div class="r-amt">$1,000</div><div class="r-badge rb-g">Paid</div></div>
       <div class="rent-row"><div class="r-av" style="background:rgba(225,245,238,.2);color:#7ddba0">SR</div><div class="r-name">Shielah Rios &middot; 602 11th St</div><div class="r-amt">$1,000</div><div class="r-badge rb-g">Paid</div></div>
-      <div class="rent-row"><div class="r-av" style="background:rgba(238,237,254,.2);color:#c4b8f5">RG</div><div class="r-name">Rudolph Glynn &middot; 284 W. Wood</div><div class="r-amt">$1,180</div><div class="r-badge rb-r">Overdue</div></div>
+      <div class="rent-row"><div class="r-av" style="background:rgba(238,237,254,.2);color:#c4b8f5">RG</div><div class="r-name">Rudolph Glynn &middot; 284 W. Wood</div><div class="r-amt">$1,100</div><div class="r-badge rb-g">Paid</div></div>
       <div class="rent-row"><div class="r-av" style="background:rgba(225,245,238,.2);color:#7ddba0">KT</div><div class="r-name">Kalaneisha Tiswell &middot; 282 W. Wood</div><div class="r-amt">$1,000</div><div class="r-badge rb-g">Paid</div></div>
       <div class="rent-row"><div class="r-av" style="background:rgba(240,237,255,.2);color:#c4b8f5">CG</div><div class="r-name">Camryn George &middot; 288 W. Wood</div><div class="r-amt">$1,100</div><div class="r-badge rb-g">Paid</div></div>
       <div class="rent-row"><div class="r-av" style="background:rgba(251,234,240,.2);color:#f5b8cc">EC</div><div class="r-name">Ezequiel Castaneda &middot; 290 W. Wood</div><div class="r-amt">$1,100</div><div class="r-badge rb-g">Paid</div></div>
@@ -317,6 +317,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
     <div class="dash-topbar">
       <div class="dash-title" id="dash-title">Dashboard</div>
       <div style="display:flex;gap:7px">
+        <button class="btn" id="btn-preview-portal"><i class="ti ti-eye"></i> Preview Tenant Portal</button>
         <button class="btn btn-r" id="btn-issue-notice"><i class="ti ti-alert-triangle"></i> Issue Notice</button>
         <button class="btn btn-n" id="btn-add-tenant"><i class="ti ti-plus"></i> Add Tenant</button>
       </div>
@@ -1214,7 +1215,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -1297,7 +1298,24 @@ function attachEvents() {
     });
   });
 
-  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring"].forEach(function(id) {
+  // Tenant preview modal
+  var closePreview = document.getElementById("close-preview-mo");
+  if (closePreview) closePreview.addEventListener("click", function() { closeMo("tenantpreview"); });
+  var pvBtn = document.getElementById("btn-preview-portal");
+  if (pvBtn) pvBtn.addEventListener("click", openTenantPreview);
+  var pvSelect = document.getElementById("preview-tenant-select");
+  if (pvSelect) pvSelect.addEventListener("change", function() { loadTenantPreview(pvSelect.value); });
+  // Preview tab buttons
+  ["hm","py","ph","mn","ms","ls"].forEach(function(tab) {
+    var btn = document.getElementById("pv-tab-" + tab);
+    if (btn) btn.addEventListener("click", function() {
+      document.querySelectorAll("[id^=pv-tab-]").forEach(function(b) { b.classList.remove("on"); });
+      btn.classList.add("on");
+      renderPreviewTab(tab, window._previewTenant);
+    });
+  });
+
+  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", function(e) {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
@@ -2626,6 +2644,136 @@ function renderLedger(data, sort, filters) {
   }
 }
 
+
+// ---- TENANT PORTAL PREVIEW (landlord view) ----
+window._previewTenant = null;
+
+function openTenantPreview() {
+  var sel = document.getElementById("preview-tenant-select");
+  sel.innerHTML = "<option value=''>Select a tenant...</option>";
+  if (window._tenantCache) {
+    window._tenantCache.forEach(function(t) {
+      var opt = document.createElement("option");
+      opt.value = t.id;
+      opt.textContent = t.full_name + (t.properties ? " — " + t.properties.address : "");
+      sel.appendChild(opt);
+    });
+  }
+  document.getElementById("pv-content").innerHTML = "<div style='text-align:center;padding:40px;color:#999;font-size:13px'><i class='ti ti-user' style='font-size:32px;display:block;margin-bottom:9px;color:#ccc'></i>Select a tenant above to preview their portal</div>";
+  openMo("tenantpreview");
+}
+
+async function loadTenantPreview(tenantId) {
+  if (!tenantId || !sb) return;
+  var tenant = window._tenantCache ? window._tenantCache.find(function(t) { return t.id === tenantId; }) : null;
+  if (!tenant) return;
+  window._previewTenant = tenant;
+
+  // Update sidebar info
+  var ini = tenant.initials || tenant.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
+  document.getElementById("pv-av").textContent = ini;
+  document.getElementById("pv-av").style.background = tenant.color || "#dbe8ff";
+  document.getElementById("pv-av").style.color = tenant.text_color || "#0C447C";
+  document.getElementById("pv-name").textContent = tenant.full_name;
+  document.getElementById("pv-addr").textContent = tenant.properties ? tenant.properties.address : "No property linked";
+
+  // Load home tab by default
+  document.querySelectorAll("[id^=pv-tab-]").forEach(function(b) { b.classList.remove("on"); });
+  var hmBtn = document.getElementById("pv-tab-hm");
+  if (hmBtn) hmBtn.classList.add("on");
+  renderPreviewTab("hm", tenant);
+}
+
+async function renderPreviewTab(tab, tenant) {
+  var el = document.getElementById("pv-content");
+  if (!tenant) return;
+  var rent = tenant.monthly_rent || 0;
+  var p = tenant.properties;
+  var addr = p ? p.address : "No property";
+
+  if (tab === "hm") {
+    var statusBadge = tenant.status === "current"
+      ? "<span class='badge b-g'>Account current</span>"
+      : "<span class='badge b-r'>Account overdue</span>";
+    var now = new Date();
+    var nextMonth = new Date(now.getFullYear(), now.getMonth()+1, 1);
+    var nextDue = nextMonth.toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});
+
+    // Get open maintenance count
+    var mRes = await sb.from("maintenance").select("id").eq("tenant_id", tenant.id).neq("status","Resolved");
+    var openM = mRes.data ? mRes.data.length : 0;
+
+    el.innerHTML =
+      "<div style='display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:13px'>" +
+      "<div class='mc'><div class='mc-l'>Rent due</div><div class='mc-v'>$" + rent.toLocaleString() + "</div><div class='mc-s'>Due 1st of month</div></div>" +
+      "<div class='mc'><div class='mc-l'>Status</div><div class='mc-v' style='font-size:16px'>" + (tenant.status === "current" ? "Current" : "Overdue") + "</div></div>" +
+      "<div class='mc'><div class='mc-l'>Open requests</div><div class='mc-v'>" + openM + "</div></div></div>" +
+      "<div class='card'><div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:9px'><div style='font-size:13.5px;font-weight:500'>Account summary</div>" + statusBadge + "</div>" +
+      "<div style='font-size:13px;color:#5a5a5a'>Monthly rent: <strong style='color:#1a1a1a'>$" + rent.toLocaleString() + "</strong></div>" +
+      "<div style='font-size:13px;color:#5a5a5a;margin-top:5px'>Security deposit: <strong style='color:#1a1a1a'>$" + (tenant.security_deposit || rent).toLocaleString() + "</strong></div>" +
+      "<div style='margin-top:11px;font-size:12.5px;color:#5a5a5a'>Next payment: <strong style='color:#1a1a1a'>" + nextDue + "</strong></div></div>" +
+      "<div style='display:grid;grid-template-columns:1fr 1fr;gap:13px'>" +
+      "<div class='card'><div style='display:flex;align-items:center;gap:9px;margin-bottom:6px'><div style='width:28px;height:28px;background:#fdf3e0;color:#a06010;border-radius:7px;display:flex;align-items:center;justify-content:center'><i class='ti ti-tool'></i></div><div style='font-size:13px;font-weight:500'>Maintenance</div></div><div style='font-size:12px;color:#5a5a5a'>" + (openM === 0 ? "No open requests" : openM + " open request(s)") + "</div></div>" +
+      "<div class='card'><div style='display:flex;align-items:center;gap:9px;margin-bottom:6px'><div style='width:28px;height:28px;background:#e6f0fb;color:#1a5fa8;border-radius:7px;display:flex;align-items:center;justify-content:center'><i class='ti ti-message'></i></div><div style='font-size:13px;font-weight:500'>Messages</div></div><div style='font-size:12px;color:#5a5a5a'>Tap Messages to view</div></div></div>";
+
+  } else if (tab === "py") {
+    el.innerHTML =
+      "<div class='card'><div style='font-size:14px;font-weight:500;margin-bottom:13px'>Pay Rent &mdash; " + now.toLocaleDateString("en-US",{month:"long",year:"numeric"}) + "</div>" +
+      "<div style='background:rgba(15,30,53,.04);border-radius:9px;padding:14px;margin-bottom:13px;display:flex;justify-content:space-between;align-items:center'><div><div style='font-size:11px;color:#5a5a5a;margin-bottom:3px'>Amount due</div><div style='font-size:26px;font-weight:500'>$" + rent.toLocaleString() + "</div></div><span class='badge b-a'>Due</span></div>" +
+      "<div style='display:flex;gap:8px;margin-bottom:13px'><div style='flex:1;border:2px solid #0f1e35;border-radius:9px;padding:11px;text-align:center;cursor:pointer'><i class='ti ti-building-bank' style='font-size:20px;color:#2d7a4f;display:block;margin-bottom:5px'></i><div style='font-size:12px;font-weight:500'>Bank (ACH)</div><div style='font-size:10px;color:#5a5a5a'>Free</div></div>" +
+      "<div style='flex:1;border:1.5px solid rgba(15,30,53,.15);border-radius:9px;padding:11px;text-align:center;cursor:pointer'><i class='ti ti-credit-card' style='font-size:20px;color:#1a5fa8;display:block;margin-bottom:5px'></i><div style='font-size:12px;font-weight:500'>Card</div><div style='font-size:10px;color:#5a5a5a'>2.9% fee</div></div>" +
+      "<div style='flex:1;border:1.5px solid rgba(15,30,53,.15);border-radius:9px;padding:11px;text-align:center;cursor:pointer'><i class='ti ti-calendar' style='font-size:20px;color:#6c47ff;display:block;margin-bottom:5px'></i><div style='font-size:12px;font-weight:500'>Installments</div><div style='font-size:10px;color:#5a5a5a'>Flex/Livable</div></div></div>" +
+      "<div style='background:#0f1e35;border-radius:7px;padding:11px;text-align:center;color:#f0c96b;font-size:13px;font-weight:500'><i class='ti ti-lock'></i> Pay $" + rent.toLocaleString() + " securely</div></div>";
+
+  } else if (tab === "ph") {
+    var payRes = await sb.from("payments").select("*").eq("tenant_id", tenant.id).order("payment_date", {ascending: false});
+    var pays = payRes.data || [];
+    var payRows = pays.length === 0
+      ? "<div class='empty'>No payment history yet.</div>"
+      : pays.map(function(p) {
+          return "<div class='lr'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + (p.notes||"Rent payment") + "</div><div class='l-sub'>" + p.payment_date + " &middot; " + (p.method||"ACH") + "</div></div><div style='color:#2d7a4f;font-weight:500'>$" + Number(p.amount).toLocaleString() + "</div><span class='badge b-g' style='margin-left:7px;font-size:10px'>Paid</span></div>";
+        }).join("");
+    el.innerHTML = "<div class='card'><div class='card-title' style='margin-bottom:13px'>Payment history</div>" + payRows + "</div>";
+
+  } else if (tab === "mn") {
+    var mRes2 = await sb.from("maintenance").select("*").eq("tenant_id", tenant.id).order("created_at", {ascending: false});
+    var maints = mRes2.data || [];
+    var maintRows = maints.length === 0
+      ? "<div class='empty'>No maintenance requests yet.</div>"
+      : maints.map(function(m) {
+          var border = m.priority === "High" ? "#c0392b" : m.priority === "Medium" ? "#c9962a" : "#2d7a4f";
+          var badge = m.status === "Open" ? "<span class='badge b-b'>Open</span>" : m.status === "In Progress" ? "<span class='badge b-a'>In Progress</span>" : "<span class='badge b-g'>Resolved</span>";
+          return "<div style='border:1px solid rgba(15,30,53,.1);border-left:3px solid " + border + ";border-radius:7px;padding:11px 13px;margin-bottom:8px'><div style='display:flex;justify-content:space-between;margin-bottom:4px'><div style='font-size:13px;font-weight:500'>" + m.issue + "</div>" + badge + "</div><div style='font-size:11.5px;color:#999'>" + m.created_at.split("T")[0] + "</div></div>";
+        }).join("");
+    el.innerHTML = "<div class='card'><div class='card-title' style='margin-bottom:13px'>Maintenance requests</div>" + maintRows + "</div>" +
+      "<div class='card' style='opacity:.6'><div class='card-title' style='margin-bottom:9px'>Submit new request</div><div style='height:36px;background:rgba(15,30,53,.04);border-radius:7px;margin-bottom:9px'></div><div style='height:60px;background:rgba(15,30,53,.04);border-radius:7px;margin-bottom:9px'></div><div style='height:36px;background:#0f1e35;border-radius:7px;opacity:.5'></div></div>";
+
+  } else if (tab === "ms") {
+    var msgRes = await sb.from("messages").select("*").eq("tenant_id", tenant.id).order("created_at", {ascending: true});
+    var msgs = msgRes.data || [];
+    var msgBubbles = msgs.length === 0
+      ? "<div style='text-align:center;padding:20px;color:#999;font-size:13px'>No messages yet.</div>"
+      : msgs.map(function(m) {
+          var isOut = m.sender === "tenant";
+          return "<div style='margin-bottom:8px'><div style='font-size:10px;color:#999;margin-bottom:3px;" + (isOut?"text-align:right":"") + "'>" + (isOut ? tenant.full_name : "Landlord") + "</div><div style='max-width:78%;padding:9px 12px;border-radius:11px;font-size:13px;line-height:1.5;" + (isOut?"background:#0f1e35;color:#f0c96b;margin-left:auto;border-radius:11px 2px 11px 11px":"background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:2px 11px 11px 11px") + "'>" + m.body + "</div></div>";
+        }).join("");
+    el.innerHTML = "<div style='font-size:13px;font-weight:500;margin-bottom:9px'>Messages with landlord</div>" +
+      "<div style='background:rgba(15,30,53,.03);border-radius:7px;padding:13px;min-height:200px;max-height:300px;overflow-y:auto;margin-bottom:11px'>" + msgBubbles + "</div>" +
+      "<div style='display:flex;gap:8px'><div style='flex:1;height:50px;background:#fff;border:1px solid rgba(15,30,53,.2);border-radius:7px;padding:8px 11px;font-size:13px;color:#999'>Type a message...</div><div style='width:50px;height:50px;background:#0f1e35;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#f0c96b;font-size:18px'><i class='ti ti-send'></i></div></div>";
+
+  } else if (tab === "ls") {
+    var start = tenant.lease_start || "2026-01-01";
+    var end = tenant.lease_end || "2026-12-31";
+    var dep = (tenant.security_deposit || rent).toLocaleString();
+    el.innerHTML = "<div class='card'><div style='display:flex;align-items:center;gap:11px;margin-bottom:13px'><div style='width:36px;height:36px;background:#e6f0fb;color:#1a5fa8;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px'><i class='ti ti-file-text'></i></div><div><div style='font-size:14px;font-weight:500'>Lease &mdash; " + addr + "</div><div style='font-size:12px;color:#5a5a5a'>South Carolina Residential Lease</div></div><span class='badge b-g' style='margin-left:auto'>Active</span></div>" +
+      "<div style='display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(15,30,53,.08);font-size:13px'><span style='color:#5a5a5a'>Monthly rent</span><span style='font-weight:500'>$" + rent.toLocaleString() + "</span></div>" +
+      "<div style='display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(15,30,53,.08);font-size:13px'><span style='color:#5a5a5a'>Lease start</span><span style='font-weight:500'>" + start + "</span></div>" +
+      "<div style='display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(15,30,53,.08);font-size:13px'><span style='color:#5a5a5a'>Lease end</span><span style='font-weight:500'>" + end + "</span></div>" +
+      "<div style='display:flex;justify-content:space-between;padding:8px 0;font-size:13px'><span style='color:#5a5a5a'>Security deposit</span><span style='font-weight:500'>$" + dep + "</span></div></div>";
+  }
+  var now = new Date();
+}
+
 // ---- FORM SUBMITS ----
 function submitVacancy() {
   var n = document.getElementById("vi-name").value;
@@ -2961,6 +3109,49 @@ document.addEventListener("DOMContentLoaded", function() {
     <button class="mo-btn" id="save-recurring-btn">Save recurring expense</button>
     <div class="ok-msg" id="rec-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Recurring expense saved!</div>
     <div class="mo-err" id="rec-err">Error saving recurring expense.</div>
+  </div>
+</div>
+
+
+<!-- TENANT PORTAL PREVIEW MODAL (landlord view) -->
+<div class="mo-overlay" id="mo-tenantpreview">
+  <div class="mo-box" style="max-width:700px;padding:0;overflow:hidden;border-radius:16px">
+    <div style="background:#0f1e35;padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:28px;height:28px;background:#c9962a;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#0f1e35;font-size:13px">P</div>
+        <span style="color:#fff;font-size:13px;font-weight:500">Tenant Portal Preview</span>
+        <span class="badge" style="background:rgba(240,201,107,.2);color:#f0c96b;font-size:10px">Landlord view</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <select id="preview-tenant-select" class="inp" style="font-size:12px;padding:4px 9px;width:180px;background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)"></select>
+        <button class="mo-close" id="close-preview-mo" style="position:static;color:rgba(255,255,255,.7)"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+    <div style="display:flex;height:520px;overflow:hidden">
+      <!-- Preview sidebar -->
+      <div style="width:180px;background:#fff;border-right:1px solid rgba(15,30,53,.1);display:flex;flex-direction:column">
+        <div style="padding:14px;border-bottom:1px solid rgba(15,30,53,.1)">
+          <div id="pv-av" style="width:36px;height:36px;border-radius:50%;background:#dbe8ff;color:#0C447C;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-bottom:6px">??</div>
+          <div id="pv-name" style="font-size:12px;font-weight:500">Select tenant</div>
+          <div id="pv-addr" style="font-size:10px;color:#5a5a5a">Tenant portal</div>
+        </div>
+        <div style="padding:9px;flex:1">
+          <button class="pni on" id="pv-tab-hm" style="width:100%;margin-bottom:2px;font-size:12px"><i class="ti ti-layout-dashboard"></i> My Home</button>
+          <button class="pni" id="pv-tab-py" style="width:100%;margin-bottom:2px;font-size:12px"><i class="ti ti-credit-card"></i> Pay Rent</button>
+          <button class="pni" id="pv-tab-ph" style="width:100%;margin-bottom:2px;font-size:12px"><i class="ti ti-history"></i> History</button>
+          <button class="pni" id="pv-tab-mn" style="width:100%;margin-bottom:2px;font-size:12px"><i class="ti ti-tool"></i> Maintenance</button>
+          <button class="pni" id="pv-tab-ms" style="width:100%;margin-bottom:2px;font-size:12px"><i class="ti ti-message"></i> Messages</button>
+          <button class="pni" id="pv-tab-ls" style="width:100%;margin-bottom:2px;font-size:12px"><i class="ti ti-file-text"></i> My Lease</button>
+        </div>
+      </div>
+      <!-- Preview main content -->
+      <div style="flex:1;overflow-y:auto;background:#faf8f4;padding:16px" id="pv-content">
+        <div style="text-align:center;padding:40px;color:#999;font-size:13px">
+          <i class="ti ti-user" style="font-size:32px;display:block;margin-bottom:9px;color:#ccc"></i>
+          Select a tenant above to preview their portal
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
