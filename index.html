@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v11.5</div>
+<div class="vbadge">PropManager SC v11.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -391,7 +391,9 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 
       <div class="dsec" id="ds-ls">
         <div class="card">
-          <div class="card-head"><div class="card-title">Lease agreements</div><button class="btn btn-n" id="new-lease-btn"><i class="ti ti-plus"></i> New lease</button></div>
+          <div class="card-head"><div class="card-title">Lease agreements</div><div style="display:flex;gap:7px"><button class="btn" id="late-fee-btn"><i class="ti ti-clock-dollar"></i> Late fee schedule</button><button class="btn btn-n" id="new-lease-btn"><i class="ti ti-plus"></i> New lease</button></div></div>
+        <!-- Expiring leases alert -->
+        <div id="expiring-leases-alert" style="display:none;background:#fdf3e0;border:1px solid rgba(160,96,16,.2);border-radius:7px;padding:11px 14px;margin-bottom:13px;font-size:13px;color:#a06010"></div>
           <div id="lease-list"><div class="spin-wrap"><div class="spinner"></div> Loading...</div></div>
         </div>
       </div>
@@ -1219,7 +1221,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -1270,6 +1272,22 @@ function attachEvents() {
   var closePnl = document.getElementById("close-pnl-mo");
   if (closePnl) closePnl.addEventListener("click", function() { closeMo("pnl"); });
 
+  // Late fee modal
+  var closeLFMo = document.getElementById("close-latefee-mo");
+  if (closeLFMo) closeLFMo.addEventListener("click", function() { closeMo("latefee"); });
+  var lateFeeBtn = document.getElementById("late-fee-btn");
+  if (lateFeeBtn) lateFeeBtn.addEventListener("click", openLateFeeModal);
+  var saveLFBtn = document.getElementById("save-latefee-btn");
+  if (saveLFBtn) saveLFBtn.addEventListener("click", saveLateFeeSchedule);
+  var addTierBtn = document.getElementById("add-fee-tier-btn");
+  if (addTierBtn) addTierBtn.addEventListener("click", addFeeTier);
+
+  // Renewal modal
+  var closeRenMo = document.getElementById("close-renewal-mo");
+  if (closeRenMo) closeRenMo.addEventListener("click", function() { closeMo("renewal"); });
+  var saveRenBtn = document.getElementById("save-renewal-btn");
+  if (saveRenBtn) saveRenBtn.addEventListener("click", saveRenewal);
+
   // Recurring modal
   var closeRecMo = document.getElementById("close-recurring-mo");
   if (closeRecMo) closeRecMo.addEventListener("click", function() { closeMo("recurring"); });
@@ -1319,7 +1337,7 @@ function attachEvents() {
     });
   });
 
-  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview"].forEach(function(id) {
+  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", function(e) {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
@@ -1405,9 +1423,13 @@ function initSupabase() {
           currentRole = "landlord";
           var llName = currentUser.email === LANDLORD_EMAIL ? "Landlord" : "Co-landlord";
           showNavUser("LL", llName);
-          closeMo("landlord");
-          goPage("dashboard");
-          loadDashboardData();
+          // Small delay so modal animation completes before redirect
+          setTimeout(function() {
+            closeMo("landlord");
+            closeMo("tenant");
+            goPage("dashboard");
+            loadDashboardData();
+          }, 400);
         } else {
           currentRole = "tenant";
           loadTenantProfile();
@@ -1858,24 +1880,70 @@ function renderMaintList(maints) {
 function renderLeaseList(tenants) {
   var el = document.getElementById("lease-list");
   if (!tenants.length) { el.innerHTML = "<div class='empty'>No tenants yet.</div>"; return; }
+  
+  var expiring = [];
+  
   el.innerHTML = tenants.map(function(t) {
     var p = t.properties;
     var badge = t.status === "current" ? "<span class='badge b-g'>Active</span>" :
                 t.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" :
                 "<span class='badge b-a'>Vacating</span>";
     var daysLeft = "";
+    var expiryColor = "rgba(15,30,53,.1)";
     if (t.lease_end) {
       var days = Math.ceil((new Date(t.lease_end) - new Date()) / 86400000);
-      if (days <= 60 && days > 0) daysLeft = "<span style='font-size:11px;color:#a06010;margin-left:6px'>" + days + " days left</span>";
-      if (days <= 0) daysLeft = "<span style='font-size:11px;color:#c0392b;margin-left:6px'>Expired</span>";
+      if (days <= 0) {
+        daysLeft = "<span class='badge b-r' style='font-size:10px;margin-left:6px'>Expired</span>";
+        expiryColor = "rgba(192,57,43,.2)";
+        expiring.push({ name: t.full_name, days: days, id: t.id });
+      } else if (days <= 30) {
+        daysLeft = "<span class='badge b-r' style='font-size:10px;margin-left:6px'>" + days + "d left</span>";
+        expiryColor = "rgba(192,57,43,.15)";
+        expiring.push({ name: t.full_name, days: days, id: t.id });
+      } else if (days <= 60) {
+        daysLeft = "<span class='badge b-a' style='font-size:10px;margin-left:6px'>" + days + "d left</span>";
+        expiryColor = "rgba(160,96,16,.1)";
+        expiring.push({ name: t.full_name, days: days, id: t.id });
+      } else if (days <= 90) {
+        daysLeft = "<span style='font-size:11px;color:#a06010;margin-left:6px'>" + days + "d left</span>";
+      }
     }
-    return "<div style='display:flex;align-items:center;gap:11px;padding:11px 13px;border:1px solid rgba(15,30,53,.1);border-radius:7px;margin-bottom:8px'><div style='width:34px;height:34px;background:#e6f0fb;color:#1a5fa8;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px'><i class='ti ti-file-text'></i></div><div style='flex:1'><div style='font-size:13px;font-weight:500'>" + t.full_name + " &mdash; " + (p ? p.address : "&mdash;") + "</div><div style='font-size:11.5px;color:#999'>$" + Number(t.monthly_rent||0).toLocaleString() + "/mo &middot; " + (t.lease_start||"—") + " to " + (t.lease_end||"—") + daysLeft + "</div></div>" + badge + "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:8px' data-lease-tenant-id='" + t.id + "'>Edit</button></div>";
+    return "<div style='display:flex;align-items:center;gap:11px;padding:11px 13px;border:1px solid " + expiryColor + ";border-radius:7px;margin-bottom:8px;background:" + (expiryColor !== "rgba(15,30,53,.1)" ? "rgba(255,248,240,.5)" : "#fff") + "'>" +
+      "<div style='width:34px;height:34px;background:#e6f0fb;color:#1a5fa8;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px'><i class='ti ti-file-text'></i></div>" +
+      "<div style='flex:1'><div style='font-size:13px;font-weight:500'>" + t.full_name + " &mdash; " + (p ? p.address : "&mdash;") + "</div>" +
+      "<div style='font-size:11.5px;color:#999'>$" + Number(t.monthly_rent||0).toLocaleString() + "/mo &middot; " + (t.lease_start||"—") + " to " + (t.lease_end||"—") + daysLeft + "</div></div>" +
+      badge +
+      "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:6px' data-lease-tenant-id='" + t.id + "'>Edit</button>" +
+      "<button class='btn btn-g' style='font-size:11px;padding:3px 8px;margin-left:4px' data-renew-id='" + t.id + "'><i class='ti ti-refresh'></i> Renew</button>" +
+      "</div>";
   }).join("");
+
+  // Show expiring alert
+  var alertEl = document.getElementById("expiring-leases-alert");
+  if (alertEl) {
+    if (expiring.length) {
+      alertEl.style.display = "block";
+      alertEl.innerHTML = "<i class='ti ti-clock' style='margin-right:6px'></i><strong>" + expiring.length + " lease(s) expiring soon:</strong> " +
+        expiring.map(function(e) {
+          return e.name + (e.days <= 0 ? " (expired)" : " (" + e.days + " days)");
+        }).join(", ") + " &mdash; <span style='cursor:pointer;text-decoration:underline' id='renew-all-link'>Send renewal offers</span>";
+    } else {
+      alertEl.style.display = "none";
+    }
+  }
+
+  // Edit buttons
   el.querySelectorAll("[data-lease-tenant-id]").forEach(function(btn) {
     btn.addEventListener("click", function() {
-      var tid = btn.getAttribute("data-lease-tenant-id");
-      var t = tenants.find(function(x) { return x.id === tid; });
+      var t = tenants.find(function(x) { return x.id === btn.getAttribute("data-lease-tenant-id"); });
       if (t) openLeaseModal(t);
+    });
+  });
+  // Renew buttons
+  el.querySelectorAll("[data-renew-id]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var t = tenants.find(function(x) { return x.id === btn.getAttribute("data-renew-id"); });
+      if (t) openRenewalModal(t);
     });
   });
 }
@@ -2652,10 +2720,14 @@ function renderLedger(data, sort, filters) {
 // ---- TENANT PORTAL PREVIEW (landlord view) ----
 window._previewTenant = null;
 
-function openTenantPreview() {
+async function openTenantPreview() {
+  // Ensure tenant data is loaded
+  if (!window._tenantCache || window._tenantCache.length === 0) {
+    await loadDashboardData();
+  }
   var sel = document.getElementById("preview-tenant-select");
   sel.innerHTML = "<option value=''>Select a tenant...</option>";
-  if (window._tenantCache) {
+  if (window._tenantCache && window._tenantCache.length) {
     window._tenantCache.forEach(function(t) {
       var opt = document.createElement("option");
       opt.value = t.id;
@@ -2721,8 +2793,9 @@ async function renderPreviewTab(tab, tenant) {
       "<div class='card'><div style='display:flex;align-items:center;gap:9px;margin-bottom:6px'><div style='width:28px;height:28px;background:#e6f0fb;color:#1a5fa8;border-radius:7px;display:flex;align-items:center;justify-content:center'><i class='ti ti-message'></i></div><div style='font-size:13px;font-weight:500'>Messages</div></div><div style='font-size:12px;color:#5a5a5a'>Tap Messages to view</div></div></div>";
 
   } else if (tab === "py") {
+    var now2 = new Date();
     el.innerHTML =
-      "<div class='card'><div style='font-size:14px;font-weight:500;margin-bottom:13px'>Pay Rent &mdash; " + now.toLocaleDateString("en-US",{month:"long",year:"numeric"}) + "</div>" +
+      "<div class='card'><div style='font-size:14px;font-weight:500;margin-bottom:13px'>Pay Rent &mdash; " + now2.toLocaleDateString("en-US",{month:"long",year:"numeric"}) + "</div>" +
       "<div style='background:rgba(15,30,53,.04);border-radius:9px;padding:14px;margin-bottom:13px;display:flex;justify-content:space-between;align-items:center'><div><div style='font-size:11px;color:#5a5a5a;margin-bottom:3px'>Amount due</div><div style='font-size:26px;font-weight:500'>$" + rent.toLocaleString() + "</div></div><span class='badge b-a'>Due</span></div>" +
       "<div style='display:flex;gap:8px;margin-bottom:13px'><div style='flex:1;border:2px solid #0f1e35;border-radius:9px;padding:11px;text-align:center;cursor:pointer'><i class='ti ti-building-bank' style='font-size:20px;color:#2d7a4f;display:block;margin-bottom:5px'></i><div style='font-size:12px;font-weight:500'>Bank (ACH)</div><div style='font-size:10px;color:#5a5a5a'>Free</div></div>" +
       "<div style='flex:1;border:1.5px solid rgba(15,30,53,.15);border-radius:9px;padding:11px;text-align:center;cursor:pointer'><i class='ti ti-credit-card' style='font-size:20px;color:#1a5fa8;display:block;margin-bottom:5px'></i><div style='font-size:12px;font-weight:500'>Card</div><div style='font-size:10px;color:#5a5a5a'>2.9% fee</div></div>" +
@@ -2775,7 +2848,137 @@ async function renderPreviewTab(tab, tenant) {
       "<div style='display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(15,30,53,.08);font-size:13px'><span style='color:#5a5a5a'>Lease end</span><span style='font-weight:500'>" + end + "</span></div>" +
       "<div style='display:flex;justify-content:space-between;padding:8px 0;font-size:13px'><span style='color:#5a5a5a'>Security deposit</span><span style='font-weight:500'>$" + dep + "</span></div></div>";
   }
-  var now = new Date();
+}
+
+
+// ---- LATE FEE SCHEDULE ----
+var _feeSchedule = [
+  { days: 6, type: "flat", amount: 80 },
+  { days: 11, type: "flat", amount: 50 },
+  { days: 16, type: "daily", amount: 10 }
+];
+
+function openLateFeeModal() {
+  renderFeeTiers();
+  document.getElementById("lf-ok").classList.remove("on");
+  openMo("latefee");
+}
+
+function renderFeeTiers() {
+  var el = document.getElementById("fee-tiers-list");
+  el.innerHTML = _feeSchedule.map(function(tier, i) {
+    return "<div style='display:grid;grid-template-columns:80px 1fr 1fr auto;gap:9px;align-items:center;margin-bottom:7px'>" +
+      "<input class='inp' type='number' value='" + tier.days + "' data-tier='" + i + "' data-field='days' style='font-size:12px;padding:6px 9px' placeholder='Days'>" +
+      "<select class='inp' data-tier='" + i + "' data-field='type' style='font-size:12px;padding:6px 9px'>" +
+        "<option value='flat'" + (tier.type==='flat'?' selected':'') + ">Flat fee</option>" +
+        "<option value='percent'" + (tier.type==='percent'?' selected':'') + ">% of rent</option>" +
+        "<option value='daily'" + (tier.type==='daily'?' selected':'') + ">Per day</option>" +
+      "</select>" +
+      "<input class='inp' type='number' value='" + tier.amount + "' data-tier='" + i + "' data-field='amount' style='font-size:12px;padding:6px 9px' placeholder='Amount'>" +
+      "<button class='btn btn-r' style='font-size:11px;padding:4px 8px' data-remove='" + i + "'><i class='ti ti-x'></i></button>" +
+      "</div>";
+  }).join("");
+  // Attach events
+  el.querySelectorAll("[data-tier]").forEach(function(input) {
+    input.addEventListener("change", function() {
+      var i = parseInt(input.getAttribute("data-tier"));
+      var field = input.getAttribute("data-field");
+      _feeSchedule[i][field] = field === "type" ? input.value : parseFloat(input.value) || 0;
+    });
+  });
+  el.querySelectorAll("[data-remove]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      _feeSchedule.splice(parseInt(btn.getAttribute("data-remove")), 1);
+      renderFeeTiers();
+    });
+  });
+}
+
+function addFeeTier() {
+  var lastDays = _feeSchedule.length ? _feeSchedule[_feeSchedule.length-1].days + 5 : 6;
+  _feeSchedule.push({ days: lastDays, type: "flat", amount: 50 });
+  renderFeeTiers();
+}
+
+function saveLateFeeSchedule() {
+  // Save to localStorage for persistence
+  try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(_feeSchedule)); } catch(e) {}
+  // Show summary
+  var summary = _feeSchedule.map(function(t) {
+    var typeLabel = t.type === "flat" ? "$" + t.amount + " flat" : t.type === "percent" ? t.amount + "% of rent" : "$" + t.amount + "/day";
+    return "Day " + t.days + ": " + typeLabel;
+  }).join(" | ");
+  document.getElementById("lf-ok").classList.add("on");
+  document.getElementById("lf-ok").innerHTML = "<i class='ti ti-circle-check' style='font-size:17px'></i> Saved! Schedule: " + summary;
+  setTimeout(function() { closeMo("latefee"); }, 2500);
+}
+
+function calcLateFee(rent, daysLate) {
+  if (daysLate < 6) return 0; // Grace period
+  var total = 0;
+  var sorted = _feeSchedule.slice().sort(function(a,b){ return a.days - b.days; });
+  for (var i = 0; i < sorted.length; i++) {
+    var tier = sorted[i];
+    if (daysLate >= tier.days) {
+      var nextTierDay = sorted[i+1] ? sorted[i+1].days : daysLate + 1;
+      if (tier.type === "flat") total += tier.amount;
+      else if (tier.type === "percent") total += (rent * tier.amount / 100);
+      else if (tier.type === "daily") total += tier.amount * Math.min(daysLate - tier.days + 1, nextTierDay - tier.days);
+    }
+  }
+  return Math.round(total);
+}
+
+// ---- LEASE RENEWAL ----
+function openRenewalModal(tenant) {
+  document.getElementById("ren-tenant-id").value = tenant.id;
+  document.getElementById("renewal-title").textContent = "Renew lease — " + tenant.full_name;
+  // Current lease info
+  var infoEl = document.getElementById("renewal-current-info");
+  infoEl.innerHTML = "<strong>Current lease:</strong> " + (tenant.lease_start||"—") + " to " + (tenant.lease_end||"—") +
+    " &middot; $" + Number(tenant.monthly_rent||0).toLocaleString() + "/mo";
+  // Default new dates: start = day after current end, end = 1 year later
+  var curEnd = tenant.lease_end ? new Date(tenant.lease_end) : new Date();
+  var newStart = new Date(curEnd);
+  newStart.setDate(newStart.getDate() + 1);
+  var newEnd = new Date(newStart);
+  newEnd.setFullYear(newEnd.getFullYear() + 1);
+  document.getElementById("ren-start").value = newStart.toISOString().split("T")[0];
+  document.getElementById("ren-end").value = newEnd.toISOString().split("T")[0];
+  document.getElementById("ren-rent").value = tenant.monthly_rent || "";
+  document.getElementById("ren-deposit").value = tenant.security_deposit || tenant.monthly_rent || "";
+  document.getElementById("ren-notes").value = "";
+  document.getElementById("ren-ok").classList.remove("on");
+  document.getElementById("ren-err").style.display = "none";
+  openMo("renewal");
+}
+
+async function saveRenewal() {
+  if (!sb) return;
+  var tenantId = document.getElementById("ren-tenant-id").value;
+  var start = document.getElementById("ren-start").value;
+  var end = document.getElementById("ren-end").value;
+  var rent = parseFloat(document.getElementById("ren-rent").value) || 0;
+  var deposit = parseFloat(document.getElementById("ren-deposit").value) || 0;
+  if (!start || !end) {
+    document.getElementById("ren-err").style.display = "block";
+    document.getElementById("ren-err").textContent = "Please set start and end dates.";
+    return;
+  }
+  var result = await sb.from("tenants").update({
+    lease_start: start,
+    lease_end: end,
+    monthly_rent: rent,
+    security_deposit: deposit,
+    status: "current"
+  }).eq("id", tenantId);
+  if (result.error) {
+    document.getElementById("ren-err").style.display = "block";
+    document.getElementById("ren-err").textContent = result.error.message;
+  } else {
+    document.getElementById("ren-ok").classList.add("on");
+    setTimeout(function() { closeMo("renewal"); loadDashboardData(); }, 1500);
+  }
 }
 
 // ---- FORM SUBMITS ----
@@ -3156,6 +3359,77 @@ document.addEventListener("DOMContentLoaded", function() {
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+
+<!-- LATE FEE SETTINGS MODAL -->
+<div class="mo-overlay" id="mo-latefee">
+  <div class="mo-box" style="max-width:500px">
+    <button class="mo-close" id="close-latefee-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Late fee schedule</div>
+    <div class="mo-sub">SC law allows a 5-day grace period before fees apply.</div>
+    <div style="background:#e6f0fb;border:1px solid rgba(26,95,168,.2);border-radius:7px;padding:11px 13px;font-size:12px;color:#1a5fa8;margin-bottom:14px">
+      <strong>SC Code 27-40-710:</strong> Rent is due on the 1st. You may charge a late fee after a 5-day grace period. Late fees must be reasonable.
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:80px 1fr 1fr auto;gap:9px;align-items:center">
+        <div style="font-size:11px;font-weight:600;color:#999;text-transform:uppercase">After days</div>
+        <div style="font-size:11px;font-weight:600;color:#999;text-transform:uppercase">Fee type</div>
+        <div style="font-size:11px;font-weight:600;color:#999;text-transform:uppercase">Amount</div>
+        <div></div>
+      </div>
+      <div id="fee-tiers-list">
+        <!-- Tier rows added dynamically -->
+      </div>
+      <button class="btn" id="add-fee-tier-btn" style="width:fit-content"><i class="ti ti-plus"></i> Add tier</button>
+    </div>
+    <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:11px 13px;font-size:12.5px;color:#5a5a5a;margin-bottom:14px">
+      <strong>Example schedule:</strong><br>
+      Day 6: $80 flat fee<br>
+      Day 11: additional $50 (total $130)<br>
+      Day 16: additional $50/day until paid
+    </div>
+    <button class="mo-btn" id="save-latefee-btn">Save fee schedule</button>
+    <div class="ok-msg" id="lf-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Late fee schedule saved!</div>
+  </div>
+</div>
+
+<!-- LEASE RENEWAL MODAL -->
+<div class="mo-overlay" id="mo-renewal">
+  <div class="mo-box" style="max-width:500px">
+    <button class="mo-close" id="close-renewal-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title" id="renewal-title">Renew lease</div>
+    <div class="mo-sub" id="renewal-sub">Send a lease renewal offer to your tenant.</div>
+    <input type="hidden" id="ren-tenant-id">
+    <div style="background:#eaf5ee;border:1px solid rgba(45,122,79,.2);border-radius:7px;padding:11px 13px;margin-bottom:14px" id="renewal-current-info"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+      <div><label class="mo-lbl" style="margin:0 0 5px">New start date</label>
+        <input class="mo-inp" type="date" id="ren-start" style="margin:0"></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">New end date</label>
+        <input class="mo-inp" type="date" id="ren-end" style="margin:0"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+      <div><label class="mo-lbl" style="margin:0 0 5px">New monthly rent ($)</label>
+        <input class="mo-inp" type="number" id="ren-rent" style="margin:0"></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">New deposit ($)</label>
+        <input class="mo-inp" type="number" id="ren-deposit" style="margin:0"></div>
+    </div>
+    <label class="mo-lbl">Lease term</label>
+    <select class="mo-inp" id="ren-term">
+      <option value="12">12 months (standard)</option>
+      <option value="6">6 months</option>
+      <option value="3">3 months</option>
+      <option value="24">24 months</option>
+      <option value="month">Month-to-month</option>
+    </select>
+    <label class="mo-lbl">Notes for tenant (optional)</label>
+    <textarea class="mo-inp" id="ren-notes" placeholder="Any changes or special terms..." style="height:65px;resize:vertical"></textarea>
+    <div style="display:flex;gap:8px;margin-top:3px">
+      <button class="mo-btn" id="save-renewal-btn" style="flex:1">Save &amp; renew lease</button>
+    </div>
+    <div class="ok-msg" id="ren-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Lease renewed! Tenant notified.</div>
+    <div class="mo-err" id="ren-err">Error saving renewal.</div>
   </div>
 </div>
 
