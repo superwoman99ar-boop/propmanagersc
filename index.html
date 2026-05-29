@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v11.8</div>
+<div class="vbadge">PropManager SC v11.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -854,36 +854,104 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 
 <!-- VACANCY PAGE -->
 <div class="page" id="page-vacancy">
-<div style="max-width:900px;margin:0 auto;padding:36px 20px">
-  <div style="margin-bottom:22px"><button class="btn" id="vac-back-btn"><i class="ti ti-arrow-left"></i> Back</button></div>
-  <div style="background:linear-gradient(135deg,#a06010,#c9962a);border-radius:16px;padding:36px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap">
-    <div>
-      <div style="font-size:11px;font-weight:600;color:rgba(15,30,53,.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px">Now available</div>
-      <div style="font-size:28px;color:#0f1e35;font-family:Georgia,serif;margin-bottom:4px">608 11th Street</div>
-      <div style="font-size:14px;color:rgba(15,30,53,.7)">Gaffney, SC 29340 &mdash; Single-family home</div>
-    </div>
-    <div style="text-align:right">
-      <div style="font-size:34px;font-weight:600;color:#0f1e35">$1,500<span style="font-size:15px;font-weight:400">/mo</span></div>
-      <div style="font-size:13px;color:rgba(15,30,53,.7);margin-top:4px">$1,500 deposit &middot; 12-month lease</div>
-      <button class="btn btn-n" style="margin-top:11px" id="apply-now-btn"><i class="ti ti-file-plus"></i> Apply now</button>
+<div style="max-width:980px;margin:0 auto;padding:28px 20px">
+
+  <!-- Top bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:9px">
+    <button class="btn" id="vac-back-btn"><i class="ti ti-arrow-left"></i> Back</button>
+    <div style="display:flex;gap:8px" id="vac-landlord-tools" style="display:none">
+      <button class="btn btn-n" id="vac-add-btn"><i class="ti ti-plus"></i> Add listing</button>
+      <button class="btn" id="vac-edit-btn"><i class="ti ti-edit"></i> Edit listing</button>
+      <button class="btn btn-r" id="vac-remove-btn"><i class="ti ti-eye-off"></i> Mark rented</button>
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
-    <div>
-      <div style="font-size:21px;color:#0f1e35;font-family:Georgia,serif;margin-bottom:11px">About this home</div>
-      <div style="font-size:14px;color:#5a5a5a;line-height:1.8;background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:12px;padding:17px">A well-maintained single-family home in Gaffney, SC. Convenient access to local schools, shops, and employers in Cherokee County. Available immediately with a 12-month lease. Professionally managed by PropManager SC.</div>
-      <div style="margin-top:14px;background:#eaf5ee;border:1px solid rgba(45,122,79,.2);border-radius:7px;padding:11px 14px;font-size:13px;color:#2d7a4f"><i class="ti ti-shield-check"></i> SC-compliant lease &middot; Electronic signing &middot; Online rent &middot; Maintenance portal</div>
+
+  <!-- No vacancies state -->
+  <div id="vac-empty" style="display:none;text-align:center;padding:60px 20px;background:#fff;border-radius:16px;border:2px dashed rgba(15,30,53,.15)">
+    <i class="ti ti-home-check" style="font-size:48px;color:#ccc;display:block;margin-bottom:14px"></i>
+    <div style="font-size:20px;color:#0f1e35;font-family:Georgia,serif;margin-bottom:7px">No vacancies at this time</div>
+    <div style="font-size:14px;color:#5a5a5a;margin-bottom:18px">All units are currently occupied. Check back soon.</div>
+    <button class="btn btn-n" id="vac-add-btn2"><i class="ti ti-plus"></i> Add a listing</button>
+  </div>
+
+  <!-- Active listing -->
+  <div id="vac-listing">
+    <!-- Hero banner -->
+    <div id="vac-hero" style="border-radius:16px;overflow:hidden;margin-bottom:20px;position:relative;background:linear-gradient(135deg,#a06010,#c9962a)">
+      <!-- Photo gallery -->
+      <div id="vac-photos" style="position:relative">
+        <div id="vac-photo-main" style="width:100%;height:340px;background:linear-gradient(135deg,#a06010,#c9962a);display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <div id="vac-no-photo" style="text-align:center;color:rgba(255,255,255,.6)">
+            <i class="ti ti-camera" style="font-size:48px;display:block;margin-bottom:9px"></i>
+            <div style="font-size:13px">No photos yet</div>
+          </div>
+          <img id="vac-main-img" style="display:none;width:100%;height:100%;object-fit:cover" alt="Vacancy photo">
+        </div>
+        <!-- Thumbnail strip -->
+        <div id="vac-thumbs" style="display:flex;gap:6px;padding:8px;background:rgba(0,0,0,.3);overflow-x:auto"></div>
+        <!-- Nav arrows -->
+        <button id="vac-photo-prev" style="display:none;position:absolute;left:10px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.5);border:none;color:#fff;cursor:pointer;font-size:16px">&#8249;</button>
+        <button id="vac-photo-next" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.5);border:none;color:#fff;cursor:pointer;font-size:16px">&#8250;</button>
+        <div id="vac-photo-count" style="display:none;position:absolute;bottom:60px;right:12px;background:rgba(0,0,0,.5);color:#fff;font-size:11px;padding:3px 8px;border-radius:10px"></div>
+      </div>
     </div>
-    <div class="card">
-      <div class="card-title" style="margin-bottom:13px">Send an inquiry</div>
-      <label class="lbl">Your name</label><input class="inp" type="text" id="vi-name" style="margin-bottom:9px" placeholder="Full name">
-      <label class="lbl">Email</label><input class="inp" type="email" id="vi-email" style="margin-bottom:9px" placeholder="your@email.com">
-      <label class="lbl">Phone</label><input class="inp" type="tel" id="vi-phone" style="margin-bottom:9px" placeholder="(864) 555-0100">
-      <label class="lbl">Message</label><textarea class="inp" style="height:65px;resize:vertical;margin-bottom:9px" id="vi-msg" placeholder="Tell us about yourself..."></textarea>
-      <button class="btn btn-n" style="width:100%;justify-content:center;padding:9px" id="vac-inquiry-btn"><i class="ti ti-send"></i> Send inquiry</button>
-      <div class="ok-msg" id="vac-ok"><i class="ti ti-circle-check" style="font-size:17px"></i> Inquiry sent! We will be in touch within 24 hours.</div>
+
+    <!-- Info + inquiry grid -->
+    <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start">
+      <!-- Left: listing details -->
+      <div>
+        <div style="background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:12px;padding:22px;margin-bottom:14px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px">
+            <div>
+              <div id="vac-tag" style="font-size:11px;font-weight:600;color:#c9962a;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">Now available</div>
+              <div id="vac-title" style="font-size:26px;color:#0f1e35;font-family:Georgia,serif;margin-bottom:3px">608 11th Street</div>
+              <div id="vac-subtitle" style="font-size:14px;color:#5a5a5a">Gaffney, SC 29340 &mdash; Single-family home</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div id="vac-price" style="font-size:32px;font-weight:600;color:#0f1e35">$1,500<span style="font-size:14px;font-weight:400">/mo</span></div>
+              <div id="vac-deposit-label" style="font-size:12px;color:#5a5a5a;margin-top:3px">$1,500 deposit &middot; 12-month lease</div>
+            </div>
+          </div>
+
+          <!-- Highlights row -->
+          <div id="vac-highlights" style="display:flex;gap:11px;flex-wrap:wrap;margin-bottom:16px">
+            <span class="badge b-g" id="vac-avail-badge">Available now</span>
+            <span style="font-size:12px;color:#5a5a5a;display:flex;align-items:center;gap:4px" id="vac-beds-span"><i class="ti ti-bed"></i> <span id="vac-beds">--</span> bed</span>
+            <span style="font-size:12px;color:#5a5a5a;display:flex;align-items:center;gap:4px" id="vac-baths-span"><i class="ti ti-bath"></i> <span id="vac-baths">--</span> bath</span>
+            <span style="font-size:12px;color:#5a5a5a;display:flex;align-items:center;gap:4px" id="vac-sqft-span"><i class="ti ti-ruler"></i> <span id="vac-sqft">--</span> sq ft</span>
+          </div>
+
+          <div style="font-size:14px;color:#5a5a5a;line-height:1.8;margin-bottom:14px" id="vac-desc">A well-maintained single-family home in Gaffney, SC. Convenient access to local schools, shops, and employers in Cherokee County. Available immediately with a 12-month lease. Professionally managed by PropManager SC.</div>
+
+          <!-- Amenities -->
+          <div id="vac-amenities-wrap" style="margin-bottom:14px">
+            <div style="font-size:12px;font-weight:600;color:#0f1e35;margin-bottom:8px">AMENITIES</div>
+            <div id="vac-amenities" style="display:flex;gap:7px;flex-wrap:wrap"></div>
+          </div>
+
+          <div style="background:#eaf5ee;border:1px solid rgba(45,122,79,.2);border-radius:7px;padding:11px 14px;font-size:13px;color:#2d7a4f">
+            <i class="ti ti-shield-check"></i> SC-compliant lease &middot; Electronic signing &middot; Online rent &middot; Maintenance portal
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: inquiry form -->
+      <div>
+        <div class="card" style="position:sticky;top:80px">
+          <div class="card-title" style="margin-bottom:13px">Schedule a showing or apply</div>
+          <label class="lbl">Your name</label><input class="inp" type="text" id="vi-name" style="margin-bottom:9px" placeholder="Full name">
+          <label class="lbl">Email</label><input class="inp" type="email" id="vi-email" style="margin-bottom:9px" placeholder="your@email.com">
+          <label class="lbl">Phone</label><input class="inp" type="tel" id="vi-phone" style="margin-bottom:9px" placeholder="(864) 555-0100">
+          <label class="lbl">Move-in date</label><input class="inp" type="date" id="vi-movein" style="margin-bottom:9px">
+          <label class="lbl">Message</label><textarea class="inp" style="height:65px;resize:vertical;margin-bottom:9px" id="vi-msg" placeholder="Tell us about yourself, # of occupants, pets, etc."></textarea>
+          <button class="btn btn-n" style="width:100%;justify-content:center;padding:10px;margin-bottom:8px" id="vac-inquiry-btn"><i class="ti ti-send"></i> Send inquiry</button>
+          <button class="btn" style="width:100%;justify-content:center;padding:10px" id="apply-now-btn"><i class="ti ti-file-plus"></i> Apply now</button>
+          <div class="ok-msg" id="vac-ok"><i class="ti ti-circle-check" style="font-size:17px"></i> Inquiry sent! We will be in touch within 24 hours.</div>
+        </div>
+      </div>
     </div>
   </div>
+
 </div>
 </div>
 
@@ -1137,7 +1205,7 @@ function attachEvents() {
   document.getElementById("nb-home").addEventListener("click", function() { goPage("home"); });
   document.getElementById("nb-dashboard").addEventListener("click", function() { goPage("dashboard"); });
   document.getElementById("nb-portal").addEventListener("click", function() { openMo("tenant"); });
-  document.getElementById("nb-vacancy").addEventListener("click", function() { goPage("vacancy"); });
+  document.getElementById("nb-vacancy").addEventListener("click", function() { goPage("vacancy"); initVacancyPage(); });
   document.getElementById("nb-contact").addEventListener("click", function() { goPage("contact"); });
 
   // Nav right
@@ -1146,11 +1214,11 @@ function attachEvents() {
 
   // Hero buttons
   document.getElementById("hero-tenant-btn").addEventListener("click", function() { openMo("tenant"); });
-  document.getElementById("hero-vacancy-btn").addEventListener("click", function() { goPage("vacancy"); });
+  document.getElementById("hero-vacancy-btn").addEventListener("click", function() { goPage("vacancy"); initVacancyPage(); });
   document.getElementById("cta-tenant-btn").addEventListener("click", function() { openMo("tenant"); });
 
   // Footer links
-  document.getElementById("ft-vacancy-link").addEventListener("click", function() { goPage("vacancy"); });
+  document.getElementById("ft-vacancy-link").addEventListener("click", function() { goPage("vacancy"); initVacancyPage(); });
   document.getElementById("ft-login-link").addEventListener("click", function() { openMo("tenant"); });
   document.getElementById("ft-contact-link").addEventListener("click", function() { goPage("contact"); });
   document.getElementById("ft-landlord-link").addEventListener("click", function() { openMo("landlord"); });
@@ -1280,6 +1348,38 @@ function attachEvents() {
 
   // Vacancy page
   document.getElementById("vac-back-btn").addEventListener("click", function() { goPage("home"); });
+  var vacAddBtn = document.getElementById("vac-add-btn");
+  if (vacAddBtn) vacAddBtn.addEventListener("click", function() { openVacancyEdit(false); });
+  var vacAddBtn2 = document.getElementById("vac-add-btn2");
+  if (vacAddBtn2) vacAddBtn2.addEventListener("click", function() { openVacancyEdit(false); });
+  var vacEditBtn = document.getElementById("vac-edit-btn");
+  if (vacEditBtn) vacEditBtn.addEventListener("click", function() { openVacancyEdit(true); });
+  var vacRemoveBtn = document.getElementById("vac-remove-btn");
+  if (vacRemoveBtn) vacRemoveBtn.addEventListener("click", function() { openMo("markrente"); });
+  var closeVacEdit = document.getElementById("close-vacancyedit-mo");
+  if (closeVacEdit) closeVacEdit.addEventListener("click", function() { closeMo("vacancyedit"); });
+  var saveVacBtn = document.getElementById("save-vacancy-btn");
+  if (saveVacBtn) saveVacBtn.addEventListener("click", saveVacancyListing);
+  var cancelRented = document.getElementById("cancel-rented-btn");
+  if (cancelRented) cancelRented.addEventListener("click", function() { closeMo("markrente"); });
+  var confirmRented = document.getElementById("confirm-rented-btn");
+  if (confirmRented) confirmRented.addEventListener("click", markAsRented);
+  var vePhotoInput = document.getElementById("ve-photo-input");
+  var vePhotoDrop = document.getElementById("ve-photo-drop");
+  if (vePhotoDrop && vePhotoInput) {
+    vePhotoDrop.addEventListener("click", function() { vePhotoInput.click(); });
+    vePhotoDrop.addEventListener("dragover", function(e) { e.preventDefault(); vePhotoDrop.style.background = "rgba(26,95,168,.08)"; });
+    vePhotoDrop.addEventListener("dragleave", function() { vePhotoDrop.style.background = "rgba(15,30,53,.02)"; });
+    vePhotoDrop.addEventListener("drop", function(e) {
+      e.preventDefault(); vePhotoDrop.style.background = "rgba(15,30,53,.02)";
+      handleVacancyPhotos(e.dataTransfer.files);
+    });
+    vePhotoInput.addEventListener("change", function() { handleVacancyPhotos(vePhotoInput.files); });
+  }
+  var vacPrevBtn = document.getElementById("vac-photo-prev");
+  var vacNextBtn = document.getElementById("vac-photo-next");
+  if (vacPrevBtn) vacPrevBtn.addEventListener("click", function() { changeVacPhoto(-1); });
+  if (vacNextBtn) vacNextBtn.addEventListener("click", function() { changeVacPhoto(1); });
   document.getElementById("apply-now-btn").addEventListener("click", function() { openMo("apply"); });
   document.getElementById("vac-inquiry-btn").addEventListener("click", submitVacancy);
   document.getElementById("submit-apply-btn").addEventListener("click", submitApply);
@@ -1292,7 +1392,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -1408,7 +1508,7 @@ function attachEvents() {
     });
   });
 
-  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal"].forEach(function(id) {
+  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal","mo-vacancyedit","mo-markrente"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", function(e) {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
@@ -3400,6 +3500,227 @@ async function sendLateNotices() {
   loadDashboardData();
 }
 
+
+// ════════════════════════════════════════════════════════════
+// VACANCY MANAGEMENT
+// ════════════════════════════════════════════════════════════
+var _vacancyData = null;
+var _vacancyPhotos = []; // base64 photo array
+var _vacancyPhotoIndex = 0;
+
+// Load vacancy data from localStorage on page load
+function initVacancyPage() {
+  try {
+    var saved = localStorage.getItem("propmanager_vacancy");
+    if (saved) {
+      _vacancyData = JSON.parse(saved);
+      _vacancyPhotos = _vacancyData.photos || [];
+    }
+  } catch(e) {}
+
+  // Show landlord tools if logged in as landlord
+  var tools = document.getElementById("vac-landlord-tools");
+  if (tools && currentRole === "landlord") tools.style.display = "flex";
+
+  if (!_vacancyData || _vacancyData.status === "rented") {
+    document.getElementById("vac-listing").style.display = "none";
+    document.getElementById("vac-empty").style.display = "block";
+    return;
+  }
+
+  document.getElementById("vac-empty").style.display = "none";
+  document.getElementById("vac-listing").style.display = "block";
+  renderVacancyListing();
+}
+
+function renderVacancyListing() {
+  if (!_vacancyData) return;
+  var d = _vacancyData;
+
+  // Text fields
+  var setTxt = function(id, val) { var el = document.getElementById(id); if (el) el.textContent = val || ""; };
+  setTxt("vac-title", d.address || "608 11th Street");
+  setTxt("vac-subtitle", (d.city || "Gaffney, SC 29340") + " — " + (d.type || "Single-family home"));
+  setTxt("vac-desc", d.desc || "");
+  setTxt("vac-beds", d.beds || "--");
+  setTxt("vac-baths", d.baths || "--");
+  setTxt("vac-sqft", d.sqft ? Number(d.sqft).toLocaleString() : "--");
+
+  var priceEl = document.getElementById("vac-price");
+  if (priceEl) priceEl.innerHTML = "$" + Number(d.rent||1500).toLocaleString() + "<span style='font-size:14px;font-weight:400'>/mo</span>";
+
+  var depEl = document.getElementById("vac-deposit-label");
+  if (depEl) depEl.textContent = "$" + Number(d.deposit||d.rent||1500).toLocaleString() + " deposit · 12-month lease";
+
+  // Amenities
+  var amEl = document.getElementById("vac-amenities");
+  if (amEl && d.amenities && d.amenities.length) {
+    amEl.innerHTML = d.amenities.map(function(a) {
+      return "<span class='badge b-b' style='font-size:11px'><i class='ti ti-check' style='font-size:10px'></i> " + a + "</span>";
+    }).join("");
+    document.getElementById("vac-amenities-wrap").style.display = "block";
+  } else if (document.getElementById("vac-amenities-wrap")) {
+    document.getElementById("vac-amenities-wrap").style.display = "none";
+  }
+
+  // Photos
+  renderVacancyPhotos();
+}
+
+function renderVacancyPhotos() {
+  var mainImg = document.getElementById("vac-main-img");
+  var noPhoto = document.getElementById("vac-no-photo");
+  var thumbsEl = document.getElementById("vac-thumbs");
+  var prevBtn = document.getElementById("vac-photo-prev");
+  var nextBtn = document.getElementById("vac-photo-next");
+  var countEl = document.getElementById("vac-photo-count");
+
+  if (!_vacancyPhotos.length) {
+    if (mainImg) mainImg.style.display = "none";
+    if (noPhoto) noPhoto.style.display = "block";
+    if (prevBtn) prevBtn.style.display = "none";
+    if (nextBtn) nextBtn.style.display = "none";
+    if (countEl) countEl.style.display = "none";
+    if (thumbsEl) thumbsEl.innerHTML = "";
+    return;
+  }
+
+  if (noPhoto) noPhoto.style.display = "none";
+  if (mainImg) {
+    mainImg.style.display = "block";
+    mainImg.src = _vacancyPhotos[_vacancyPhotoIndex];
+  }
+  if (prevBtn) prevBtn.style.display = _vacancyPhotos.length > 1 ? "block" : "none";
+  if (nextBtn) nextBtn.style.display = _vacancyPhotos.length > 1 ? "block" : "none";
+  if (countEl) {
+    countEl.style.display = "block";
+    countEl.textContent = (_vacancyPhotoIndex+1) + " / " + _vacancyPhotos.length;
+  }
+
+  // Thumbnails
+  if (thumbsEl) {
+    thumbsEl.innerHTML = _vacancyPhotos.map(function(photo, i) {
+      return "<img src='" + photo + "' style='width:60px;height:44px;object-fit:cover;border-radius:5px;cursor:pointer;border:2px solid " + (i===_vacancyPhotoIndex?"#c9962a":"transparent") + ";flex-shrink:0' data-photo-idx='" + i + "' alt='Photo " + (i+1) + "'>";
+    }).join("");
+    thumbsEl.querySelectorAll("[data-photo-idx]").forEach(function(thumb) {
+      thumb.addEventListener("click", function() {
+        _vacancyPhotoIndex = parseInt(thumb.getAttribute("data-photo-idx"));
+        renderVacancyPhotos();
+      });
+    });
+  }
+}
+
+function changeVacPhoto(dir) {
+  if (!_vacancyPhotos.length) return;
+  _vacancyPhotoIndex = (_vacancyPhotoIndex + dir + _vacancyPhotos.length) % _vacancyPhotos.length;
+  renderVacancyPhotos();
+}
+
+function openVacancyEdit(isEdit) {
+  document.getElementById("vac-edit-title").textContent = isEdit ? "Edit listing" : "Add new listing";
+  var d = isEdit && _vacancyData ? _vacancyData : {};
+  document.getElementById("ve-address").value = d.address || "608 11th Street, Gaffney SC 29340";
+  document.getElementById("ve-rent").value = d.rent || 1500;
+  document.getElementById("ve-deposit").value = d.deposit || d.rent || 1500;
+  document.getElementById("ve-beds").value = d.beds || "";
+  document.getElementById("ve-baths").value = d.baths || "";
+  document.getElementById("ve-sqft").value = d.sqft || "";
+  document.getElementById("ve-desc").value = d.desc || "";
+  document.getElementById("ve-avail").value = d.avail || new Date().toISOString().split("T")[0];
+  var typeEl = document.getElementById("ve-type");
+  if (typeEl && d.type) typeEl.value = d.type;
+
+  // Set amenity checkboxes
+  var amenityIds = ["am-washer","am-ac","am-heat","am-parking","am-yard","am-garage","am-pets","am-dishwasher","am-hardwood"];
+  amenityIds.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.checked = d.amenities && d.amenities.includes(el.value);
+  });
+
+  // Show existing photos in preview
+  renderEditPhotoPreview();
+  document.getElementById("ve-ok").classList.remove("on");
+  document.getElementById("ve-err").style.display = "none";
+  openMo("vacancyedit");
+}
+
+function handleVacancyPhotos(files) {
+  var arr = Array.from(files).slice(0, 10 - _vacancyPhotos.length);
+  var loaded = 0;
+  arr.forEach(function(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      _vacancyPhotos.push(e.target.result);
+      loaded++;
+      if (loaded === arr.length) renderEditPhotoPreview();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderEditPhotoPreview() {
+  var el = document.getElementById("ve-photo-preview");
+  if (!el) return;
+  el.innerHTML = _vacancyPhotos.map(function(photo, i) {
+    return "<div style='position:relative;display:inline-block'>" +
+      "<img src='" + photo + "' style='width:80px;height:60px;object-fit:cover;border-radius:7px;border:1px solid rgba(15,30,53,.1)'>" +
+      "<button style='position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:#c0392b;border:none;color:#fff;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center' data-remove-photo='" + i + "'>&times;</button>" +
+      (i===0 ? "<div style='position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,.6);color:#fff;font-size:9px;padding:1px 4px;border-radius:3px'>Main</div>" : "") +
+      "</div>";
+  }).join("");
+  el.querySelectorAll("[data-remove-photo]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      _vacancyPhotos.splice(parseInt(btn.getAttribute("data-remove-photo")), 1);
+      renderEditPhotoPreview();
+    });
+  });
+}
+
+function saveVacancyListing() {
+  var amenityIds = ["am-washer","am-ac","am-heat","am-parking","am-yard","am-garage","am-pets","am-dishwasher","am-hardwood"];
+  var amenities = amenityIds.map(function(id) {
+    var el = document.getElementById(id);
+    return el && el.checked ? el.value : null;
+  }).filter(Boolean);
+
+  _vacancyData = {
+    address:    document.getElementById("ve-address").value,
+    rent:       parseFloat(document.getElementById("ve-rent").value) || 1500,
+    deposit:    parseFloat(document.getElementById("ve-deposit").value) || 1500,
+    beds:       document.getElementById("ve-beds").value,
+    baths:      document.getElementById("ve-baths").value,
+    sqft:       document.getElementById("ve-sqft").value,
+    type:       document.getElementById("ve-type").value,
+    desc:       document.getElementById("ve-desc").value,
+    avail:      document.getElementById("ve-avail").value,
+    amenities:  amenities,
+    photos:     _vacancyPhotos,
+    status:     "available"
+  };
+
+  try { localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData)); } catch(e) {}
+
+  document.getElementById("ve-ok").classList.add("on");
+  _vacancyPhotoIndex = 0;
+  setTimeout(function() {
+    closeMo("vacancyedit");
+    document.getElementById("vac-listing").style.display = "block";
+    document.getElementById("vac-empty").style.display = "none";
+    renderVacancyListing();
+  }, 1200);
+}
+
+function markAsRented() {
+  if (_vacancyData) {
+    _vacancyData.status = "rented";
+    try { localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData)); } catch(e) {}
+  }
+  closeMo("markrente");
+  document.getElementById("vac-listing").style.display = "none";
+  document.getElementById("vac-empty").style.display = "block";
+}
+
 // ---- FORM SUBMITS ----
 function submitVacancy() {
   var n = document.getElementById("vi-name").value;
@@ -3872,6 +4193,81 @@ document.addEventListener("DOMContentLoaded", function() {
     </div>
     <div class="ok-msg" id="ren-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Lease renewed! Tenant notified.</div>
     <div class="mo-err" id="ren-err">Error saving renewal.</div>
+  </div>
+</div>
+
+
+<!-- EDIT VACANCY LISTING MODAL -->
+<div class="mo-overlay" id="mo-vacancyedit">
+  <div class="mo-box" style="max-width:580px;max-height:90vh;overflow-y:auto">
+    <button class="mo-close" id="close-vacancyedit-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title" id="vac-edit-title">Edit listing</div>
+    <div class="mo-sub">Update the vacancy information shown to prospective tenants.</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+      <div style="grid-column:1/-1"><label class="mo-lbl">Street address</label>
+        <input class="mo-inp" type="text" id="ve-address" placeholder="608 11th Street, Gaffney SC 29340"></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">Monthly rent ($)</label>
+        <input class="mo-inp" type="number" id="ve-rent" placeholder="1500" style="margin:0"></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">Security deposit ($)</label>
+        <input class="mo-inp" type="number" id="ve-deposit" placeholder="1500" style="margin:0"></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">Bedrooms</label>
+        <input class="mo-inp" type="number" id="ve-beds" placeholder="3" style="margin:0"></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">Bathrooms</label>
+        <input class="mo-inp" type="number" id="ve-baths" placeholder="2" step="0.5" style="margin:0"></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">Square footage</label>
+        <input class="mo-inp" type="number" id="ve-sqft" placeholder="1200" style="margin:0"></div>
+      <div><label class="mo-lbl" style="margin:0 0 5px">Property type</label>
+        <select class="mo-inp" id="ve-type" style="margin:0">
+          <option>Single-family</option><option>Duplex</option>
+          <option>Apartment</option><option>Condo</option><option>Townhouse</option>
+        </select></div>
+    </div>
+
+    <label class="mo-lbl">Available date</label>
+    <input class="mo-inp" type="date" id="ve-avail">
+
+    <label class="mo-lbl">Description</label>
+    <textarea class="mo-inp" id="ve-desc" style="height:100px;resize:vertical" placeholder="Describe the property, neighborhood, nearby schools/shops..."></textarea>
+
+    <label class="mo-lbl">Amenities (check all that apply)</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:12px;background:rgba(15,30,53,.03);border-radius:7px;padding:12px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="am-washer" value="Washer/Dryer"> Washer/Dryer</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="am-ac" value="Central A/C"> Central A/C</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="am-heat" value="Central Heat"> Central Heat</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="am-parking" value="Parking"> Parking</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="am-yard" value="Yard"> Yard</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="am-garage" value="Garage"> Garage</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="am-pets" value="Pets allowed"> Pets allowed</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="am-dishwasher" value="Dishwasher"> Dishwasher</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="am-hardwood" value="Hardwood floors"> Hardwood floors</label>
+    </div>
+
+    <label class="mo-lbl">Photos (upload up to 10)</label>
+    <div id="ve-photo-drop" style="border:2px dashed rgba(15,30,53,.2);border-radius:9px;padding:20px;text-align:center;cursor:pointer;margin-bottom:11px;background:rgba(15,30,53,.02)">
+      <i class="ti ti-photo-up" style="font-size:28px;color:#999;display:block;margin-bottom:7px"></i>
+      <div style="font-size:13px;color:#5a5a5a">Drop photos here or <span style="color:#1a5fa8;font-weight:500">click to browse</span></div>
+      <div style="font-size:11px;color:#999;margin-top:3px">JPG, PNG up to 5MB each &mdash; first photo is the main listing photo</div>
+      <input type="file" id="ve-photo-input" accept="image/*" multiple style="display:none">
+    </div>
+    <div id="ve-photo-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
+
+    <button class="mo-btn" id="save-vacancy-btn">Save listing</button>
+    <div class="ok-msg" id="ve-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Listing saved!</div>
+    <div class="mo-err" id="ve-err">Error saving listing.</div>
+  </div>
+</div>
+
+<!-- MARK RENTED CONFIRM MODAL -->
+<div class="mo-overlay" id="mo-markrente">
+  <div class="mo-box" style="max-width:420px;text-align:center">
+    <div style="font-size:40px;margin-bottom:11px">🏠</div>
+    <div class="mo-title">Mark as rented?</div>
+    <div class="mo-sub">This will remove the listing from the public vacancy page and mark the property as occupied.</div>
+    <div style="display:flex;gap:9px;margin-top:5px">
+      <button class="btn" style="flex:1" id="cancel-rented-btn">Cancel</button>
+      <button class="mo-btn" id="confirm-rented-btn" style="flex:1;background:#2d7a4f">Yes, mark as rented</button>
+    </div>
   </div>
 </div>
 
