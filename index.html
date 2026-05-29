@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v12.1</div>
+<div class="vbadge">PropManager SC v12.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1577,6 +1577,62 @@ function attachEvents() {
 
 // ---- AUTH ----
 // showNavUser defined below with role support
+
+function showNavUser(initials, name, role) {
+  role = role || "public";
+
+  // Update nav bar buttons
+  var navBtns = document.getElementById("nav-btns");
+  if (navBtns) {
+    navBtns.innerHTML =
+      "<div style='display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.8);font-size:13px'>" +
+      "<div style='width:28px;height:28px;border-radius:50%;background:rgba(201,150,42,.3);border:1.5px solid #c9962a;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#f0c96b'>" + initials + "</div>" +
+      "<span>" + name + "</span>" +
+      "<button id='nav-signout-live' style='padding:4px 10px;border-radius:7px;font-size:12px;border:1px solid rgba(15,30,53,.15);background:#fff;color:#1a1a1a;cursor:pointer;font-family:inherit'>Sign out</button></div>";
+    setTimeout(function() {
+      var soBtn = document.getElementById("nav-signout-live");
+      if (soBtn) soBtn.onclick = function() { signOut(); };
+    }, 100);
+  }
+
+  var pubCard = document.getElementById("hero-public-card");
+  var llCard  = document.getElementById("hero-landlord-card");
+
+  if (role === "landlord") {
+    // Landlord: show portfolio overview
+    if (pubCard) pubCard.style.display = "none";
+    if (llCard)  llCard.style.display  = "block";
+    updateHeroLandlordCard();
+
+  } else if (role === "tenant" && currentTenant) {
+    // Tenant: show personalised card with ONLY their own info
+    if (llCard) llCard.style.display = "none";
+    if (pubCard) {
+      pubCard.style.display = "block";
+      var tIni = currentTenant.initials ||
+        currentTenant.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
+      pubCard.innerHTML =
+        "<div class='hc-head'>" +
+        "<div style='width:34px;height:34px;border-radius:50%;background:" + (currentTenant.color||"#dbe8ff") + ";color:" + (currentTenant.text_color||"#0C447C") + ";display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700'>" + tIni + "</div>" +
+        "<div><div class='hc-t'>Welcome, " + currentTenant.full_name.split(" ")[0] + "</div><div class='hc-s'>Your tenant portal</div></div>" +
+        "<div class='live-pill'><span class='live-dot'></span> Active</div></div>" +
+        "<div class='hc-grid' style='margin-top:14px'>" +
+        "<div class='hc-tile'><div class='hc-tile-l'>Monthly rent</div><div class='hc-tile-v'>$" + Number(currentTenant.monthly_rent||0).toLocaleString() + "</div><div class='hc-tile-s' style='color:" + (currentTenant.status==="current"?"#7ddba0":"#f5a59c") + "'>" + (currentTenant.status==="current"?"Current":"Overdue") + "</div></div>" +
+        "<div class='hc-tile'><div class='hc-tile-l'>Unit</div><div class='hc-tile-v' style='font-size:13px;line-height:1.3'>" + (currentTenant.properties ? currentTenant.properties.address : "Your unit") + "</div></div></div>" +
+        "<button id='hero-go-portal-btn' style='width:100%;margin-top:14px;padding:11px;background:#c9962a;border:none;border-radius:9px;color:#0f1e35;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit'>Go to my portal</button>";
+      setTimeout(function() {
+        var gpBtn = document.getElementById("hero-go-portal-btn");
+        if (gpBtn) gpBtn.addEventListener("click", function() { goPage("portal"); });
+      }, 50);
+    }
+
+  } else {
+    // Not logged in — show public feature card
+    if (pubCard) pubCard.style.display = "block";
+    if (llCard)  llCard.style.display  = "none";
+  }
+}
+
 
 async function tenantLogin() {
   var email = document.getElementById("t-email").value.trim();
