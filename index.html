@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v13.5</div>
+<div class="vbadge">PropManager SC v13.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -732,7 +732,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
               <i class="ti ti-lock"></i> <span id="pay-btn-label">Pay with bank account</span>
             </button>
             <div style="text-align:center;margin-top:9px">
-              <span style="font-size:12px;color:#1a5fa8;cursor:pointer" id="partial-pay-link">Can't pay the full amount? Make a partial payment</span>
+              <button style="background:none;border:none;font-size:12px;color:#1a5fa8;cursor:pointer;font-family:inherit;padding:0;text-decoration:underline" data-action="openPartialPayment">Can't pay the full amount? Make a partial payment</button>
             </div>
             <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:7px">
               <i class="ti ti-shield-check" style="font-size:13px;color:#999"></i>
@@ -1330,6 +1330,7 @@ function goPortal(id) {
   if (id === "ph") { loadPortalPayments(); }
   if (id === "mn") { loadPortalMaintenance(); }
   if (id === "ls") { loadPortalLease(); }
+  if (id === "py") { showPayStep(1); }
 }
 
 // ---- MODALS ----
@@ -1535,7 +1536,21 @@ function attachEvents() {
   // Pay tabs
   document.getElementById("pay-tab-full").addEventListener("click", function() { swPayTab("full"); });
   document.getElementById("pay-tab-flex").addEventListener("click", function() { swPayTab("flex"); });
-  document.getElementById("submit-payment-btn").addEventListener("click", logPayment);
+  // Review button (step 1 -> step 2)
+  var reviewBtn = document.getElementById("review-payment-btn");
+  if (reviewBtn) reviewBtn.addEventListener("click", reviewPayment);
+
+  // Back button (step 2 -> step 1)
+  var backBtn = document.getElementById("back-to-pay-btn");
+  if (backBtn) backBtn.addEventListener("click", function() { showPayStep(1); });
+
+  // Confirm & Pay button (step 2 -> submit)
+  var confirmBtn = document.getElementById("submit-payment-btn");
+  if (confirmBtn) confirmBtn.addEventListener("click", logPayment);
+
+  // Done button (step 3 -> home)
+  var doneBtn = document.getElementById("done-pay-btn");
+  if (doneBtn) doneBtn.addEventListener("click", function() { goPortal("hm"); showPayStep(1); });
   var achOpt = document.getElementById("pay-method-ach");
   if (achOpt) achOpt.addEventListener("click", function() { selectPayMethod("ach"); });
   var cardOpt = document.getElementById("pay-method-card");
@@ -2099,6 +2114,16 @@ async function sendMessage() {
 // Stripe payment method selection
 var _payMethod = "ach";
 var _stripeCardElement = null;
+var _payReviewData = {};
+
+function showPayStep(step) {
+  ["pay-step-1","pay-step-2","pay-step-3"].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+  var target = document.getElementById("pay-step-" + step);
+  if (target) target.style.display = "block";
+}
 
 function initStripePayment() {
   if (!stripe || _stripeCardElement) return;
@@ -2134,6 +2159,31 @@ function selectPayMethod(method) {
   document.getElementById("pay-btn-label").textContent = isCard ? "Pay with card" : "Pay with bank account";
   // Init card element if needed
   if (isCard) { initStripePayment(); }
+}
+
+function reviewPayment() {
+  if (!currentTenant) return;
+  var rent    = currentTenant.monthly_rent || 0;
+  var name    = document.getElementById("pay-name").value.trim() || currentTenant.full_name;
+  var isCard  = _payMethod === "card";
+  var fee     = isCard ? Math.round(rent * 0.029 + 0.30) : 0;
+  var total   = rent + fee;
+  var month   = new Date().toLocaleDateString("en-US", { month:"long", year:"numeric" });
+  var addr    = currentTenant.properties ? currentTenant.properties.address : "Your unit";
+  var method  = isCard ? "Credit / Debit Card" : "Bank Account (ACH)";
+
+  // Store for submission
+  _payReviewData = { rent:rent, fee:fee, total:total, method:isCard?"Card":"ACH", month:month, addr:addr, name:name };
+
+  // Populate review screen
+  document.getElementById("review-property").textContent = addr;
+  document.getElementById("review-month").textContent    = month + " rent";
+  document.getElementById("review-method").textContent   = method;
+  document.getElementById("review-fee").textContent      = isCard ? "$" + fee.toFixed(2) + " (2.9% + 30¢)" : "Free";
+  document.getElementById("review-total").textContent    = "$" + total.toLocaleString();
+  document.getElementById("pay-btn-label").textContent   = "Confirm & pay $" + total.toLocaleString();
+
+  showPayStep(2);
 }
 
 async function logPayment() {
@@ -2176,28 +2226,41 @@ async function logPayment() {
 
 async function recordPaymentInDB(method) {
   var btn = document.getElementById("submit-payment-btn");
+  var rent = _payReviewData.rent || (currentTenant ? currentTenant.monthly_rent : 0);
+  var month = _payReviewData.month || new Date().toLocaleDateString("en-US",{month:"long",year:"numeric"});
   if (sb && currentTenant) {
     var res = await sb.from("payments").insert({
-      tenant_id: currentTenant.id,
+      tenant_id:   currentTenant.id,
       property_id: currentTenant.property_id,
-      amount: currentTenant.monthly_rent,
+      amount:      rent,
       payment_date: new Date().toISOString().split("T")[0],
-      method: method,
-      status: "paid",
-      notes: new Date().toLocaleDateString("en-US",{month:"long",year:"numeric"}) + " rent via portal"
+      method:      method,
+      status:      "paid",
+      notes:       month + " rent via portal"
     });
     if (res.error) {
       var errEl = document.getElementById("pay-err");
-      errEl.textContent = "Error recording payment: " + res.error.message;
+      errEl.textContent = "Error: " + res.error.message;
       errEl.style.display = "block";
       btn.disabled = false;
-      btn.innerHTML = "<i class='ti ti-lock'></i> <span id='pay-btn-label'>Pay now</span>";
+      btn.innerHTML = "<i class='ti ti-lock'></i> Confirm &amp; pay";
       return;
     }
   }
-  showOk("pay-ok");
+  // Show receipt (step 3)
+  var receiptEl = document.getElementById("receipt-details");
+  if (receiptEl) {
+    receiptEl.innerHTML =
+      "Tenant: <strong>" + (currentTenant ? currentTenant.full_name : "") + "</strong><br>" +
+      "Property: <strong>" + (_payReviewData.addr||"") + "</strong><br>" +
+      "Period: <strong>" + month + "</strong><br>" +
+      "Amount: <strong>$" + Number(rent).toLocaleString() + "</strong><br>" +
+      "Method: <strong>" + method + "</strong><br>" +
+      "Date: <strong>" + new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) + "</strong><br>" +
+      "Status: <strong style='color:#2d7a4f'>Confirmed ✔</strong>";
+  }
+  showPayStep(3);
   btn.disabled = false;
-  btn.innerHTML = "<i class='ti ti-lock'></i> <span id='pay-btn-label'>Pay now</span>";
   if (currentTenant) loadPortalHome();
 }
 
@@ -4530,14 +4593,15 @@ document.addEventListener("DOMContentLoaded", function() {
     var action = btn.getAttribute("data-action");
     var param  = btn.getAttribute("data-param");
     var actions = {
-      "goPage":          function() { goPage(param); },
-      "goDash":          function() { goDash(param); },
-      "goPortal":        function() { goPortal(param); },
-      "openMo":          function() { openMo(param); },
-      "closeMo":         function() { closeMo(param); },
-      "signOut":         function() { signOut(); },
-      "sendLateNotices": function() { sendLateNotices(); },
-      "selectNotice":    function() {
+      "goPage":             function() { goPage(param); },
+      "goDash":             function() { goDash(param); },
+      "goPortal":           function() { goPortal(param); },
+      "openMo":             function() { openMo(param); },
+      "closeMo":            function() { closeMo(param); },
+      "signOut":            function() { signOut(); },
+      "sendLateNotices":    function() { sendLateNotices(); },
+      "openPartialPayment": function() { openPartialPayment(); },
+      "selectNotice":       function() {
         var parts = (param||"").split("|");
         selectNotice(parts[0], parts[1], parts[2], parseFloat(parts[3])||0);
       }
