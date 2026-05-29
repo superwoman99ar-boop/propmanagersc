@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v13.4</div>
+<div class="vbadge">PropManager SC v13.5</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -351,7 +351,10 @@ footer{background:#0f1e35;padding:44px 20px 26px}
   <div class="dash-main">
     <div class="dash-topbar">
       <div class="dash-title" id="dash-title">Dashboard</div>
-      <div style="display:flex;gap:7px">
+      <div style="display:flex;gap:7px;align-items:center">
+        <div style="position:relative">
+          <button class="btn" id="notif-bell-btn" style="position:relative"><i class="ti ti-bell"></i> <span id="notif-count" style="display:none;position:absolute;top:-5px;right:-5px;background:#c0392b;color:#fff;font-size:9px;font-weight:600;padding:1px 5px;border-radius:10px">0</span></button>
+        </div>
         <button class="btn" id="btn-preview-portal"><i class="ti ti-eye"></i> Preview Tenant Portal</button>
         <button class="btn btn-r" id="btn-issue-notice"><i class="ti ti-alert-triangle"></i> Issue Notice</button>
         <button class="btn btn-n" id="btn-add-tenant"><i class="ti ti-plus"></i> Add Tenant</button>
@@ -628,7 +631,8 @@ footer{background:#0f1e35;padding:44px 20px 26px}
       <button class="pni" id="pi-ms"><i class="ti ti-message"></i> Messages <span class="p-badge" id="msg-badge" style="display:none">!</span></button>
       <button class="pni" id="pi-ls"><i class="ti ti-file-text"></i> My Lease</button>
     </div>
-    <div style="padding:11px 14px;border-top:1px solid rgba(15,30,53,.1)">
+    <div style="padding:11px 14px;border-top:1px solid rgba(15,30,53,.1);display:flex;flex-direction:column;gap:6px">
+      <button id="portal-change-pass-btn" style="display:flex;align-items:center;gap:7px;font-size:12px;color:#5a5a5a;cursor:pointer;background:none;border:none;font-family:inherit"><i class="ti ti-lock"></i> Change password</button>
       <button id="portal-signout-btn" style="display:flex;align-items:center;gap:7px;font-size:12px;color:#5a5a5a;cursor:pointer;background:none;border:none;font-family:inherit"><i class="ti ti-logout"></i> Sign out</button>
     </div>
   </div>
@@ -727,7 +731,10 @@ footer{background:#0f1e35;padding:44px 20px 26px}
             <button class="btn btn-n" style="width:100%;justify-content:center;padding:12px;font-size:14px" id="submit-payment-btn">
               <i class="ti ti-lock"></i> <span id="pay-btn-label">Pay with bank account</span>
             </button>
-            <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:9px">
+            <div style="text-align:center;margin-top:9px">
+              <span style="font-size:12px;color:#1a5fa8;cursor:pointer" id="partial-pay-link">Can't pay the full amount? Make a partial payment</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:7px">
               <i class="ti ti-shield-check" style="font-size:13px;color:#999"></i>
               <span style="font-size:11px;color:#999">Secured by Stripe &mdash; bank-level encryption</span>
             </div>
@@ -1145,7 +1152,11 @@ footer{background:#0f1e35;padding:44px 20px 26px}
       <input class="mo-inp" type="password" id="t-pass" placeholder="Your password">
       <button class="mo-btn" id="tenant-login-btn">Sign in to portal</button>
       <div class="mo-err" id="t-err">Incorrect email or password.</div>
-      <div style="margin-top:13px;text-align:center;font-size:13px;color:#5a5a5a">No account? <span style="color:#c9962a;cursor:pointer;font-weight:500" id="contact-link-from-login">Contact your landlord</span></div>
+      <div style="margin-top:11px;text-align:center;font-size:13px;color:#5a5a5a">
+        <span style="color:#1a5fa8;cursor:pointer" id="forgot-pass-link">Forgot password?</span>
+        &nbsp;&middot;&nbsp;
+        No account? <span style="color:#c9962a;cursor:pointer;font-weight:500" id="contact-link-from-login">Contact your landlord</span>
+      </div>
     </div>
     <div class="mo-ok" id="tenant-ok">
       <i class="ti ti-circle-check" style="color:#2d7a4f"></i>
@@ -1356,7 +1367,15 @@ function attachEvents() {
 
   // Nav buttons
   document.getElementById("nb-home").addEventListener("click", function() { goPage("home"); });
-  document.getElementById("nb-dashboard").addEventListener("click", function() { goPage("dashboard"); });
+  document.getElementById("nb-dashboard").addEventListener("click", function() {
+    if (currentRole === "landlord") {
+      goPage("dashboard");
+    } else if (currentRole === "tenant") {
+      goPage("portal");
+    } else {
+      openMo("landlord");
+    }
+  });
   document.getElementById("nb-portal").addEventListener("click", function() { openMo("tenant"); });
   document.getElementById("nb-vacancy").addEventListener("click", function() { goPage("vacancy"); initVacancyPage(); });
   document.getElementById("nb-contact").addEventListener("click", function() { goPage("contact"); });
@@ -1624,7 +1643,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -1740,7 +1759,7 @@ function attachEvents() {
     });
   });
 
-  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal","mo-vacancyedit","mo-markrente","mo-register","mo-stripeconnect"].forEach(function(id) {
+  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal","mo-vacancyedit","mo-markrente","mo-register","mo-stripeconnect","mo-forgotpass","mo-changepass","mo-notifications","mo-partial"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", function(e) {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
@@ -2185,6 +2204,7 @@ async function recordPaymentInDB(method) {
 // ---- DASHBOARD DATA ----
 async function loadDashboardData() {
   if (!sb) return;
+  if (currentRole !== "landlord") { console.warn("Dashboard access denied"); return; }
   var tRes = await sb.from("tenants").select("*, properties(*)").order("full_name");
   var prRes = await sb.from("properties").select("*").order("address");
   if (prRes.data) window._propCache = prRes.data;
@@ -2257,6 +2277,9 @@ async function loadDashboardData() {
       updateHeroLandlordCard();
     }
     checkStripeConnectStatus();
+    requestBrowserNotifications();
+    // Poll every 60 seconds for new messages/maintenance
+    setInterval(pollForNotifications, 60000);
   }
 
   var alertEl = document.getElementById("overdue-alert");
@@ -4246,6 +4269,223 @@ function checkStripeConnectStatus() {
   } catch(e) {}
 }
 
+
+// ════════════════════════════════════════════════════════════
+// PASSWORD MANAGEMENT
+// ════════════════════════════════════════════════════════════
+async function sendPasswordReset() {
+  var email = document.getElementById("fp-email").value.trim();
+  if (!email) {
+    document.getElementById("fp-err").style.display = "block";
+    return;
+  }
+  document.getElementById("fp-err").style.display = "none";
+  if (!sb) return;
+  var result = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  document.getElementById("fp-form").style.display = "none";
+  document.getElementById("fp-ok").style.display = "block";
+}
+
+async function changePassword() {
+  var newPass    = document.getElementById("cp-new").value;
+  var confirmPass = document.getElementById("cp-confirm").value;
+  var errEl = document.getElementById("cp-err");
+  if (!newPass || newPass.length < 8) {
+    errEl.style.display = "block";
+    errEl.textContent = "Password must be at least 8 characters.";
+    return;
+  }
+  if (newPass !== confirmPass) {
+    errEl.style.display = "block";
+    errEl.textContent = "Passwords do not match.";
+    return;
+  }
+  errEl.style.display = "none";
+  if (!sb) return;
+  var result = await sb.auth.updateUser({ password: newPass });
+  if (result.error) {
+    errEl.style.display = "block";
+    errEl.textContent = result.error.message;
+  } else {
+    showOk("cp-ok");
+    setTimeout(function() { closeMo("changepass"); }, 2000);
+  }
+}
+
+// Handle password reset redirect from email link
+function checkPasswordResetFlow() {
+  var hashParams = new URLSearchParams(window.location.hash.replace("#","?"));
+  var type = hashParams.get("type");
+  if (type === "recovery") {
+    // Open change password modal automatically
+    document.getElementById("cp-new").value = "";
+    document.getElementById("cp-confirm").value = "";
+    document.getElementById("cp-err").style.display = "none";
+    document.getElementById("cp-ok").classList.remove("on");
+    openMo("changepass");
+    // Clean URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ════════════════════════════════════════════════════════════
+var _notifSettings = {
+  message: true, maintenance: true, payment: true, late: true, lease: true,
+  email: ""
+};
+
+function saveNotificationSettings() {
+  _notifSettings.message     = document.getElementById("notif-message").checked;
+  _notifSettings.maintenance = document.getElementById("notif-maintenance").checked;
+  _notifSettings.payment     = document.getElementById("notif-payment").checked;
+  _notifSettings.late        = document.getElementById("notif-late").checked;
+  _notifSettings.lease       = document.getElementById("notif-lease").checked;
+  _notifSettings.email       = document.getElementById("notif-email").value.trim();
+  try { localStorage.setItem("propmanager_notifications", JSON.stringify(_notifSettings)); } catch(e) {}
+  showOk("notif-ok");
+  setTimeout(function() { closeMo("notifications"); }, 1500);
+}
+
+function loadNotificationSettings() {
+  try {
+    var saved = localStorage.getItem("propmanager_notifications");
+    if (saved) { _notifSettings = JSON.parse(saved); }
+  } catch(e) {}
+  // Apply to checkboxes if modal exists
+  var ids = ["message","maintenance","payment","late","lease"];
+  ids.forEach(function(id) {
+    var el = document.getElementById("notif-" + id);
+    if (el) el.checked = _notifSettings[id] !== false;
+  });
+}
+
+function showInAppNotification(type, title, body, count) {
+  // Update bell badge count
+  var countEl = document.getElementById("notif-count");
+  if (countEl) {
+    var current = parseInt(countEl.textContent || "0");
+    var newCount = count !== undefined ? count : current + 1;
+    if (newCount > 0) {
+      countEl.textContent = newCount > 9 ? "9+" : newCount;
+      countEl.style.display = "block";
+    } else {
+      countEl.style.display = "none";
+    }
+  }
+  // Show browser notification if permitted
+  if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+    new Notification("PropManager SC: " + title, { body: body, icon: "/favicon.ico" });
+  }
+  // Show in-page toast
+  var toast = document.createElement("div");
+  toast.style.cssText = "position:fixed;bottom:50px;right:14px;background:#0f1e35;color:#fff;padding:12px 16px;border-radius:10px;font-size:13px;z-index:9999;max-width:300px;box-shadow:0 4px 20px rgba(0,0,0,.3);border-left:3px solid";
+  var colors = { message:"#1a5fa8", maintenance:"#c9962a", payment:"#2d7a4f", late:"#c0392b", lease:"#a06010" };
+  toast.style.borderLeftColor = colors[type] || "#c9962a";
+  toast.innerHTML = "<div style='font-weight:500;margin-bottom:3px'>" + title + "</div><div style='font-size:12px;opacity:.8'>" + body + "</div>";
+  document.body.appendChild(toast);
+  setTimeout(function() {
+    toast.style.transition = "opacity .4s";
+    toast.style.opacity = "0";
+    setTimeout(function() { toast.remove(); }, 400);
+  }, 5000);
+}
+
+function requestBrowserNotifications() {
+  if (typeof Notification !== "undefined" && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+// Poll for new messages/maintenance when landlord is logged in
+var _lastNotifCheck = null;
+async function pollForNotifications() {
+  if (!sb || currentRole !== "landlord") return;
+  var now = new Date().toISOString();
+  var checkFrom = _lastNotifCheck || new Date(Date.now() - 60000).toISOString();
+  _lastNotifCheck = now;
+
+  // Check for new messages
+  if (_notifSettings.message) {
+    var msgRes = await sb.from("messages")
+      .select("id, body, tenant_id, tenants(full_name)")
+      .eq("sender", "tenant")
+      .eq("read", false)
+      .gt("created_at", checkFrom);
+    if (msgRes.data && msgRes.data.length > 0) {
+      msgRes.data.forEach(function(m) {
+        var name = m.tenants ? m.tenants.full_name : "A tenant";
+        showInAppNotification("message", "New message", name + ": " + (m.body||"").slice(0,60));
+      });
+    }
+  }
+
+  // Check for new maintenance
+  if (_notifSettings.maintenance) {
+    var mRes = await sb.from("maintenance")
+      .select("id, issue, tenants(full_name)")
+      .gt("created_at", checkFrom);
+    if (mRes.data && mRes.data.length > 0) {
+      mRes.data.forEach(function(m) {
+        var name = m.tenants ? m.tenants.full_name : "A tenant";
+        showInAppNotification("maintenance", "Maintenance request", name + ": " + (m.issue||"").slice(0,60));
+      });
+    }
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// PARTIAL PAYMENT
+// ════════════════════════════════════════════════════════════
+function openPartialPayment() {
+  var rent = currentTenant ? Number(currentTenant.monthly_rent || 0) : 0;
+  var totalEl = document.getElementById("partial-total");
+  if (totalEl) totalEl.textContent = "$" + rent.toLocaleString() + ".00";
+  var amtEl = document.getElementById("partial-amount");
+  if (amtEl) { amtEl.value = ""; amtEl.max = rent; }
+  document.getElementById("partial-ok").classList.remove("on");
+  document.getElementById("partial-err").style.display = "none";
+  document.getElementById("partial-note").value = "";
+  openMo("partial");
+}
+
+async function submitPartialPayment() {
+  var amt   = parseFloat(document.getElementById("partial-amount").value);
+  var note  = document.getElementById("partial-note").value.trim();
+  var method = document.getElementById("partial-method").value.includes("ACH") ? "ACH" : "Card";
+  var errEl  = document.getElementById("partial-err");
+  var rent   = currentTenant ? Number(currentTenant.monthly_rent || 0) : 0;
+
+  if (!amt || amt <= 0 || amt > rent) {
+    errEl.style.display = "block";
+    errEl.textContent = "Please enter an amount between $1 and $" + rent.toLocaleString() + ".";
+    return;
+  }
+  errEl.style.display = "none";
+
+  if (sb && currentTenant) {
+    var result = await sb.from("payments").insert({
+      tenant_id:   currentTenant.id,
+      property_id: currentTenant.property_id,
+      amount:      amt,
+      payment_date: new Date().toISOString().split("T")[0],
+      method:      method,
+      status:      "partial",
+      notes:       "Partial payment" + (note ? ": " + note : "") + " (balance: $" + (rent - amt).toLocaleString() + ")"
+    });
+    if (result.error) {
+      errEl.style.display = "block";
+      errEl.textContent = result.error.message;
+      return;
+    }
+  }
+  showOk("partial-ok");
+  setTimeout(function() { closeMo("partial"); loadPortalHome(); }, 2000);
+}
+
 // ---- FORM SUBMITS ----
 function submitVacancy() {
   var n = document.getElementById("vi-name").value;
@@ -4264,6 +4504,11 @@ function submitApply() {
 
 // ---- INIT ----
 document.addEventListener("DOMContentLoaded", function() {
+  // Check for password reset flow (from email link)
+  checkPasswordResetFlow();
+  // Load saved notification settings
+  loadNotificationSettings();
+
   // Check for Stripe Connect OAuth callback
   var urlParams = new URLSearchParams(window.location.search);
   var stripeCode  = urlParams.get("code");
@@ -4932,6 +5177,124 @@ document.addEventListener("DOMContentLoaded", function() {
       </div>
       <button class="btn" id="sc-disconnect-btn" style="font-size:12px;color:#c0392b;border-color:#c0392b">Disconnect Stripe</button>
     </div>
+  </div>
+</div>
+
+
+<!-- FORGOT PASSWORD MODAL -->
+<div class="mo-overlay" id="mo-forgotpass">
+  <div class="mo-box" style="max-width:420px">
+    <button class="mo-close" id="close-forgotpass-mo"><i class="ti ti-x"></i></button>
+    <div id="fp-form">
+      <div class="mo-title">Reset your password</div>
+      <div class="mo-sub">Enter your email and we will send a reset link.</div>
+      <label class="mo-lbl">Email address</label>
+      <input class="mo-inp" type="email" id="fp-email" placeholder="your@email.com">
+      <button class="mo-btn" id="send-reset-btn">Send reset link</button>
+      <div class="mo-err" id="fp-err">Please enter your email address.</div>
+    </div>
+    <div class="mo-ok" id="fp-ok" style="display:block;display:none;text-align:center;padding:14px 0">
+      <i class="ti ti-mail-check" style="font-size:42px;color:#2d7a4f;display:block;margin-bottom:9px"></i>
+      <div style="font-size:17px;font-weight:500;color:#0f1e35;margin-bottom:5px">Reset link sent!</div>
+      <div style="font-size:13px;color:#5a5a5a">Check your email and click the link to set a new password. Check your spam folder if you don't see it within a few minutes.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL (for logged-in tenants) -->
+<div class="mo-overlay" id="mo-changepass">
+  <div class="mo-box" style="max-width:420px">
+    <button class="mo-close" id="close-changepass-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Change password</div>
+    <div class="mo-sub">Enter a new password for your account.</div>
+    <label class="mo-lbl">New password</label>
+    <input class="mo-inp" type="password" id="cp-new" placeholder="At least 8 characters">
+    <label class="mo-lbl">Confirm new password</label>
+    <input class="mo-inp" type="password" id="cp-confirm" placeholder="Repeat your new password">
+    <button class="mo-btn" id="save-password-btn">Save new password</button>
+    <div class="mo-err" id="cp-err">Passwords do not match.</div>
+    <div class="ok-msg" id="cp-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Password updated successfully!</div>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS SETTINGS MODAL -->
+<div class="mo-overlay" id="mo-notifications">
+  <div class="mo-box" style="max-width:460px">
+    <button class="mo-close" id="close-notif-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Notification settings</div>
+    <div class="mo-sub">Choose how you receive alerts. Email notifications require Resend setup.</div>
+    <div style="background:#e6f0fb;border:1px solid rgba(26,95,168,.2);border-radius:7px;padding:11px 13px;font-size:12.5px;color:#1a5fa8;margin-bottom:16px">
+      <strong>In-app notifications are live now.</strong> Browser notifications work when propmanagersc.com is open. Email notifications require connecting Resend.com (free — I can set this up for you).
+    </div>
+    <div style="display:flex;flex-direction:column;gap:13px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:rgba(15,30,53,.03);border-radius:8px">
+        <div><div style="font-size:13px;font-weight:500">New message from tenant</div><div style="font-size:11.5px;color:#5a5a5a">When a tenant sends you a message</div></div>
+        <label style="position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0">
+          <input type="checkbox" id="notif-message" checked style="opacity:0;width:0;height:0">
+          <span style="position:absolute;cursor:pointer;inset:0;background:#0f1e35;border-radius:22px;transition:.3s"></span>
+        </label>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:rgba(15,30,53,.03);border-radius:8px">
+        <div><div style="font-size:13px;font-weight:500">New maintenance request</div><div style="font-size:11.5px;color:#5a5a5a">When a tenant submits a repair request</div></div>
+        <label style="position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0">
+          <input type="checkbox" id="notif-maintenance" checked style="opacity:0;width:0;height:0">
+          <span style="position:absolute;cursor:pointer;inset:0;background:#0f1e35;border-radius:22px;transition:.3s"></span>
+        </label>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:rgba(15,30,53,.03);border-radius:8px">
+        <div><div style="font-size:13px;font-weight:500">Rent payment received</div><div style="font-size:11.5px;color:#5a5a5a">When a tenant pays rent online</div></div>
+        <label style="position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0">
+          <input type="checkbox" id="notif-payment" checked style="opacity:0;width:0;height:0">
+          <span style="position:absolute;cursor:pointer;inset:0;background:#0f1e35;border-radius:22px;transition:.3s"></span>
+        </label>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:rgba(15,30,53,.03);border-radius:8px">
+        <div><div style="font-size:13px;font-weight:500">Rent past due alert</div><div style="font-size:11.5px;color:#5a5a5a">When a tenant misses the due date</div></div>
+        <label style="position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0">
+          <input type="checkbox" id="notif-late" checked style="opacity:0;width:0;height:0">
+          <span style="position:absolute;cursor:pointer;inset:0;background:#0f1e35;border-radius:22px;transition:.3s"></span>
+        </label>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;background:rgba(15,30,53,.03);border-radius:8px">
+        <div><div style="font-size:13px;font-weight:500">Lease expiring soon</div><div style="font-size:11.5px;color:#5a5a5a">60 days before a lease ends</div></div>
+        <label style="position:relative;display:inline-block;width:40px;height:22px;flex-shrink:0">
+          <input type="checkbox" id="notif-lease" checked style="opacity:0;width:0;height:0">
+          <span style="position:absolute;cursor:pointer;inset:0;background:#0f1e35;border-radius:22px;transition:.3s"></span>
+        </label>
+      </div>
+    </div>
+    <div style="font-size:13px;font-weight:500;margin-bottom:9px">Notify me at:</div>
+    <input class="mo-inp" type="email" id="notif-email" placeholder="your@email.com">
+    <button class="mo-btn" id="save-notif-btn">Save notification settings</button>
+    <div class="ok-msg" id="notif-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Notification settings saved!</div>
+  </div>
+</div>
+
+<!-- PARTIAL PAYMENT MODAL -->
+<div class="mo-overlay" id="mo-partial">
+  <div class="mo-box" style="max-width:460px">
+    <button class="mo-close" id="close-partial-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Make a partial payment</div>
+    <div class="mo-sub" id="partial-sub">Pay what you can now and the remainder later.</div>
+    <div style="background:#fdf3e0;border:1px solid rgba(160,96,16,.2);border-radius:7px;padding:11px 13px;font-size:12.5px;color:#a06010;margin-bottom:14px">
+      <i class="ti ti-info-circle"></i> <strong>Note:</strong> Partial payments do not stop late fees. The full balance must be paid within your landlord's grace period to avoid a late notice. Contact your landlord if you need a payment arrangement.
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:10px 13px;background:rgba(15,30,53,.04);border-radius:8px;margin-bottom:13px;font-size:13px">
+      <span style="color:#5a5a5a">Total due</span>
+      <span style="font-weight:600" id="partial-total">$0.00</span>
+    </div>
+    <label class="mo-lbl">Amount to pay now ($)</label>
+    <input class="mo-inp" type="number" id="partial-amount" placeholder="0.00" min="1" step="0.01">
+    <label class="mo-lbl">Payment method</label>
+    <select class="mo-inp" id="partial-method">
+      <option>ACH (bank transfer) — free</option>
+      <option>Card — 2.9% fee</option>
+    </select>
+    <label class="mo-lbl">Note to landlord (optional)</label>
+    <input class="mo-inp" type="text" id="partial-note" placeholder="e.g. Paying remainder on Friday">
+    <button class="mo-btn" id="submit-partial-btn">Submit partial payment</button>
+    <div class="ok-msg" id="partial-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Partial payment recorded! Your landlord has been notified.</div>
+    <div class="mo-err" id="partial-err">Please enter a valid amount.</div>
   </div>
 </div>
 
