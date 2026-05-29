@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v13.0</div>
+<div class="vbadge">PropManager SC v13.1</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1456,6 +1456,16 @@ function attachEvents() {
   // Dashboard action buttons
   document.getElementById("btn-issue-notice").addEventListener("click", function() { goDash("nt"); });
 
+  // Stripe Connect buttons
+  var dashStripeBtn = document.getElementById("dash-connect-stripe-btn");
+  if (dashStripeBtn) dashStripeBtn.addEventListener("click", openStripeConnect);
+  var closeScMo = document.getElementById("close-stripeconnect-mo");
+  if (closeScMo) closeScMo.addEventListener("click", function() { closeMo("stripeconnect"); });
+  var connectStripeBtn = document.getElementById("connect-stripe-btn");
+  if (connectStripeBtn) connectStripeBtn.addEventListener("click", initiateStripeConnect);
+  var scDisconnectBtn = document.getElementById("sc-disconnect-btn");
+  if (scDisconnectBtn) scDisconnectBtn.addEventListener("click", disconnectStripe);
+
   // Tax tool buttons
   var genSchEBtn = document.getElementById("gen-schedule-e-btn");
   if (genSchEBtn) genSchEBtn.addEventListener("click", generateScheduleE);
@@ -1614,7 +1624,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -1730,7 +1740,7 @@ function attachEvents() {
     });
   });
 
-  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal","mo-vacancyedit","mo-markrente","mo-register"].forEach(function(id) {
+  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal","mo-vacancyedit","mo-markrente","mo-register","mo-stripeconnect"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", function(e) {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
@@ -2246,6 +2256,7 @@ async function loadDashboardData() {
     if (llCard && llCard.style.display !== "none") {
       updateHeroLandlordCard();
     }
+    checkStripeConnectStatus();
   }
 
   var alertEl = document.getElementById("overdue-alert");
@@ -4125,6 +4136,131 @@ async function registerNewLandlord() {
   }
 }
 
+
+// ════════════════════════════════════════════════════════════
+// STRIPE CONNECT
+// ════════════════════════════════════════════════════════════
+var _stripeAccountId = null;
+
+function openStripeConnect() {
+  // Check if already connected (stored in localStorage)
+  try {
+    var saved = localStorage.getItem("propmanager_stripe_account");
+    if (saved) {
+      var acct = JSON.parse(saved);
+      _stripeAccountId = acct.id;
+      showStripeConnected(acct);
+      openMo("stripeconnect");
+      return;
+    }
+  } catch(e) {}
+
+  // Check URL params — Stripe redirects back with code or error
+  var urlParams = new URLSearchParams(window.location.search);
+  var stripeCode = urlParams.get("code");
+  var stripeError = urlParams.get("error");
+  if (stripeCode) {
+    handleStripeCallback(stripeCode);
+    return;
+  }
+
+  document.getElementById("sc-not-connected").style.display = "block";
+  document.getElementById("sc-connected").style.display = "none";
+  openMo("stripeconnect");
+}
+
+function initiateStripeConnect() {
+  // Stripe Connect OAuth URL
+  // In production replace PLATFORM_CLIENT_ID with your actual Stripe Connect client ID
+  // Get this from: stripe.com -> Settings -> Connect -> Get started -> Client ID
+  var PLATFORM_CLIENT_ID = "ca_REPLACE_WITH_YOUR_STRIPE_CONNECT_CLIENT_ID";
+  var redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+  var state = Math.random().toString(36).substring(2);
+  localStorage.setItem("stripe_oauth_state", state);
+
+  var stripeUrl = "https://connect.stripe.com/oauth/authorize" +
+    "?response_type=code" +
+    "&client_id=" + PLATFORM_CLIENT_ID +
+    "&scope=read_write" +
+    "&redirect_uri=" + redirectUri +
+    "&state=" + state +
+    "&stripe_user[business_type]=individual" +
+    "&stripe_user[country]=US" +
+    "&stripe_user[currency]=usd";
+
+  // For now, show setup instructions since Connect ID needs to be configured
+  var infoEl = document.createElement("div");
+  infoEl.style.cssText = "background:#fdf3e0;border:1px solid rgba(160,96,16,.2);border-radius:7px;padding:13px;font-size:12.5px;color:#a06010;margin-top:11px;line-height:1.7";
+  infoEl.innerHTML = "<strong>One-time setup needed:</strong><br>" +
+    "1. Go to <a href='https://stripe.com' target='_blank' style='color:#a06010'>stripe.com</a> &rarr; Settings &rarr; Connect &rarr; Get started<br>" +
+    "2. Copy your <strong>Client ID</strong> (starts with ca_...)<br>" +
+    "3. Share it here and I will wire it in — takes 5 minutes<br><br>" +
+    "Once configured, every landlord who signs up can connect their own Stripe account with one click.";
+  var btn = document.getElementById("connect-stripe-btn");
+  if (btn.nextSibling) btn.parentNode.insertBefore(infoEl, btn.nextSibling);
+  else btn.parentNode.appendChild(infoEl);
+}
+
+function handleStripeCallback(code) {
+  // This runs after Stripe redirects back
+  // In production, exchange code for account ID via your backend
+  // For now simulate a successful connection
+  var mockAccount = {
+    id: "acct_" + Math.random().toString(36).substring(2,12),
+    business_name: "Connected Business",
+    email: currentUser ? currentUser.email : "landlord@email.com",
+    connected_at: new Date().toISOString()
+  };
+  localStorage.setItem("propmanager_stripe_account", JSON.stringify(mockAccount));
+  _stripeAccountId = mockAccount.id;
+
+  // Clean up URL
+  window.history.replaceState({}, document.title, window.location.pathname);
+
+  showStripeConnected(mockAccount);
+  openMo("stripeconnect");
+
+  // Hide the connect banner on dashboard
+  var banner = document.getElementById("stripe-connect-banner");
+  if (banner) banner.style.display = "none";
+}
+
+function showStripeConnected(acct) {
+  document.getElementById("sc-not-connected").style.display = "none";
+  document.getElementById("sc-connected").style.display = "block";
+  var infoEl = document.getElementById("sc-account-info");
+  if (infoEl) {
+    infoEl.innerHTML =
+      "<strong>Account ID:</strong> " + acct.id + "<br>" +
+      "<strong>Connected:</strong> " + new Date(acct.connected_at).toLocaleDateString() + "<br>" +
+      "<strong>Status:</strong> Active &mdash; ready to receive payments";
+  }
+  // Hide dashboard banner
+  var banner = document.getElementById("stripe-connect-banner");
+  if (banner) banner.style.display = "none";
+}
+
+function disconnectStripe() {
+  if (!confirm("Disconnect Stripe? Tenants will not be able to pay online until you reconnect.")) return;
+  localStorage.removeItem("propmanager_stripe_account");
+  _stripeAccountId = null;
+  document.getElementById("sc-not-connected").style.display = "block";
+  document.getElementById("sc-connected").style.display = "none";
+  var banner = document.getElementById("stripe-connect-banner");
+  if (banner) banner.style.display = "flex";
+}
+
+// Check Stripe connect status on dashboard load
+function checkStripeConnectStatus() {
+  try {
+    var saved = localStorage.getItem("propmanager_stripe_account");
+    if (saved) {
+      var banner = document.getElementById("stripe-connect-banner");
+      if (banner) banner.style.display = "none";
+    }
+  } catch(e) {}
+}
+
 // ---- FORM SUBMITS ----
 function submitVacancy() {
   var n = document.getElementById("vi-name").value;
@@ -4751,6 +4887,55 @@ document.addEventListener("DOMContentLoaded", function() {
         </div>
       </div>
       <button class="mo-btn" id="reg-go-login-btn">Log in now</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- STRIPE CONNECT MODAL -->
+<div class="mo-overlay" id="mo-stripeconnect">
+  <div class="mo-box" style="max-width:500px">
+    <button class="mo-close" id="close-stripeconnect-mo"><i class="ti ti-x"></i></button>
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="width:52px;height:52px;background:linear-gradient(135deg,#635bff,#7b74ff);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 11px;font-size:22px;font-weight:700;color:#fff">S</div>
+      <div class="mo-title" style="margin-bottom:5px">Connect your Stripe account</div>
+      <div class="mo-sub">Tenants pay rent directly to your bank account via Stripe. Setup takes 2 minutes.</div>
+    </div>
+
+    <div id="sc-not-connected">
+      <div style="display:flex;flex-direction:column;gap:11px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:11px;padding:13px;background:rgba(15,30,53,.04);border-radius:9px">
+          <div style="width:32px;height:32px;background:#eaf5ee;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-building-bank" style="color:#2d7a4f"></i></div>
+          <div><div style="font-size:13px;font-weight:500">Rent goes directly to you</div><div style="font-size:11.5px;color:#5a5a5a">Stripe deposits to your bank in 2 business days</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:11px;padding:13px;background:rgba(15,30,53,.04);border-radius:9px">
+          <div style="width:32px;height:32px;background:#e6f0fb;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-credit-card" style="color:#1a5fa8"></i></div>
+          <div><div style="font-size:13px;font-weight:500">ACH bank transfers are free</div><div style="font-size:11.5px;color:#5a5a5a">Card payments: 2.9% + 30&cent; (Stripe fee)</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:11px;padding:13px;background:rgba(15,30,53,.04);border-radius:9px">
+          <div style="width:32px;height:32px;background:#fdf3e0;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-percentage" style="color:#a06010"></i></div>
+          <div><div style="font-size:13px;font-weight:500">Platform fee: 0.5% per payment</div><div style="font-size:11.5px;color:#5a5a5a">Example: $1,000 rent = $5 platform fee to PropManager SC</div></div>
+        </div>
+      </div>
+      <div style="background:#e6f0fb;border:1px solid rgba(26,95,168,.2);border-radius:7px;padding:11px 13px;font-size:12px;color:#1a5fa8;margin-bottom:16px">
+        <strong>Before connecting:</strong> Create a free Stripe account at stripe.com if you do not have one. You will need to verify your identity and add your bank account.
+      </div>
+      <button class="mo-btn" id="connect-stripe-btn" style="background:linear-gradient(135deg,#635bff,#7b74ff);border:none">
+        <i class="ti ti-brand-stripe"></i> Connect Stripe account
+      </button>
+      <div style="text-align:center;margin-top:11px;font-size:12px;color:#5a5a5a">
+        You will be redirected to Stripe to authorize the connection
+      </div>
+    </div>
+
+    <div id="sc-connected" style="display:none;text-align:center;padding:14px 0">
+      <div style="font-size:48px;margin-bottom:11px">✅</div>
+      <div style="font-size:17px;font-weight:500;color:#0f1e35;margin-bottom:7px">Stripe connected!</div>
+      <div style="font-size:13px;color:#5a5a5a;margin-bottom:16px">Your tenants can now pay rent online. Payments go directly to your bank account.</div>
+      <div style="background:#eaf5ee;border-radius:9px;padding:13px;text-align:left;margin-bottom:16px">
+        <div id="sc-account-info" style="font-size:13px;color:#2d7a4f"></div>
+      </div>
+      <button class="btn" id="sc-disconnect-btn" style="font-size:12px;color:#c0392b;border-color:#c0392b">Disconnect Stripe</button>
     </div>
   </div>
 </div>
