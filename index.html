@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v13.7</div>
+<div class="vbadge">PropManager SC v13.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1743,7 +1743,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial","leasedoc"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -1793,6 +1793,65 @@ function attachEvents() {
   if (closeInnago) closeInnago.addEventListener("click", function() { closeMo("innagocsv"); });
   var closePnl = document.getElementById("close-pnl-mo");
   if (closePnl) closePnl.addEventListener("click", function() { closeMo("pnl"); });
+
+  // Lease document modal
+  var closeLDMo = document.getElementById("close-leasedoc-mo");
+  if (closeLDMo) closeLDMo.addEventListener("click", function() { closeMo("leasedoc"); });
+  var ldEditToggle = document.getElementById("leasedoc-edit-toggle");
+  if (ldEditToggle) ldEditToggle.addEventListener("click", function() {
+    var ep = document.getElementById("lease-edit-panel");
+    var pp = document.getElementById("lease-preview-panel");
+    var tp = document.getElementById("lease-terms-panel");
+    var isEdit = ep && ep.style.display !== "none";
+    if (ep) ep.style.display = isEdit ? "none" : "block";
+    if (pp) pp.style.display = isEdit ? "block" : "none";
+    if (tp) tp.style.display = "none";
+    ldEditToggle.innerHTML = isEdit ? "<i class='ti ti-pencil'></i> Edit" : "<i class='ti ti-eye'></i> Preview";
+    if (!isEdit) setLeaseEditFields(window._currentLeaseDoc);
+  });
+  var ldSendBtn = document.getElementById("leasedoc-send-btn");
+  if (ldSendBtn) ldSendBtn.addEventListener("click", sendLeaseToTenant);
+  var ldDeleteBtn = document.getElementById("leasedoc-delete-btn");
+  if (ldDeleteBtn) ldDeleteBtn.addEventListener("click", deleteLease);
+  var ldSaveBtn = document.getElementById("leasedoc-save-btn");
+  if (ldSaveBtn) ldSaveBtn.addEventListener("click", saveLeaseDocument);
+  var ldPrintBtn = document.getElementById("leasedoc-print-btn");
+  if (ldPrintBtn) ldPrintBtn.addEventListener("click", function() {
+    var body = document.getElementById("lease-document-body");
+    if (!body) return;
+    var win = window.open("","_blank");
+    win.document.write("<html><head><title>Lease Agreement</title><style>body{font-family:Georgia,serif;font-size:13px;line-height:1.9;padding:40px;max-width:720px;margin:0 auto;color:#1a1a1a}h2{text-align:center}h3{margin-top:22px}p{margin:8px 0}@media print{button{display:none}}</style></head><body>" + body.innerHTML + "</body></html>");
+    win.document.close();
+    win.focus();
+    setTimeout(function(){ win.print(); }, 300);
+  });
+  var leApplyBtn = document.getElementById("le-apply-btn");
+  if (leApplyBtn) leApplyBtn.addEventListener("click", applyLeaseEdits);
+  var leTermsApplyBtn = document.getElementById("le-terms-apply-btn");
+  if (leTermsApplyBtn) leTermsApplyBtn.addEventListener("click", function() {
+    if (window._currentLeaseDoc) window._currentLeaseDoc.special_terms = document.getElementById("le-special-terms").value;
+    renderLeaseDocument(window._currentLeaseDoc);
+    showOk("le-terms-ok");
+  });
+  // Lease tab switching
+  ["lt-preview","lt-edit","lt-terms"].forEach(function(tabId) {
+    var tab = document.getElementById(tabId);
+    if (!tab) return;
+    tab.addEventListener("click", function() {
+      document.querySelectorAll(".lease-tab").forEach(function(t) {
+        t.style.borderBottomColor = "transparent";
+        t.style.color = "#5a5a5a";
+        t.style.fontWeight = "normal";
+      });
+      tab.style.borderBottomColor = "#0f1e35";
+      tab.style.color = "#0f1e35";
+      tab.style.fontWeight = "500";
+      document.getElementById("lease-preview-panel").style.display = tabId === "lt-preview" ? "block" : "none";
+      document.getElementById("lease-edit-panel").style.display   = tabId === "lt-edit"    ? "block" : "none";
+      document.getElementById("lease-terms-panel").style.display  = tabId === "lt-terms"   ? "block" : "none";
+      if (tabId === "lt-edit") setLeaseEditFields(window._currentLeaseDoc);
+    });
+  });
 
   // Late fee modal
   var closeLFMo = document.getElementById("close-latefee-mo");
@@ -1859,7 +1918,7 @@ function attachEvents() {
     });
   });
 
-  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal","mo-vacancyedit","mo-markrente","mo-register","mo-stripeconnect","mo-forgotpass","mo-changepass","mo-notifications","mo-partial"].forEach(function(id) {
+  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal","mo-vacancyedit","mo-markrente","mo-register","mo-stripeconnect","mo-forgotpass","mo-changepass","mo-notifications","mo-partial","mo-leasedoc"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", function(e) {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
@@ -2599,7 +2658,7 @@ function renderLeaseList(tenants) {
       "<div style='flex:1'><div style='font-size:13px;font-weight:500'>" + t.full_name + " &mdash; " + (p ? p.address : "&mdash;") + "</div>" +
       "<div style='font-size:11.5px;color:#999'>$" + Number(t.monthly_rent||0).toLocaleString() + "/mo &middot; " + (t.lease_start||"—") + " to " + (t.lease_end||"—") + daysLeft + "</div></div>" +
       badge +
-      "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:6px' data-lease-tenant-id='" + t.id + "'>Edit</button>" +
+      "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:6px' data-lease-view='" + t.id + "' title='View full lease document'><i class='ti ti-file-text'></i> View</button>" +
       "<button class='btn btn-g' style='font-size:11px;padding:3px 8px;margin-left:4px' data-renew-id='" + t.id + "'><i class='ti ti-refresh'></i> Renew</button>" +
       "</div>";
   }).join("");
@@ -2619,10 +2678,16 @@ function renderLeaseList(tenants) {
   }
 
   // Edit buttons
-  el.querySelectorAll("[data-lease-tenant-id]").forEach(function(btn) {
+  el.querySelectorAll("[data-lease-view]").forEach(function(btn) {
     btn.addEventListener("click", function() {
-      var t = tenants.find(function(x) { return x.id === btn.getAttribute("data-lease-tenant-id"); });
-      if (t) openLeaseModal(t);
+      var t = tenants.find(function(x) { return x.id === btn.getAttribute("data-lease-view"); });
+      if (t) openLeaseDocument(t, tenants);
+    });
+  });
+  el.querySelectorAll("[data-renew-id]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var t = tenants.find(function(x) { return x.id === btn.getAttribute("data-renew-id"); });
+      if (t) openRenewalModal(t);
     });
   });
   // Renew buttons
@@ -4634,6 +4699,272 @@ async function submitPartialPayment() {
   setTimeout(function() { closeMo("partial"); loadPortalHome(); }, 2000);
 }
 
+
+// ════════════════════════════════════════════════════════════
+// LEASE DOCUMENT SYSTEM
+// ════════════════════════════════════════════════════════════
+window._currentLeaseDoc = null;
+window._allTenantsForLease = [];
+
+function openLeaseDocument(tenant, allTenants) {
+  window._allTenantsForLease = allTenants || [];
+  var p = tenant.properties || {};
+  var doc = {
+    id:            tenant.id,
+    tenant_name:   tenant.full_name,
+    tenant_email:  tenant.email,
+    address:       p.address || "",
+    city:          p.city || "Gaffney, SC",
+    zip:           p.zip || "29340",
+    rent:          tenant.monthly_rent || 0,
+    deposit:       tenant.security_deposit || tenant.monthly_rent || 0,
+    start:         tenant.lease_start || new Date().toISOString().split("T")[0],
+    end:           tenant.lease_end   || "",
+    latefee:       80,
+    grace:         5,
+    landlord:      "A&J Rush Properties",
+    pets:          "No pets allowed",
+    utilities:     ["Electric"],
+    special_terms: tenant.lease_terms || "",
+    status:        tenant.lease_status || "draft"
+  };
+  window._currentLeaseDoc = doc;
+
+  // Set modal header
+  document.getElementById("leasedoc-title").textContent = "Lease — " + doc.tenant_name;
+  document.getElementById("leasedoc-sub").textContent = doc.address + " \u00b7 " + doc.start + " to " + doc.end;
+  var sb = document.getElementById("leasedoc-status-badge");
+  if (sb) {
+    sb.textContent = doc.status === "signed" ? "Signed" : doc.status === "sent" ? "Sent" : "Draft";
+    sb.className = "badge " + (doc.status === "signed" ? "b-g" : doc.status === "sent" ? "b-b" : "b-a");
+  }
+  document.getElementById("leasedoc-ok").classList.remove("on");
+  document.getElementById("leasedoc-err").style.display = "none";
+
+  // Show preview tab
+  document.getElementById("lease-preview-panel").style.display = "block";
+  document.getElementById("lease-edit-panel").style.display    = "none";
+  document.getElementById("lease-terms-panel").style.display   = "none";
+
+  renderLeaseDocument(doc);
+  openMo("leasedoc");
+}
+
+function renderLeaseDocument(doc) {
+  var utils = doc.utilities && doc.utilities.length ? doc.utilities.join(", ") : "None";
+  var endDate = doc.end ? new Date(doc.end).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) : "____________________";
+  var startDate = doc.start ? new Date(doc.start).toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) : "____________________";
+  var annualRent = Number(doc.rent || 0) * 12;
+
+  var html = '\
+<div style="text-align:center;margin-bottom:28px">\
+  <h2 style="font-size:18px;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">South Carolina Residential Lease Agreement</h2>\
+  <div style="font-size:12px;color:#666">Pursuant to SC Code \u00a7 27-40-101 et seq.</div>\
+</div>\
+\
+<p>This Residential Lease Agreement (&ldquo;Agreement&rdquo;) is entered into as of <strong>' + startDate + '</strong>, between:</p>\
+\
+<p><strong>LANDLORD:</strong> ' + (doc.landlord||"A&J Rush Properties") + ', hereinafter referred to as &ldquo;Landlord&rdquo;</p>\
+<p><strong>TENANT:</strong> ' + doc.tenant_name + ', hereinafter referred to as &ldquo;Tenant&rdquo;</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">1. Premises</h3>\
+<p>Landlord hereby leases to Tenant the residential property located at: <strong>' + doc.address + ', ' + doc.city + ' ' + doc.zip + '</strong> (&ldquo;the Premises&rdquo;).</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">2. Term</h3>\
+<p>The lease term begins on <strong>' + startDate + '</strong> and ends on <strong>' + endDate + '</strong>. This is a fixed-term tenancy. If Tenant remains in possession after the end date with Landlord\'s consent, the tenancy shall convert to month-to-month.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">3. Rent</h3>\
+<p>Tenant agrees to pay <strong>$' + Number(doc.rent).toLocaleString() + '.00 per month</strong> as rent for the Premises. The total annual rent is <strong>$' + annualRent.toLocaleString() + '.00</strong>. Rent is due on the <strong>1st day</strong> of each month. Rent shall be paid via the PropManager SC online portal at propmanagersc.com or by other method approved by Landlord in writing.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">4. Late Fees</h3>\
+<p>Rent received after the <strong>' + (doc.grace||5) + 'th day</strong> of the month shall incur a late fee of <strong>$' + (doc.latefee||80) + '.00</strong> per SC Code \u00a7 27-40-710. Continued failure to pay may result in eviction proceedings.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">5. Security Deposit</h3>\
+<p>Tenant shall pay a security deposit of <strong>$' + Number(doc.deposit).toLocaleString() + '.00</strong> prior to occupancy. The deposit shall be returned within <strong>30 days</strong> of lease termination, less any deductions for damages beyond normal wear and tear, per SC Code \u00a7 27-40-410.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">6. Utilities</h3>\
+<p>Tenant is responsible for the following utilities: <strong>' + utils + '</strong>. All other utilities not listed are the responsibility of Landlord unless otherwise agreed in writing.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">7. Pets</h3>\
+<p>' + (doc.pets||"No pets allowed") + '. Violation of this provision shall be grounds for termination of tenancy.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">8. Maintenance and Repairs</h3>\
+<p>Tenant shall maintain the Premises in a clean and sanitary condition and notify Landlord promptly of any needed repairs. Tenant shall not make alterations without prior written consent. Landlord shall maintain the Premises in habitable condition per SC Code \u00a7 27-40-440.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">9. Occupancy</h3>\
+<p>The Premises shall be occupied only by Tenant and immediate family members listed herein. Subletting or assignment is prohibited without prior written consent of Landlord.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">10. Entry by Landlord</h3>\
+<p>Landlord shall provide at least <strong>24 hours advance notice</strong> before entering the Premises except in cases of emergency, per SC Code \u00a7 27-40-530.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">11. Termination and Notice</h3>\
+<p>Either party wishing to terminate this agreement must provide written notice: <strong>30 days</strong> for month-to-month tenancies; as provided herein for fixed-term. Landlord may terminate for nonpayment after providing a <strong>5-Day Notice to Pay or Quit</strong> per SC Code \u00a7 27-40-710.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">12. Illegal Activity</h3>\
+<p>Tenant shall not engage in any illegal activity on the Premises. Violation is grounds for immediate termination of tenancy.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">13. Smoking</h3>\
+<p>Smoking of any substance is strictly prohibited inside the Premises and within 25 feet of any entrance.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">14. Renter\'s Insurance</h3>\
+<p>Tenant is strongly encouraged to obtain renter\'s insurance to protect personal belongings. Landlord\'s insurance does not cover Tenant\'s personal property.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">15. Lead Paint Disclosure</h3>\
+<p>If the Premises was built before 1978, Tenant acknowledges receipt of the EPA pamphlet &ldquo;Protect Your Family from Lead in Your Home.&rdquo; Landlord has no knowledge of lead-based paint hazards unless disclosed separately in writing.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">16. Governing Law</h3>\
+<p>This Agreement shall be governed by the laws of the State of South Carolina. Any disputes shall be resolved in the appropriate court of Cherokee County or Spartanburg County, South Carolina.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">17. Entire Agreement</h3>\
+<p>This Agreement constitutes the entire agreement between the parties. Any amendments must be in writing and signed by both parties.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">18. Severability</h3>\
+<p>If any provision of this Agreement is found to be unenforceable, the remaining provisions shall remain in full force and effect.</p>\
+\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">19. Notice</h3>\
+<p>All notices shall be delivered in writing to the addresses listed above or via the PropManager SC portal messaging system.</p>\
+' + (doc.special_terms ? '\
+<h3 style="font-size:14px;text-transform:uppercase;border-bottom:1px solid #ccc;padding-bottom:5px;margin-top:24px">20. Special Terms and Conditions</h3>\
+<p>' + doc.special_terms.replace(/\n/g,"</p><p>") + '</p>' : '') + '\
+\
+<div style="margin-top:40px;padding-top:20px;border-top:1px solid #ccc">\
+  <h3 style="font-size:14px;text-transform:uppercase;margin-bottom:20px">Signatures</h3>\
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px">\
+    <div>\
+      <div style="border-bottom:1px solid #333;min-height:40px;margin-bottom:5px"></div>\
+      <div style="font-size:12px;color:#666">Landlord: ' + (doc.landlord||"A&J Rush Properties") + '</div>\
+      <div style="font-size:12px;color:#666;margin-top:4px">Date: ____________________</div>\
+    </div>\
+    <div>\
+      <div style="border-bottom:1px solid #333;min-height:40px;margin-bottom:5px">' + (doc.status==="signed"?"<em style=\"color:#2d7a4f;font-size:13px\">Electronically signed</em>":"") + '</div>\
+      <div style="font-size:12px;color:#666">Tenant: ' + doc.tenant_name + '</div>\
+      <div style="font-size:12px;color:#666;margin-top:4px">Date: ____________________</div>\
+    </div>\
+  </div>\
+</div>';
+
+  var bodyEl = document.getElementById("lease-document-body");
+  if (bodyEl) bodyEl.innerHTML = html;
+}
+
+function setLeaseEditFields(doc) {
+  if (!doc) return;
+  var set = function(id, val) { var el=document.getElementById(id); if(el) el.value=val||""; };
+  set("le-tenant-name", doc.tenant_name);
+  set("le-address",     doc.address);
+  set("le-city",        doc.city + " " + doc.zip);
+  set("le-start",       doc.start);
+  set("le-end",         doc.end);
+  set("le-rent",        doc.rent);
+  set("le-deposit",     doc.deposit);
+  set("le-latefee",     doc.latefee||80);
+  set("le-grace",       doc.grace||5);
+  set("le-landlord",    doc.landlord||"A&J Rush Properties");
+  set("le-special-terms", doc.special_terms||"");
+  if (doc.pets) { var petEl=document.getElementById("le-pets"); if(petEl) petEl.value=doc.pets; }
+}
+
+function applyLeaseEdits() {
+  if (!window._currentLeaseDoc) return;
+  var doc = window._currentLeaseDoc;
+  var cityZip = (document.getElementById("le-city").value||"").trim().split(" ");
+  doc.tenant_name = document.getElementById("le-tenant-name").value;
+  doc.address     = document.getElementById("le-address").value;
+  doc.city        = cityZip.slice(0,-1).join(" ");
+  doc.zip         = cityZip.slice(-1)[0] || "";
+  doc.start       = document.getElementById("le-start").value;
+  doc.end         = document.getElementById("le-end").value;
+  doc.rent        = parseFloat(document.getElementById("le-rent").value)||0;
+  doc.deposit     = parseFloat(document.getElementById("le-deposit").value)||0;
+  doc.latefee     = parseFloat(document.getElementById("le-latefee").value)||80;
+  doc.grace       = parseInt(document.getElementById("le-grace").value)||5;
+  doc.landlord    = document.getElementById("le-landlord").value;
+  doc.pets        = document.getElementById("le-pets").value;
+
+  // Utilities
+  var utils = [];
+  ["electric","gas","water","trash","internet"].forEach(function(u) {
+    var el = document.getElementById("ut-" + u);
+    if (el && el.checked) utils.push(el.nextSibling ? el.parentNode.textContent.trim() : u);
+  });
+  doc.utilities = utils;
+
+  // Switch to preview
+  document.getElementById("lease-preview-panel").style.display = "block";
+  document.getElementById("lease-edit-panel").style.display    = "none";
+  document.querySelectorAll(".lease-tab").forEach(function(t) {
+    t.style.borderBottomColor = "transparent"; t.style.color="#5a5a5a"; t.style.fontWeight="normal";
+  });
+  var lt = document.getElementById("lt-preview");
+  if (lt) { lt.style.borderBottomColor="#0f1e35"; lt.style.color="#0f1e35"; lt.style.fontWeight="500"; }
+
+  renderLeaseDocument(doc);
+  document.getElementById("leasedoc-save-status").textContent = "Unsaved changes";
+}
+
+async function saveLeaseDocument() {
+  if (!window._currentLeaseDoc || !sb) return;
+  var doc = window._currentLeaseDoc;
+  var result = await sb.from("tenants").update({
+    lease_start:     doc.start,
+    lease_end:       doc.end,
+    monthly_rent:    doc.rent,
+    security_deposit:doc.deposit,
+    lease_terms:     doc.special_terms || ""
+  }).eq("id", doc.id);
+  if (result.error) {
+    document.getElementById("leasedoc-err").style.display = "block";
+    document.getElementById("leasedoc-err").textContent = result.error.message;
+  } else {
+    document.getElementById("leasedoc-save-status").textContent = "All changes saved";
+    document.getElementById("leasedoc-ok-msg").textContent = "Lease saved!";
+    showOk("leasedoc-ok");
+    loadDashboardData();
+  }
+}
+
+async function deleteLease() {
+  if (!window._currentLeaseDoc) return;
+  var doc = window._currentLeaseDoc;
+  if (!confirm("Delete lease for " + doc.tenant_name + "? This will clear their lease dates and terms. The tenant record will not be deleted.")) return;
+  if (!sb) return;
+  var result = await sb.from("tenants").update({
+    lease_start:  null,
+    lease_end:    null,
+    lease_terms:  null,
+    lease_status: null
+  }).eq("id", doc.id);
+  if (result.error) {
+    document.getElementById("leasedoc-err").style.display = "block";
+    document.getElementById("leasedoc-err").textContent = result.error.message;
+  } else {
+    document.getElementById("leasedoc-ok-msg").textContent = "Lease deleted.";
+    showOk("leasedoc-ok");
+    setTimeout(function() { closeMo("leasedoc"); loadDashboardData(); }, 1500);
+  }
+}
+
+async function sendLeaseToTenant() {
+  if (!window._currentLeaseDoc || !sb) return;
+  var doc = window._currentLeaseDoc;
+  // Save first
+  await saveLeaseDocument();
+  // Mark as sent
+  await sb.from("tenants").update({ lease_status: "sent" }).eq("id", doc.id);
+  // Log a message to the tenant
+  await sb.from("messages").insert({
+    tenant_id: doc.id,
+    sender:    "landlord",
+    body:      "Your lease agreement for " + doc.address + " has been prepared and is ready for your review. Please log in to your tenant portal at propmanagersc.com to view and sign your lease. Contact us if you have any questions.",
+    read:      false
+  });
+  doc.status = "sent";
+  var sb2 = document.getElementById("leasedoc-status-badge");
+  if (sb2) { sb2.textContent = "Sent"; sb2.className = "badge b-b"; }
+  document.getElementById("leasedoc-ok-msg").textContent = "Lease sent to " + doc.tenant_name + " via portal message!";
+  showOk("leasedoc-ok");
+}
+
 // ---- FORM SUBMITS ----
 function submitVacancy() {
   var n = document.getElementById("vi-name").value;
@@ -5444,6 +5775,114 @@ document.addEventListener("DOMContentLoaded", function() {
     <button class="mo-btn" id="submit-partial-btn">Submit partial payment</button>
     <div class="ok-msg" id="partial-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Partial payment recorded! Your landlord has been notified.</div>
     <div class="mo-err" id="partial-err">Please enter a valid amount.</div>
+  </div>
+</div>
+
+
+<!-- LEASE DOCUMENT MODAL (full view + edit + send) -->
+<div class="mo-overlay" id="mo-leasedoc">
+  <div class="mo-box" style="max-width:780px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;padding:0">
+
+    <!-- Header toolbar -->
+    <div style="background:#0f1e35;padding:13px 18px;display:flex;align-items:center;gap:11px;flex-shrink:0">
+      <div style="width:32px;height:32px;background:rgba(201,150,42,.2);border-radius:7px;display:flex;align-items:center;justify-content:center;color:#f0c96b;font-size:15px"><i class="ti ti-file-text"></i></div>
+      <div style="flex:1">
+        <div style="font-size:13.5px;font-weight:500;color:#fff" id="leasedoc-title">Lease Agreement</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5)" id="leasedoc-sub">South Carolina Residential Lease</div>
+      </div>
+      <div style="display:flex;gap:7px;align-items:center">
+        <span id="leasedoc-status-badge" class="badge b-a" style="font-size:10px">Draft</span>
+        <button class="btn" style="font-size:11px;padding:4px 10px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff" id="leasedoc-edit-toggle"><i class="ti ti-pencil"></i> Edit</button>
+        <button class="btn" style="font-size:11px;padding:4px 10px;background:#2d7a4f;border-color:#2d7a4f;color:#fff" id="leasedoc-send-btn"><i class="ti ti-send"></i> Send to tenant</button>
+        <button class="btn btn-r" style="font-size:11px;padding:4px 10px" id="leasedoc-delete-btn"><i class="ti ti-trash"></i> Delete</button>
+        <button class="mo-close" id="close-leasedoc-mo" style="position:static;color:rgba(255,255,255,.6)"><i class="ti ti-x"></i></button>
+      </div>
+    </div>
+
+    <!-- Tab bar: Preview / Edit Clauses -->
+    <div style="background:#fff;border-bottom:1px solid rgba(15,30,53,.1);padding:0 18px;display:flex;gap:0;flex-shrink:0">
+      <button class="lease-tab on" id="lt-preview" style="padding:11px 16px;font-size:13px;background:none;border:none;border-bottom:2px solid #0f1e35;color:#0f1e35;cursor:pointer;font-family:inherit;font-weight:500">Preview document</button>
+      <button class="lease-tab" id="lt-edit" style="padding:11px 16px;font-size:13px;background:none;border:none;border-bottom:2px solid transparent;color:#5a5a5a;cursor:pointer;font-family:inherit">Edit clauses</button>
+      <button class="lease-tab" id="lt-terms" style="padding:11px 16px;font-size:13px;background:none;border:none;border-bottom:2px solid transparent;color:#5a5a5a;cursor:pointer;font-family:inherit">Special terms</button>
+    </div>
+
+    <!-- Main content area -->
+    <div style="flex:1;overflow-y:auto;background:#f5f3ef">
+
+      <!-- PREVIEW PANEL -->
+      <div id="lease-preview-panel" style="padding:24px;max-width:680px;margin:0 auto">
+        <div id="lease-document-body" style="background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:4px;padding:40px;font-family:Georgia,Times,serif;font-size:13.5px;line-height:1.9;color:#1a1a1a;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+          Loading lease document...
+        </div>
+      </div>
+
+      <!-- EDIT CLAUSES PANEL -->
+      <div id="lease-edit-panel" style="display:none;padding:20px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:13px">
+          <div>
+            <label class="mo-lbl">Tenant full name</label>
+            <input class="mo-inp" type="text" id="le-tenant-name" style="margin-bottom:9px">
+            <label class="mo-lbl">Property address</label>
+            <input class="mo-inp" type="text" id="le-address" style="margin-bottom:9px">
+            <label class="mo-lbl">City, State ZIP</label>
+            <input class="mo-inp" type="text" id="le-city" style="margin-bottom:9px">
+            <label class="mo-lbl">Lease start date</label>
+            <input class="mo-inp" type="date" id="le-start" style="margin-bottom:9px">
+            <label class="mo-lbl">Lease end date</label>
+            <input class="mo-inp" type="date" id="le-end" style="margin-bottom:9px">
+          </div>
+          <div>
+            <label class="mo-lbl">Monthly rent ($)</label>
+            <input class="mo-inp" type="number" id="le-rent" style="margin-bottom:9px">
+            <label class="mo-lbl">Security deposit ($)</label>
+            <input class="mo-inp" type="number" id="le-deposit" style="margin-bottom:9px">
+            <label class="mo-lbl">Late fee ($)</label>
+            <input class="mo-inp" type="number" id="le-latefee" value="80" style="margin-bottom:9px">
+            <label class="mo-lbl">Grace period (days)</label>
+            <input class="mo-inp" type="number" id="le-grace" value="5" style="margin-bottom:9px">
+            <label class="mo-lbl">Landlord name</label>
+            <input class="mo-inp" type="text" id="le-landlord" value="A&amp;J Rush Properties" style="margin-bottom:9px">
+          </div>
+        </div>
+        <label class="mo-lbl">Pet policy</label>
+        <select class="mo-inp" id="le-pets" style="margin-bottom:9px">
+          <option>No pets allowed</option>
+          <option>Pets allowed with prior written approval</option>
+          <option>Cats and dogs under 25 lbs allowed with $200 pet deposit</option>
+          <option>All pets allowed with prior written approval and pet deposit</option>
+        </select>
+        <label class="mo-lbl">Utilities paid by tenant</label>
+        <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:13px">
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ut-electric" checked> Electric</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ut-gas"> Gas</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ut-water"> Water/Sewer</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ut-trash"> Trash</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ut-internet"> Internet/Cable</label>
+        </div>
+        <button class="mo-btn" id="le-apply-btn">Apply changes &amp; preview</button>
+      </div>
+
+      <!-- SPECIAL TERMS PANEL -->
+      <div id="lease-terms-panel" style="display:none;padding:20px">
+        <div style="font-size:13px;color:#5a5a5a;margin-bottom:11px">Add any special terms, addendums, or additional clauses. These will appear in Section 20 of the lease.</div>
+        <textarea id="le-special-terms" style="width:100%;height:200px;font-family:inherit;font-size:13px;padding:11px;border:1px solid rgba(15,30,53,.2);border-radius:7px;resize:vertical;line-height:1.7;box-sizing:border-box" placeholder="Example: Tenant agrees to maintain the lawn. Smoking is prohibited on the premises. Tenant must obtain renter's insurance within 30 days of move-in..."></textarea>
+        <button class="mo-btn" style="margin-top:11px" id="le-terms-apply-btn">Save special terms</button>
+        <div class="ok-msg" id="le-terms-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Special terms saved.</div>
+      </div>
+
+    </div>
+
+    <!-- Footer save bar -->
+    <div style="background:#fff;border-top:1px solid rgba(15,30,53,.1);padding:11px 18px;display:flex;align-items:center;justify-content:space-between;gap:11px;flex-shrink:0">
+      <div style="font-size:12px;color:#5a5a5a" id="leasedoc-save-status">All changes saved</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" id="leasedoc-print-btn"><i class="ti ti-printer"></i> Print</button>
+        <button class="btn btn-n" id="leasedoc-save-btn"><i class="ti ti-device-floppy"></i> Save lease</button>
+      </div>
+    </div>
+
+    <div class="ok-msg" id="leasedoc-ok" style="margin:0 18px 11px"><i class="ti ti-circle-check" style="font-size:17px"></i> <span id="leasedoc-ok-msg">Lease saved!</span></div>
+    <div class="mo-err" id="leasedoc-err" style="margin:0 18px 11px">Error saving lease.</div>
   </div>
 </div>
 
