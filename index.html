@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v11.7</div>
+<div class="vbadge">PropManager SC v11.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3344,13 +3344,20 @@ async function checkLateRentAndNotify() {
       var fee = gracePeriodOver ? calcLateFee(t.monthly_rent, daysLate) : 0;
       var feeStr = fee > 0 ? " + $" + fee + " late fee" : "";
       return "<span style='background:#fff;border:1px solid rgba(192,57,43,.2);border-radius:6px;padding:3px 9px;font-size:12px;color:#c0392b'>" +
-        t.full_name + " — $" + Number(t.monthly_rent).toLocaleString() + feeStr + "</span>";
+        t.full_name + " - $" + Number(t.monthly_rent).toLocaleString() + feeStr + "</span>";
     }).join("") +
     "</div>" +
     "<div style='margin-top:9px;display:flex;gap:7px'>" +
-    "<button class='btn btn-r' style='font-size:12px' onclick='sendLateNotices()'><i class='ti ti-bell'></i> Send late notices to all</button>" +
-    "<button class='btn' style='font-size:12px' onclick='goDash("nt")'><i class='ti ti-file-alert'></i> Issue 5-day notices</button>" +
+    "<button class='btn btn-r' style='font-size:12px' id='send-late-notices-btn'><i class='ti ti-bell'></i> Send late notices to all</button>" +
+    "<button class='btn' style='font-size:12px' id='goto-notices-btn'><i class='ti ti-file-alert'></i> Issue 5-day notices</button>" +
     "</div></div>";
+  // Attach events after DOM update - NO onclick attributes
+  setTimeout(function() {
+    var slnBtn = document.getElementById("send-late-notices-btn");
+    if (slnBtn) slnBtn.addEventListener("click", sendLateNotices);
+    var gnBtn = document.getElementById("goto-notices-btn");
+    if (gnBtn) gnBtn.addEventListener("click", function() { goDash("nt"); });
+  }, 50);
 }
 
 async function sendLateNotices() {
@@ -3413,6 +3420,29 @@ function submitApply() {
 document.addEventListener("DOMContentLoaded", function() {
   attachEvents();
   initSupabase();
+  
+  // PERMANENT GUARD: catches dynamically created buttons
+  // Any button with data-action gets wired automatically - no onclick needed
+  document.addEventListener("click", function(e) {
+    var btn = e.target.closest("[data-action]");
+    if (!btn) return;
+    var action = btn.getAttribute("data-action");
+    var param  = btn.getAttribute("data-param");
+    var actions = {
+      "goPage":          function() { goPage(param); },
+      "goDash":          function() { goDash(param); },
+      "goPortal":        function() { goPortal(param); },
+      "openMo":          function() { openMo(param); },
+      "closeMo":         function() { closeMo(param); },
+      "signOut":         function() { signOut(); },
+      "sendLateNotices": function() { sendLateNotices(); },
+      "selectNotice":    function() {
+        var parts = (param||"").split("|");
+        selectNotice(parts[0], parts[1], parts[2], parseFloat(parts[3])||0);
+      }
+    };
+    if (actions[action]) { e.preventDefault(); actions[action](); }
+  });
 });
 </script>
 
