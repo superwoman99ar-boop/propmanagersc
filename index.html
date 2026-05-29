@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v13.2</div>
+<div class="vbadge">PropManager SC v13.3</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4279,6 +4279,16 @@ function submitApply() {
 
 // ---- INIT ----
 document.addEventListener("DOMContentLoaded", function() {
+  // Check for Stripe Connect OAuth callback
+  var urlParams = new URLSearchParams(window.location.search);
+  var stripeCode  = urlParams.get("code");
+  var stripeError = urlParams.get("error");
+  if (stripeCode) {
+    handleStripeCallback(stripeCode);
+  } else if (stripeError) {
+    console.warn("Stripe Connect error:", stripeError);
+  }
+
   attachEvents();
   initSupabase();
   
