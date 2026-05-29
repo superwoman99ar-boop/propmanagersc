@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v11.6</div>
+<div class="vbadge">PropManager SC v11.7</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -497,17 +497,76 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 
       <div class="dsec" id="ds-tx">
         <div class="g4">
-          <div class="mc"><div class="mc-l">Gross income (ann.)</div><div class="mc-v" id="tx-gross">$75,600</div></div>
-          <div class="mc"><div class="mc-l">Total expenses est.</div><div class="mc-v mc-r" id="tx-exp">--</div></div>
-          <div class="mc"><div class="mc-l">Depreciation est.</div><div class="mc-v">$10,400</div><div class="mc-s">27.5-yr method</div></div>
-          <div class="mc"><div class="mc-l">Net taxable est.</div><div class="mc-v mc-g" id="tx-net">--</div></div>
+          <div class="mc"><div class="mc-l">Gross income (ann.)</div><div class="mc-v mc-g" id="tx-gross">--</div></div>
+          <div class="mc"><div class="mc-l">Total expenses YTD</div><div class="mc-v mc-r" id="tx-exp">--</div></div>
+          <div class="mc"><div class="mc-l">Depreciation (27.5yr)</div><div class="mc-v" id="tx-dep">--</div></div>
+          <div class="mc"><div class="mc-l">Net taxable income</div><div class="mc-v mc-g" id="tx-net">--</div></div>
         </div>
+
+        <!-- SCHEDULE E GENERATOR -->
         <div class="card">
-          <div class="card-head"><div class="card-title">Tax tools</div></div>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <button class="btn" style="justify-content:flex-start"><i class="ti ti-file-spreadsheet"></i> Generate Schedule E</button>
-            <button class="btn" style="justify-content:flex-start"><i class="ti ti-calculator"></i> Calculate depreciation</button>
-            <button class="btn" style="justify-content:flex-start"><i class="ti ti-download"></i> Export ledger CSV</button>
+          <div class="card-head">
+            <div class="card-title"><i class="ti ti-file-spreadsheet" style="color:#1a5fa8"></i> Schedule E — Rental Income &amp; Expenses</div>
+            <button class="btn btn-n" id="gen-schedule-e-btn"><i class="ti ti-download"></i> Generate &amp; Download</button>
+          </div>
+          <div style="font-size:12.5px;color:#5a5a5a;margin-bottom:13px">Generates IRS Schedule E (Form 1040) with your rental income and expenses. Select the tax year:</div>
+          <div style="display:flex;gap:11px;align-items:center;flex-wrap:wrap;margin-bottom:13px">
+            <div><label class="lbl">Tax year</label>
+              <select class="inp" id="tx-year" style="width:120px">
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+              </select>
+            </div>
+            <div><label class="lbl">Your name (for report)</label>
+              <input class="inp" type="text" id="tx-owner-name" placeholder="e.g. A&J Rush Properties" style="width:220px">
+            </div>
+            <div><label class="lbl">SSN/EIN (last 4 only)</label>
+              <input class="inp" type="text" id="tx-ssn" placeholder="XXXX" maxlength="4" style="width:100px">
+            </div>
+          </div>
+          <div id="schedule-e-preview" style="display:none;border:1px solid rgba(15,30,53,.1);border-radius:9px;overflow:hidden;margin-bottom:11px"></div>
+          <div class="ok-msg" id="tx-ok"><i class="ti ti-circle-check" style="font-size:17px"></i> Schedule E downloaded as CSV.</div>
+        </div>
+
+        <!-- DEPRECIATION CALCULATOR -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><i class="ti ti-calculator" style="color:#2d7a4f"></i> Depreciation calculator</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:11px">
+            <div><label class="lbl">Property purchase price ($)</label>
+              <input class="inp" type="number" id="dep-price" placeholder="150000"></div>
+            <div><label class="lbl">Land value ($)</label>
+              <input class="inp" type="number" id="dep-land" placeholder="25000"></div>
+            <div><label class="lbl">Year placed in service</label>
+              <input class="inp" type="number" id="dep-year-start" placeholder="2020" min="1980" max="2026"></div>
+          </div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:11px">
+            <button class="btn btn-n" id="calc-dep-btn"><i class="ti ti-calculator"></i> Calculate</button>
+            <div id="dep-result" style="font-size:13px;color:#2d7a4f;font-weight:500;align-self:center"></div>
+          </div>
+          <div id="dep-table" style="display:none;overflow-x:auto"></div>
+        </div>
+
+        <!-- LEDGER EXPORT -->
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><i class="ti ti-download" style="color:#a06010"></i> Export tools</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:rgba(15,30,53,.03);border-radius:7px">
+              <div><div style="font-size:13px;font-weight:500">Full ledger CSV</div><div style="font-size:11.5px;color:#5a5a5a">All income and expenses — importable into QuickBooks, Excel</div></div>
+              <button class="btn btn-n" id="export-ledger-btn"><i class="ti ti-download"></i> Export</button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:rgba(15,30,53,.03);border-radius:7px">
+              <div><div style="font-size:13px;font-weight:500">Rent roll report</div><div style="font-size:11.5px;color:#5a5a5a">All tenants, rents, and payment status — year to date</div></div>
+              <button class="btn btn-n" id="export-rentroll-btn"><i class="ti ti-download"></i> Export</button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:rgba(15,30,53,.03);border-radius:7px">
+              <div><div style="font-size:13px;font-weight:500">Expense summary by category</div><div style="font-size:11.5px;color:#5a5a5a">Totals by category for tax filing</div></div>
+              <button class="btn btn-n" id="export-expenses-btn"><i class="ti ti-download"></i> Export</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1135,6 +1194,18 @@ function attachEvents() {
 
   // Dashboard action buttons
   document.getElementById("btn-issue-notice").addEventListener("click", function() { goDash("nt"); });
+
+  // Tax tool buttons
+  var genSchEBtn = document.getElementById("gen-schedule-e-btn");
+  if (genSchEBtn) genSchEBtn.addEventListener("click", generateScheduleE);
+  var calcDepBtn = document.getElementById("calc-dep-btn");
+  if (calcDepBtn) calcDepBtn.addEventListener("click", calcDepreciation);
+  var expLedgerBtn = document.getElementById("export-ledger-btn");
+  if (expLedgerBtn) expLedgerBtn.addEventListener("click", exportLedgerCSV);
+  var expRentRollBtn = document.getElementById("export-rentroll-btn");
+  if (expRentRollBtn) expRentRollBtn.addEventListener("click", exportRentRoll);
+  var expExpBtn = document.getElementById("export-expenses-btn");
+  if (expExpBtn) expExpBtn.addEventListener("click", exportExpensesSummary);
   var newLsBtn = document.getElementById("new-lease-btn");
   if (newLsBtn) newLsBtn.addEventListener("click", function() { openLeaseModal(null); });
   document.getElementById("btn-add-tenant").addEventListener("click", function() { openMo("addtenant"); });
@@ -1743,6 +1814,8 @@ async function loadDashboardData() {
   if (glRec) glRec.textContent = "$" + Math.round(recurringMonthly).toLocaleString();
   renderLedger({ payments: payments, expenses: expenses });
   renderNoticeButtons(tenants);
+  updateTaxMetrics(payments, expenses);
+  checkLateRentAndNotify();
 
   var alertEl = document.getElementById("overdue-alert");
   if (overdue > 0 && alertEl) {
@@ -2979,6 +3052,345 @@ async function saveRenewal() {
     document.getElementById("ren-ok").classList.add("on");
     setTimeout(function() { closeMo("renewal"); loadDashboardData(); }, 1500);
   }
+}
+
+
+// ════════════════════════════════════════════════════════════
+// TAX TOOLS
+// ════════════════════════════════════════════════════════════
+
+async function generateScheduleE() {
+  if (!sb) return;
+  var year = document.getElementById("tx-year").value;
+  var ownerName = document.getElementById("tx-owner-name").value || "PropManager SC";
+  var ssn = document.getElementById("tx-ssn").value || "XXXX";
+  var btn = document.getElementById("gen-schedule-e-btn");
+  btn.innerHTML = "<i class='ti ti-loader'></i> Generating...";
+
+  var startDate = year + "-01-01";
+  var endDate = year + "-12-31";
+
+  var payRes = await sb.from("payments").select("*, tenants(full_name, monthly_rent), tenants!inner(properties(address))")
+    .gte("payment_date", startDate).lte("payment_date", endDate).eq("status", "paid");
+  var expRes = await sb.from("expenses").select("*")
+    .gte("expense_date", startDate).lte("expense_date", endDate);
+  var tenRes = await sb.from("tenants").select("*, properties(address, monthly_rent)");
+  var propRes = await sb.from("properties").select("*");
+
+  var pays = payRes.data || [];
+  var exps = expRes.data || [];
+  var tenants = tenRes.data || [];
+  var props = propRes.data || [];
+
+  var totalIncome = pays.reduce(function(s,p){ return s + Number(p.amount); }, 0);
+  var expByCat = {};
+  exps.forEach(function(e) {
+    var cat = e.category || "Other";
+    expByCat[cat] = (expByCat[cat] || 0) + Number(e.amount);
+  });
+  var totalExp = Object.values(expByCat).reduce(function(s,v){ return s+v; }, 0);
+  
+  // IRS Schedule E categories mapping
+  var schedEMap = {
+    "Advertising": expByCat["Advertising"] || 0,
+    "Auto and travel": expByCat["Auto"] || 0,
+    "Cleaning and maintenance": (expByCat["Maintenance"] || 0) + (expByCat["Cleaning"] || 0),
+    "Commissions": expByCat["Commissions"] || 0,
+    "Insurance": expByCat["Insurance"] || 0,
+    "Legal and professional fees": (expByCat["Professional Fees"] || 0) + (expByCat["Legal"] || 0),
+    "Management fees": expByCat["Management"] || 0,
+    "Mortgage interest": expByCat["Mortgage"] || 0,
+    "Other interest": expByCat["Interest"] || 0,
+    "Repairs": expByCat["Repairs"] || 0,
+    "Supplies": expByCat["Supplies"] || 0,
+    "Taxes": expByCat["Property Tax"] || 0,
+    "Utilities": expByCat["Utilities"] || 0,
+    "Other expenses": expByCat["Other"] || 0
+  };
+
+  var annualRent = tenants.reduce(function(s,t){ return s + Number(t.monthly_rent||0); }, 0) * 12;
+  var depreciation = props.reduce(function(s,p){ return s + ((Number(p.monthly_rent||0)*12*15)/27.5); }, 0);
+
+  // Build preview
+  var previewHTML = "<div style='background:#0f1e35;padding:14px 18px;color:#fff'>" +
+    "<div style='font-size:13px;font-weight:600'>SCHEDULE E (Form 1040) &mdash; Supplemental Income &amp; Loss &mdash; " + year + "</div>" +
+    "<div style='font-size:11px;color:rgba(255,255,255,.6);margin-top:2px'>" + ownerName + " &mdash; SSN ending " + ssn + "</div></div>" +
+    "<div style='padding:14px;font-size:12px'>" +
+    "<table style='width:100%;border-collapse:collapse'>" +
+    "<tr style='background:rgba(15,30,53,.06)'><td style='padding:7px 9px;font-weight:600' colspan='2'>INCOME</td></tr>" +
+    "<tr><td style='padding:5px 9px;color:#5a5a5a'>3. Rents received</td><td style='padding:5px 9px;text-align:right;color:#2d7a4f;font-weight:500'>$" + totalIncome.toLocaleString() + "</td></tr>" +
+    "<tr style='background:rgba(15,30,53,.06)'><td style='padding:7px 9px;font-weight:600' colspan='2'>EXPENSES</td></tr>" +
+    Object.keys(schedEMap).filter(function(k){ return schedEMap[k] > 0; }).map(function(k) {
+      return "<tr><td style='padding:4px 9px;color:#5a5a5a'>" + k + "</td><td style='padding:4px 9px;text-align:right;color:#c0392b'>($" + Number(schedEMap[k]).toLocaleString() + ")</td></tr>";
+    }).join("") +
+    "<tr><td style='padding:4px 9px;color:#5a5a5a'>Depreciation (27.5yr)</td><td style='padding:4px 9px;text-align:right;color:#c0392b'>($" + Math.round(depreciation).toLocaleString() + ")</td></tr>" +
+    "<tr style='border-top:2px solid rgba(15,30,53,.15);font-weight:600'><td style='padding:7px 9px'>Total expenses</td><td style='padding:7px 9px;text-align:right;color:#c0392b'>($" + Math.round(totalExp + depreciation).toLocaleString() + ")</td></tr>" +
+    "<tr style='background:#0f1e35'><td style='padding:8px 9px;color:#fff;font-weight:600'>Net income (loss)</td><td style='padding:8px 9px;text-align:right;color:#f0c96b;font-weight:600'>$" + Math.round(totalIncome - totalExp - depreciation).toLocaleString() + "</td></tr>" +
+    "</table></div>";
+
+  document.getElementById("schedule-e-preview").innerHTML = previewHTML;
+  document.getElementById("schedule-e-preview").style.display = "block";
+
+  // Build CSV for download
+  var csv = "SCHEDULE E - " + year + " - " + ownerName + "\n";
+  csv += "\nINCOME\n";
+  csv += "Rents received,$" + totalIncome + "\n";
+  csv += "\nEXPENSES\n";
+  Object.keys(schedEMap).forEach(function(k) { if (schedEMap[k]) csv += k + ",$" + schedEMap[k] + "\n"; });
+  csv += "Depreciation (27.5yr),$" + Math.round(depreciation) + "\n";
+  csv += "\nTOTAL EXPENSES,$" + Math.round(totalExp + depreciation) + "\n";
+  csv += "NET INCOME (LOSS),$" + Math.round(totalIncome - totalExp - depreciation) + "\n";
+  csv += "\nPROPERTIES\n";
+  props.forEach(function(p) { csv += p.address + "," + p.city + ",$" + (p.monthly_rent*12) + "\n"; });
+
+  var blob = new Blob([csv], {type:"text/csv"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = "ScheduleE_" + year + "_PropManagerSC.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+
+  btn.innerHTML = "<i class='ti ti-download'></i> Generate &amp; Download";
+  showOk("tx-ok");
+}
+
+function calcDepreciation() {
+  var price = parseFloat(document.getElementById("dep-price").value) || 0;
+  var land = parseFloat(document.getElementById("dep-land").value) || 0;
+  var startYear = parseInt(document.getElementById("dep-year-start").value) || 2020;
+  if (!price) { alert("Please enter a purchase price."); return; }
+  var basis = price - land;
+  var annualDep = basis / 27.5;
+  var currentYear = new Date().getFullYear();
+  var yearsHeld = currentYear - startYear + 1;
+  var totalTaken = Math.min(annualDep * yearsHeld, basis);
+
+  document.getElementById("dep-result").textContent =
+    "Annual deduction: $" + Math.round(annualDep).toLocaleString() +
+    " | Total taken to date: $" + Math.round(totalTaken).toLocaleString() +
+    " | Remaining basis: $" + Math.round(basis - totalTaken).toLocaleString();
+
+  // Build depreciation table
+  var rows = "";
+  for (var y = startYear; y <= startYear + 27; y++) {
+    var dep = y === startYear ? annualDep * (1 - (startYear - startYear) / 12) : annualDep;
+    dep = Math.min(dep, basis - (annualDep * (y - startYear)));
+    if (dep <= 0) break;
+    var highlight = y === currentYear ? "style='background:#eaf5ee;font-weight:500'" : "";
+    rows += "<tr " + highlight + "><td style='padding:5px 9px'>" + y + (y === currentYear ? " (current)" : "") + "</td><td style='padding:5px 9px;text-align:right'>$" + Math.round(dep).toLocaleString() + "</td><td style='padding:5px 9px;text-align:right'>$" + Math.round(Math.min(annualDep*(y-startYear+1),basis)).toLocaleString() + "</td><td style='padding:5px 9px;text-align:right'>$" + Math.round(Math.max(0,basis - annualDep*(y-startYear+1))).toLocaleString() + "</td></tr>";
+  }
+
+  document.getElementById("dep-table").style.display = "block";
+  document.getElementById("dep-table").innerHTML =
+    "<div style='font-size:12px;font-weight:500;margin-bottom:7px'>Depreciation schedule (27.5 year straight-line)</div>" +
+    "<div style='max-height:250px;overflow-y:auto'><table style='width:100%;font-size:12px;border-collapse:collapse'>" +
+    "<thead><tr style='background:rgba(15,30,53,.06)'><th style='padding:6px 9px;text-align:left'>Year</th><th style='padding:6px 9px;text-align:right'>Deduction</th><th style='padding:6px 9px;text-align:right'>Cumulative</th><th style='padding:6px 9px;text-align:right'>Remaining</th></tr></thead>" +
+    "<tbody>" + rows + "</tbody></table></div>";
+}
+
+async function exportLedgerCSV() {
+  if (!sb) return;
+  var payRes = await sb.from("payments").select("*, tenants(full_name)").order("payment_date", {ascending: false});
+  var expRes = await sb.from("expenses").select("*").order("expense_date", {ascending: false});
+  var pays = payRes.data || [];
+  var exps = expRes.data || [];
+
+  var csv = "PropManager SC — Full Ledger Export\nGenerated:," + new Date().toLocaleDateString() + "\n\n";
+  csv += "INCOME\nDate,Tenant,Amount,Method,Status,Notes\n";
+  pays.forEach(function(p) {
+    csv += p.payment_date + "," + (p.tenants ? p.tenants.full_name : "Unknown") + ",$" + p.amount + "," + p.method + "," + p.status + "," + (p.notes||"") + "\n";
+  });
+  csv += "\nEXPENSES\nDate,Category,Description,Amount\n";
+  exps.forEach(function(e) {
+    csv += e.expense_date + "," + (e.category||"Other") + "," + e.description + ",$" + e.amount + "\n";
+  });
+  var totalInc = pays.reduce(function(s,p){ return s+Number(p.amount); }, 0);
+  var totalExp = exps.reduce(function(s,e){ return s+Number(e.amount); }, 0);
+  csv += "\nSUMMARY\nTotal income,$" + totalInc + "\nTotal expenses,$" + totalExp + "\nNet profit,$" + (totalInc-totalExp) + "\n";
+
+  var blob = new Blob([csv], {type:"text/csv"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a"); a.href = url;
+  a.download = "PropManagerSC_Ledger_" + new Date().getFullYear() + ".csv";
+  a.click(); URL.revokeObjectURL(url);
+}
+
+async function exportRentRoll() {
+  if (!sb) return;
+  var tRes = await sb.from("tenants").select("*, properties(address)").order("full_name");
+  var tenants = tRes.data || [];
+  var csv = "PropManager SC — Rent Roll\nGenerated:," + new Date().toLocaleDateString() + "\n\n";
+  csv += "Tenant,Address,Monthly Rent,Lease Start,Lease End,Status,Security Deposit,Email,Phone\n";
+  tenants.forEach(function(t) {
+    csv += t.full_name + "," + (t.properties ? t.properties.address : "") + ",$" + (t.monthly_rent||0) + "," +
+      (t.lease_start||"") + "," + (t.lease_end||"") + "," + t.status + ",$" + (t.security_deposit||0) + "," +
+      t.email + "," + (t.phone||"") + "\n";
+  });
+  var totalRent = tenants.reduce(function(s,t){ return s+Number(t.monthly_rent||0); }, 0);
+  csv += "\nTotal monthly rent,$" + totalRent + "\nAnnual gross,$" + (totalRent*12) + "\n";
+  var blob = new Blob([csv], {type:"text/csv"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a"); a.href = url;
+  a.download = "PropManagerSC_RentRoll_" + new Date().toLocaleDateString().replace(/\//g,"-") + ".csv";
+  a.click(); URL.revokeObjectURL(url);
+}
+
+async function exportExpensesSummary() {
+  if (!sb) return;
+  var expRes = await sb.from("expenses").select("*").order("expense_date");
+  var exps = expRes.data || [];
+  var byCat = {};
+  exps.forEach(function(e) {
+    var cat = e.category || "Other";
+    if (!byCat[cat]) byCat[cat] = { total: 0, count: 0 };
+    byCat[cat].total += Number(e.amount);
+    byCat[cat].count++;
+  });
+  var csv = "PropManager SC — Expense Summary by Category\nGenerated:," + new Date().toLocaleDateString() + "\n\n";
+  csv += "Category,Total,# of Transactions,Avg per Transaction\n";
+  Object.keys(byCat).sort().forEach(function(cat) {
+    var d = byCat[cat];
+    csv += cat + ",$" + d.total.toFixed(2) + "," + d.count + ",$" + (d.total/d.count).toFixed(2) + "\n";
+  });
+  var grand = exps.reduce(function(s,e){ return s+Number(e.amount); }, 0);
+  csv += "\nGRAND TOTAL,$" + grand.toFixed(2) + "\n";
+  var blob = new Blob([csv], {type:"text/csv"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a"); a.href = url;
+  a.download = "PropManagerSC_ExpensesSummary_" + new Date().getFullYear() + ".csv";
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// Update tax summary metrics when dashboard loads
+async function updateTaxMetrics(payments, expenses) {
+  var year = new Date().getFullYear();
+  var yearPays = payments.filter(function(p) { return p.payment_date && p.payment_date.startsWith(year); });
+  var yearExps = expenses.filter(function(e) { return e.expense_date && e.expense_date.startsWith(year); });
+  var grossInc = yearPays.reduce(function(s,p){ return s+Number(p.amount); }, 0);
+  var totalExp = yearExps.reduce(function(s,e){ return s+Number(e.amount); }, 0);
+  var annualRent = (window._tenantCache || []).reduce(function(s,t){ return s+Number(t.monthly_rent||0); }, 0) * 12;
+  var dep = annualRent * 0.15; // ~15% of annual rent as rough depreciation estimate
+  var taxable = Math.max(0, grossInc - totalExp - dep);
+  var txGross = document.getElementById("tx-gross");
+  var txExp = document.getElementById("tx-exp");
+  var txDep = document.getElementById("tx-dep");
+  var txNet = document.getElementById("tx-net");
+  if (txGross) txGross.textContent = "$" + grossInc.toLocaleString();
+  if (txExp) txExp.textContent = "$" + totalExp.toLocaleString();
+  if (txDep) txDep.textContent = "$" + Math.round(dep).toLocaleString();
+  if (txNet) txNet.textContent = "$" + Math.round(taxable).toLocaleString();
+}
+
+// ════════════════════════════════════════════════════════════
+// AUTOMATIC LATE RENT NOTIFICATIONS
+// Runs when landlord logs in — checks for unpaid rent
+// ════════════════════════════════════════════════════════════
+async function checkLateRentAndNotify() {
+  if (!sb || !window._tenantCache) return;
+  var now = new Date();
+  var dayOfMonth = now.getDate();
+  var year = now.getFullYear();
+  var month = now.getMonth();
+  var monthStr = year + "-" + String(month+1).padStart(2,"0");
+  var monthName = now.toLocaleDateString("en-US", { month:"long", year:"numeric" });
+  var gracePeriodOver = dayOfMonth > 5;
+
+  // Get all payments for this month
+  var payRes = await sb.from("payments").select("tenant_id, status, payment_date")
+    .gte("payment_date", monthStr + "-01")
+    .lte("payment_date", monthStr + "-31");
+  var paidThisMonth = new Set((payRes.data || []).map(function(p) { return p.tenant_id; }));
+
+  // Find tenants who have NOT paid this month
+  var lateTenants = window._tenantCache.filter(function(t) {
+    return t.monthly_rent > 0 && !paidThisMonth.has(t.id);
+  });
+
+  if (lateTenants.length === 0) {
+    console.log("All tenants current for " + monthName);
+    return;
+  }
+
+  // Mark them as overdue in DB if grace period is over
+  if (gracePeriodOver) {
+    for (var i = 0; i < lateTenants.length; i++) {
+      var t = lateTenants[i];
+      if (t.status !== "overdue") {
+        await sb.from("tenants").update({ status: "overdue" }).eq("id", t.id);
+      }
+    }
+  }
+
+  // Show notification banner in dashboard
+  var banner = document.getElementById("late-rent-banner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "late-rent-banner";
+    banner.style.cssText = "background:#fdecea;border:1px solid rgba(192,57,43,.2);border-radius:9px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:11px;flex-wrap:wrap";
+    var dc = document.querySelector(".dc");
+    if (dc) dc.insertBefore(banner, dc.firstChild);
+  }
+
+  var daysLate = Math.max(0, dayOfMonth - 1);
+  var feeInfo = gracePeriodOver ? " Late fees apply after day 5." : " Within 5-day grace period.";
+
+  banner.innerHTML = "<i class='ti ti-alert-circle' style='font-size:20px;color:#c0392b;flex-shrink:0;margin-top:1px'></i>" +
+    "<div style='flex:1'>" +
+    "<div style='font-size:13.5px;font-weight:600;color:#c0392b;margin-bottom:5px'>" +
+    lateTenants.length + " tenant(s) have not paid " + monthName + " rent (Day " + daysLate + ")" + feeInfo + "</div>" +
+    "<div style='display:flex;gap:7px;flex-wrap:wrap'>" +
+    lateTenants.map(function(t) {
+      var fee = gracePeriodOver ? calcLateFee(t.monthly_rent, daysLate) : 0;
+      var feeStr = fee > 0 ? " + $" + fee + " late fee" : "";
+      return "<span style='background:#fff;border:1px solid rgba(192,57,43,.2);border-radius:6px;padding:3px 9px;font-size:12px;color:#c0392b'>" +
+        t.full_name + " — $" + Number(t.monthly_rent).toLocaleString() + feeStr + "</span>";
+    }).join("") +
+    "</div>" +
+    "<div style='margin-top:9px;display:flex;gap:7px'>" +
+    "<button class='btn btn-r' style='font-size:12px' onclick='sendLateNotices()'><i class='ti ti-bell'></i> Send late notices to all</button>" +
+    "<button class='btn' style='font-size:12px' onclick='goDash("nt")'><i class='ti ti-file-alert'></i> Issue 5-day notices</button>" +
+    "</div></div>";
+}
+
+async function sendLateNotices() {
+  if (!sb || !window._tenantCache) return;
+  var now = new Date();
+  var monthStr = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+  var payRes = await sb.from("payments").select("tenant_id").gte("payment_date", monthStr + "-01").lte("payment_date", monthStr + "-31");
+  var paidIds = new Set((payRes.data||[]).map(function(p){ return p.tenant_id; }));
+  var late = window._tenantCache.filter(function(t){ return t.monthly_rent > 0 && !paidIds.has(t.id); });
+
+  if (!late.length) { alert("All tenants are current!"); return; }
+
+  // Log notices in the notices table
+  for (var i = 0; i < late.length; i++) {
+    var t = late[i];
+    var daysLate = Math.max(0, now.getDate() - 1);
+    var fee = calcLateFee(t.monthly_rent, daysLate);
+    await sb.from("notices").insert({
+      tenant_id: t.id,
+      property_id: t.property_id,
+      notice_type: "late-rent",
+      amount_owed: t.monthly_rent + fee,
+      sent_at: new Date().toISOString(),
+      status: "sent"
+    });
+    // Update status to overdue
+    await sb.from("tenants").update({ status: "overdue" }).eq("id", t.id);
+  }
+
+  // Show confirmation
+  var banner = document.getElementById("late-rent-banner");
+  if (banner) {
+    banner.style.background = "#eaf5ee";
+    banner.style.borderColor = "rgba(45,122,79,.2)";
+    banner.innerHTML = "<i class='ti ti-circle-check' style='font-size:20px;color:#2d7a4f'></i>" +
+      "<div style='font-size:13px;color:#2d7a4f;font-weight:500'>Late notices sent and recorded for " + late.length + " tenant(s). " +
+      "Each notice has been logged in your 5-Day Notices section. " +
+      "To send email notifications, set up Resend.com integration.</div>";
+  }
+  loadDashboardData();
 }
 
 // ---- FORM SUBMITS ----
