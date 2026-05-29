@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v12.2</div>
+<div class="vbadge">PropManager SC v12.3</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1634,6 +1634,55 @@ function showNavUser(initials, name, role) {
 }
 
 
+async function updateHeroLandlordCard() {
+  if (!sb) return;
+  try {
+    var now = new Date();
+    var monthStr = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+    var monthStart = monthStr + "-01";
+    var monthEnd   = monthStr + "-" + String(new Date(now.getFullYear(), now.getMonth()+1, 0).getDate()).padStart(2,"0");
+
+    var tRes = await sb.from("tenants").select("id, full_name, monthly_rent, status, initials, color, text_color, property_id, properties(address)").order("full_name");
+    var pRes = await sb.from("payments").select("amount, tenant_id, status").gte("payment_date", monthStart).lte("payment_date", monthEnd);
+
+    var tenants = tRes.data || [];
+    var pays    = pRes.data || [];
+    var paidIds = new Set(pays.filter(function(p){ return p.status === "paid"; }).map(function(p){ return p.tenant_id; }));
+
+    var totalRent  = tenants.reduce(function(s,t){ return s + Number(t.monthly_rent||0); }, 0);
+    var collected  = pays.filter(function(p){ return p.status === "paid"; }).reduce(function(s,p){ return s + Number(p.amount||0); }, 0);
+    var pct        = totalRent > 0 ? Math.round(collected / totalRent * 100) : 0;
+
+    var hInc = document.getElementById("hero-income");
+    var hCol = document.getElementById("hero-collected");
+    var hPct = document.getElementById("hero-collected-pct");
+    if (hInc) hInc.textContent = "$" + totalRent.toLocaleString();
+    if (hCol) hCol.textContent = "$" + collected.toLocaleString();
+    if (hPct) hPct.textContent = pct + "% collected";
+
+    var rowsEl = document.getElementById("hero-rent-rows");
+    if (rowsEl && tenants.length) {
+      rowsEl.innerHTML = tenants
+        .filter(function(t){ return Number(t.monthly_rent||0) > 0; })
+        .map(function(t) {
+          var paid  = paidIds.has(t.id);
+          var ini   = t.initials || t.full_name.split(" ").map(function(w){ return w[0]; }).join("").slice(0,2).toUpperCase();
+          var addr  = t.properties ? t.properties.address.replace(", Gaffney SC","").replace(", Spartanburg SC","") : "";
+          var fName = t.full_name.split(" ")[0];
+          var lName = t.full_name.split(" ").slice(-1)[0];
+          return "<div class='rent-row'>" +
+            "<div class='r-av' style='background:" + (t.color||"rgba(255,255,255,.1)") + ";color:" + (t.text_color||"rgba(255,255,255,.7)") + "'>" + ini + "</div>" +
+            "<div class='r-name'>" + fName + " " + lName + " &middot; " + addr + "</div>" +
+            "<div class='r-amt'>$" + Number(t.monthly_rent||0).toLocaleString() + "</div>" +
+            "<div class='r-badge " + (paid ? "rb-g" : "rb-r") + "'>" + (paid ? "Paid" : "Unpaid") + "</div></div>";
+        }).join("");
+    }
+  } catch(e) {
+    console.warn("Hero card update error:", e.message);
+  }
+}
+
+
 async function tenantLogin() {
   var email = document.getElementById("t-email").value.trim();
   var pass = document.getElementById("t-pass").value;
@@ -2028,6 +2077,13 @@ async function loadDashboardData() {
   renderNoticeButtons(tenants);
   updateTaxMetrics(payments, expenses);
   checkLateRentAndNotify();
+  // Refresh hero card with live data now that tenants/payments are loaded
+  if (currentRole === "landlord") {
+    var llCard = document.getElementById("hero-landlord-card");
+    if (llCard && llCard.style.display !== "none") {
+      updateHeroLandlordCard();
+    }
+  }
 
   var alertEl = document.getElementById("overdue-alert");
   if (overdue > 0 && alertEl) {
