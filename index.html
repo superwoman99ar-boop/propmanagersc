@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v11.9</div>
+<div class="vbadge">PropManager SC v12.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -231,22 +231,50 @@ footer{background:#0f1e35;padding:44px 20px 26px}
         <div><div class="stat-v">100%</div><div class="stat-l">Online managed</div></div>
       </div>
     </div>
-    <div class="hero-card">
+    <!-- PUBLIC VIEW: shown to visitors not logged in -->
+    <div class="hero-card" id="hero-public-card">
+      <div class="hc-head">
+        <div class="hc-logo">P</div>
+        <div><div class="hc-t">Tenant portal</div><div class="hc-s">propmanagersc.com</div></div>
+        <div class="live-pill"><span class="live-dot"></span> Secure</div>
+      </div>
+      <div style="padding:18px 0 8px;display:flex;flex-direction:column;gap:11px">
+        <div style="display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.07);border-radius:9px;padding:13px">
+          <div style="width:34px;height:34px;background:rgba(201,150,42,.2);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-credit-card" style="color:#f0c96b"></i></div>
+          <div><div style="font-size:13px;font-weight:500;color:#fff">Pay rent online</div><div style="font-size:11px;color:rgba(255,255,255,.5)">ACH, card, or installments</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.07);border-radius:9px;padding:13px">
+          <div style="width:34px;height:34px;background:rgba(45,122,79,.2);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-tool" style="color:#7ddba0"></i></div>
+          <div><div style="font-size:13px;font-weight:500;color:#fff">Submit maintenance</div><div style="font-size:11px;color:rgba(255,255,255,.5)">Track requests in real time</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.07);border-radius:9px;padding:13px">
+          <div style="width:34px;height:34px;background:rgba(26,95,168,.2);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-file-text" style="color:#7eb8f5"></i></div>
+          <div><div style="font-size:13px;font-weight:500;color:#fff">View lease &amp; documents</div><div style="font-size:11px;color:rgba(255,255,255,.5)">Access anytime, anywhere</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.07);border-radius:9px;padding:13px">
+          <div style="width:34px;height:34px;background:rgba(120,80,200,.2);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-message" style="color:#c4b8f5"></i></div>
+          <div><div style="font-size:13px;font-weight:500;color:#fff">Message your landlord</div><div style="font-size:11px;color:rgba(255,255,255,.5)">Direct communication</div></div>
+        </div>
+      </div>
+      <button class="btn-hp" style="width:100%;margin-top:4px;justify-content:center;padding:12px" id="hero-portal-login-btn">
+        <i class="ti ti-login"></i> Log in to your portal
+      </button>
+    </div>
+
+    <!-- LANDLORD VIEW: only shown after landlord login -->
+    <div class="hero-card" id="hero-landlord-card" style="display:none">
       <div class="hc-head">
         <div class="hc-logo">P</div>
         <div><div class="hc-t">Portfolio overview</div><div class="hc-s">Live 2026</div></div>
         <div class="live-pill"><span class="live-dot"></span> Live</div>
       </div>
       <div class="hc-grid">
-        <div class="hc-tile"><div class="hc-tile-l">Monthly income</div><div class="hc-tile-v">$6,300</div><div class="hc-tile-s" style="color:#7ddba0">83% occupied</div></div>
-        <div class="hc-tile"><div class="hc-tile-l">YTD profit</div><div class="hc-tile-v">$28,560</div><div class="hc-tile-s" style="color:#f0c96b">75.6% margin</div></div>
+        <div class="hc-tile"><div class="hc-tile-l">Monthly income</div><div class="hc-tile-v" id="hero-income">$6,300</div><div class="hc-tile-s" style="color:#7ddba0">6 active units</div></div>
+        <div class="hc-tile"><div class="hc-tile-l">This month</div><div class="hc-tile-v" id="hero-collected">--</div><div class="hc-tile-s" style="color:#f0c96b" id="hero-collected-pct">loading...</div></div>
       </div>
-      <div class="rent-row"><div class="r-av" style="background:rgba(219,232,255,.2);color:#b8cff5">JK</div><div class="r-name">Jonathan Knight &middot; 510 11th St</div><div class="r-amt">$1,000</div><div class="r-badge rb-g">Paid</div></div>
-      <div class="rent-row"><div class="r-av" style="background:rgba(225,245,238,.2);color:#7ddba0">SR</div><div class="r-name">Shielah Rios &middot; 602 11th St</div><div class="r-amt">$1,000</div><div class="r-badge rb-g">Paid</div></div>
-      <div class="rent-row"><div class="r-av" style="background:rgba(238,237,254,.2);color:#c4b8f5">RG</div><div class="r-name">Rudolph Glynn &middot; 284 W. Wood</div><div class="r-amt">$1,100</div><div class="r-badge rb-g">Paid</div></div>
-      <div class="rent-row"><div class="r-av" style="background:rgba(225,245,238,.2);color:#7ddba0">KT</div><div class="r-name">Kalaneisha Tiswell &middot; 282 W. Wood</div><div class="r-amt">$1,000</div><div class="r-badge rb-g">Paid</div></div>
-      <div class="rent-row"><div class="r-av" style="background:rgba(240,237,255,.2);color:#c4b8f5">CG</div><div class="r-name">Camryn George &middot; 288 W. Wood</div><div class="r-amt">$1,100</div><div class="r-badge rb-g">Paid</div></div>
-      <div class="rent-row"><div class="r-av" style="background:rgba(251,234,240,.2);color:#f5b8cc">EC</div><div class="r-name">Ezequiel Castaneda &middot; 290 W. Wood</div><div class="r-amt">$1,100</div><div class="r-badge rb-g">Paid</div></div>
+      <div id="hero-rent-rows">
+        <div class="rent-row"><div class="r-av" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.4)">--</div><div class="r-name" style="color:rgba(255,255,255,.4)">Loading tenant data...</div></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1214,6 +1242,8 @@ function attachEvents() {
 
   // Hero buttons
   document.getElementById("hero-tenant-btn").addEventListener("click", function() { openMo("tenant"); });
+  var heroPLogin = document.getElementById("hero-portal-login-btn");
+  if (heroPLogin) heroPLogin.addEventListener("click", function() { openMo("tenant"); });
   document.getElementById("hero-vacancy-btn").addEventListener("click", function() { goPage("vacancy"); initVacancyPage(); });
   document.getElementById("cta-tenant-btn").addEventListener("click", function() { openMo("tenant"); });
 
@@ -1376,6 +1406,35 @@ function attachEvents() {
     });
     vePhotoInput.addEventListener("change", function() { handleVacancyPhotos(vePhotoInput.files); });
   }
+  // Photo tabs
+  var photoTabUp = document.getElementById("photo-tab-upload");
+  var photoTabUrl = document.getElementById("photo-tab-url");
+  if (photoTabUp) photoTabUp.addEventListener("click", function() {
+    photoTabUp.classList.add("on"); photoTabUrl.classList.remove("on");
+    document.getElementById("photo-upload-panel").style.display = "block";
+    document.getElementById("photo-url-panel").style.display = "none";
+  });
+  if (photoTabUrl) photoTabUrl.addEventListener("click", function() {
+    photoTabUrl.classList.add("on"); photoTabUp.classList.remove("on");
+    document.getElementById("photo-url-panel").style.display = "block";
+    document.getElementById("photo-upload-panel").style.display = "none";
+  });
+  // Add URL button
+  var addUrlBtn = document.getElementById("add-photo-url-btn");
+  if (addUrlBtn) addUrlBtn.addEventListener("click", function() {
+    var urlInput = document.getElementById("ve-photo-url");
+    var url = (urlInput.value || "").trim();
+    if (!url) return;
+    if (_vacancyPhotos.length >= 10) { alert("Maximum 10 photos allowed."); return; }
+    _vacancyPhotos.push(url);
+    urlInput.value = "";
+    renderEditPhotoPreview();
+  });
+  // Enter key on URL input
+  var urlInp = document.getElementById("ve-photo-url");
+  if (urlInp) urlInp.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("add-photo-url-btn").click(); }
+  });
   var vacPrevBtn = document.getElementById("vac-photo-prev");
   var vacNextBtn = document.getElementById("vac-photo-next");
   if (vacPrevBtn) vacPrevBtn.addEventListener("click", function() { changeVacPhoto(-1); });
@@ -1559,6 +1618,11 @@ async function landlordLogin() {
 
 async function signOut() {
   if (sb) { await sb.auth.signOut(); }
+  // Restore public hero card before reload
+  var pubCard = document.getElementById("hero-public-card");
+  var llCard  = document.getElementById("hero-landlord-card");
+  if (pubCard) pubCard.style.display = "block";
+  if (llCard)  llCard.style.display  = "none";
   goPage("home");
   location.reload();
 }
@@ -1593,7 +1657,7 @@ function initSupabase() {
         if (LANDLORD_EMAILS.indexOf(currentUser.email) !== -1) {
           currentRole = "landlord";
           var llName = currentUser.email === LANDLORD_EMAIL ? "Landlord" : "Co-landlord";
-          showNavUser("LL", llName);
+          showNavUser("LL", llName, "landlord");
           // Small delay so modal animation completes before redirect
           setTimeout(function() {
             closeMo("landlord");
@@ -4243,12 +4307,30 @@ document.addEventListener("DOMContentLoaded", function() {
       <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="am-hardwood" value="Hardwood floors"> Hardwood floors</label>
     </div>
 
-    <label class="mo-lbl">Photos (upload up to 10)</label>
-    <div id="ve-photo-drop" style="border:2px dashed rgba(15,30,53,.2);border-radius:9px;padding:20px;text-align:center;cursor:pointer;margin-bottom:11px;background:rgba(15,30,53,.02)">
-      <i class="ti ti-photo-up" style="font-size:28px;color:#999;display:block;margin-bottom:7px"></i>
-      <div style="font-size:13px;color:#5a5a5a">Drop photos here or <span style="color:#1a5fa8;font-weight:500">click to browse</span></div>
-      <div style="font-size:11px;color:#999;margin-top:3px">JPG, PNG up to 5MB each &mdash; first photo is the main listing photo</div>
-      <input type="file" id="ve-photo-input" accept="image/*" multiple style="display:none">
+    <label class="mo-lbl">Photos</label>
+    <div class="tab-row" style="margin-bottom:11px">
+      <button class="tab on" id="photo-tab-upload">Upload from device</button>
+      <button class="tab" id="photo-tab-url">Add by URL</button>
+    </div>
+    <!-- Upload tab -->
+    <div id="photo-upload-panel">
+      <div id="ve-photo-drop" style="border:2px dashed rgba(15,30,53,.2);border-radius:9px;padding:20px;text-align:center;cursor:pointer;margin-bottom:11px;background:rgba(15,30,53,.02)">
+        <i class="ti ti-photo-up" style="font-size:28px;color:#999;display:block;margin-bottom:7px"></i>
+        <div style="font-size:13px;color:#5a5a5a">Drop photos here or <span style="color:#1a5fa8;font-weight:500">click to browse</span></div>
+        <div style="font-size:11px;color:#999;margin-top:3px">JPG, PNG up to 5MB each &mdash; first photo is the main listing photo</div>
+        <input type="file" id="ve-photo-input" accept="image/*" multiple style="display:none">
+      </div>
+    </div>
+    <!-- URL tab -->
+    <div id="photo-url-panel" style="display:none;margin-bottom:11px">
+      <div style="font-size:12px;color:#5a5a5a;background:rgba(15,30,53,.04);border-radius:7px;padding:10px 12px;margin-bottom:9px">
+        <strong>Tip:</strong> Upload photos to <a href="https://imgur.com" target="_blank" style="color:#1a5fa8">imgur.com</a> or <a href="https://cloudinary.com" target="_blank" style="color:#1a5fa8">Cloudinary</a> (both free), then paste the direct image URL here. Photos stored by URL persist permanently.
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:9px">
+        <input class="mo-inp" type="url" id="ve-photo-url" placeholder="https://i.imgur.com/yourphoto.jpg" style="margin:0;flex:1">
+        <button class="btn btn-n" id="add-photo-url-btn" style="white-space:nowrap"><i class="ti ti-plus"></i> Add</button>
+      </div>
+      <div style="font-size:11px;color:#999">Add up to 10 photo URLs. First URL is the main listing photo.</div>
     </div>
     <div id="ve-photo-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
 
