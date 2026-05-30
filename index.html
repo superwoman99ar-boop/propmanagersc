@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v14.1</div>
+<div class="vbadge">PropManager SC v14.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -508,97 +508,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
       </div>
 
       <!-- TENANT SCREENING SECTION -->
-      <div class="dsec" id="ds-sc">
-        <div class="card" style="margin-bottom:13px">
-          <div class="card-head">
-            <div class="card-title"><i class="ti ti-user-check" style="color:#1a5fa8"></i> Tenant screening</div>
-            <button class="btn btn-n" id="new-screening-btn"><i class="ti ti-plus"></i> Screen a new applicant</button>
-          </div>
-          <div style="font-size:13px;color:#5a5a5a;margin-bottom:16px;line-height:1.7">
-            Run background checks, credit reports, and eviction history on prospective tenants before signing a lease.
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:18px">
-            <div style="background:rgba(15,30,53,.04);border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:28px;color:#1a5fa8;margin-bottom:7px"><i class="ti ti-file-analytics"></i></div>
-              <div style="font-size:13px;font-weight:500;margin-bottom:4px">Credit report</div>
-              <div style="font-size:11.5px;color:#5a5a5a">Score, history, accounts</div>
-              <div style="font-size:12px;color:#2d7a4f;font-weight:500;margin-top:7px">Tenant pays $35</div>
-            </div>
-            <div style="background:rgba(15,30,53,.04);border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:28px;color:#c0392b;margin-bottom:7px"><i class="ti ti-shield-check"></i></div>
-              <div style="font-size:13px;font-weight:500;margin-bottom:4px">Background check</div>
-              <div style="font-size:11.5px;color:#5a5a5a">Criminal, sex offender</div>
-              <div style="font-size:12px;color:#2d7a4f;font-weight:500;margin-top:7px">Included in $35</div>
-            </div>
-            <div style="background:rgba(15,30,53,.04);border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:28px;color:#a06010;margin-bottom:7px"><i class="ti ti-home-off"></i></div>
-              <div style="font-size:13px;font-weight:500;margin-bottom:4px">Eviction history</div>
-              <div style="font-size:11.5px;color:#5a5a5a">Prior eviction records</div>
-              <div style="font-size:12px;color:#2d7a4f;font-weight:500;margin-top:7px">Included in $35</div>
-            </div>
-          </div>
-          <div style="background:#e6f0fb;border:1px solid rgba(26,95,168,.2);border-radius:7px;padding:13px 15px;font-size:12.5px;color:#1a5fa8;margin-bottom:16px">
-            <strong>How it works:</strong> You invite the applicant by email. They pay the $35 screening fee and authorize the report. You receive the full report instantly via TransUnion SmartMove — the same service used by major property management companies.
-          </div>
-          <div id="screening-list">
-            <div class="empty">No screening requests yet. Click &ldquo;Screen a new applicant&rdquo; to get started.</div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head"><div class="card-title">Online rental application</div><button class="btn btn-n" id="copy-app-link-btn"><i class="ti ti-link"></i> Copy application link</button></div>
-          <div style="font-size:13px;color:#5a5a5a;margin-bottom:13px;line-height:1.7">
-            Share your application link with prospective tenants. They fill out the form online and you review their application directly in your dashboard.
-          </div>
-          <div style="background:rgba(15,30,53,.04);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:11px;margin-bottom:13px">
-            <i class="ti ti-link" style="color:#1a5fa8;font-size:18px;flex-shrink:0"></i>
-            <div style="font-family:monospace;font-size:12px;color:#0f1e35;word-break:break-all">propmanagersc.com?apply=1</div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;font-size:12.5px;color:#5a5a5a">
-            <div style="display:flex;align-items:center;gap:7px"><i class="ti ti-check" style="color:#2d7a4f"></i> Name, employment, income</div>
-            <div style="display:flex;align-items:center;gap:7px"><i class="ti ti-check" style="color:#2d7a4f"></i> Rental history &amp; references</div>
-            <div style="display:flex;align-items:center;gap:7px"><i class="ti ti-check" style="color:#2d7a4f"></i> Pet and vehicle info</div>
-            <div style="display:flex;align-items:center;gap:7px"><i class="ti ti-check" style="color:#2d7a4f"></i> Emergency contact</div>
-          </div>
-        </div>
-      </div>
-
       <!-- DOCUMENTS SECTION -->
-      <div class="dsec" id="ds-docs">
-        <div class="card" style="margin-bottom:13px">
-          <div class="card-head">
-            <div class="card-title"><i class="ti ti-files" style="color:#a06010"></i> Document storage</div>
-            <button class="btn btn-n" id="upload-doc-btn"><i class="ti ti-upload"></i> Upload document</button>
-          </div>
-          <div style="font-size:13px;color:#5a5a5a;margin-bottom:14px">Store leases, inspection reports, receipts, move-in checklists, and other property documents.</div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:16px">
-            <div style="background:rgba(15,30,53,.04);border-radius:8px;padding:13px;text-align:center;cursor:pointer" id="doc-cat-lease">
-              <i class="ti ti-file-text" style="font-size:24px;color:#1a5fa8;display:block;margin-bottom:6px"></i>
-              <div style="font-size:12px;font-weight:500">Leases</div>
-            </div>
-            <div style="background:rgba(15,30,53,.04);border-radius:8px;padding:13px;text-align:center;cursor:pointer" id="doc-cat-inspection">
-              <i class="ti ti-clipboard-check" style="font-size:24px;color:#2d7a4f;display:block;margin-bottom:6px"></i>
-              <div style="font-size:12px;font-weight:500">Inspections</div>
-            </div>
-            <div style="background:rgba(15,30,53,.04);border-radius:8px;padding:13px;text-align:center;cursor:pointer" id="doc-cat-receipt">
-              <i class="ti ti-receipt" style="font-size:24px;color:#a06010;display:block;margin-bottom:6px"></i>
-              <div style="font-size:12px;font-weight:500">Receipts</div>
-            </div>
-            <div style="background:rgba(15,30,53,.04);border-radius:8px;padding:13px;text-align:center;cursor:pointer" id="doc-cat-other">
-              <i class="ti ti-file" style="font-size:24px;color:#5a5a5a;display:block;margin-bottom:6px"></i>
-              <div style="font-size:12px;font-weight:500">Other</div>
-            </div>
-          </div>
-          <div id="doc-list"><div class="empty">No documents uploaded yet. Click Upload to add your first document.</div></div>
-        </div>
-
-        <div class="card">
-          <div class="card-head"><div class="card-title">Move-in / Move-out checklist</div><button class="btn btn-n" id="new-checklist-btn"><i class="ti ti-plus"></i> New checklist</button></div>
-          <div style="font-size:13px;color:#5a5a5a;margin-bottom:13px">Document the condition of each property at move-in and move-out to protect your security deposit.</div>
-          <div id="checklist-list"><div class="empty">No checklists yet.</div></div>
-        </div>
-      </div>
-
       <!-- SCREENING SECTION -->
       <div class="dsec" id="ds-sc">
         <div class="card" style="margin-bottom:13px">
@@ -1836,6 +1746,70 @@ function attachEvents() {
   document.getElementById("di-gl").addEventListener("click", function() { goDash("gl"); });
   document.getElementById("di-nt").addEventListener("click", function() { goDash("nt"); });
   document.getElementById("di-tx").addEventListener("click", function() { goDash("tx"); });
+
+  // ── NEW SECTION LISTENERS ─────────────────────────────────────────────────
+  (function() {
+    var navMap = {
+      "di-sc":   function() { goDash("sc");   renderScreeningList(); },
+      "di-docs": function() { goDash("docs"); renderDocList(null); },
+      "di-app":  function() { goDash("app");  renderApplications(); },
+      "di-syn":  function() { goDash("syn");  populateSynDetails(); },
+      "di-sms":  function() { goDash("sms");  initSmsSection(); }
+    };
+    Object.keys(navMap).forEach(function(id) {
+      var btn = document.getElementById(id);
+      if (btn) btn.addEventListener("click", navMap[id]);
+    });
+
+    // Screening buttons
+    var nsBtn = document.getElementById("new-screening-btn");
+    if (nsBtn) nsBtn.addEventListener("click", openScreeningModal);
+    var caBtn = document.getElementById("copy-app-link-btn");
+    if (caBtn) caBtn.addEventListener("click", function() {
+      var url = window.location.origin + window.location.pathname + "?apply=1";
+      navigator.clipboard.writeText(url).then(function() {
+        caBtn.innerHTML = "<i class='ti ti-check'></i> Copied!";
+        setTimeout(function() { caBtn.innerHTML = "<i class='ti ti-link'></i> Copy link"; }, 2000);
+      }).catch(function() { alert("Your link: " + url); });
+    });
+    var cScrMo = document.getElementById("close-screening-mo");
+    if (cScrMo) cScrMo.addEventListener("click", function() { closeMo("screening"); });
+    var sScrBtn = document.getElementById("send-screening-btn");
+    if (sScrBtn) sScrBtn.addEventListener("click", sendScreeningInvite);
+
+    // Document buttons
+    var udBtn = document.getElementById("upload-doc-btn");
+    if (udBtn) udBtn.addEventListener("click", openDocUpload);
+    var ncBtn = document.getElementById("new-checklist-btn");
+    if (ncBtn) ncBtn.addEventListener("click", openMoveInChecklist);
+    var cDuMo = document.getElementById("close-docupload-mo");
+    if (cDuMo) cDuMo.addEventListener("click", function() { closeMo("docupload"); });
+    var cChMo = document.getElementById("close-checklist-mo");
+    if (cChMo) cChMo.addEventListener("click", function() { closeMo("checklist"); });
+    var sdBtn = document.getElementById("save-doc-btn");
+    if (sdBtn) sdBtn.addEventListener("click", saveDocument);
+    var scBtn = document.getElementById("save-checklist-btn");
+    if (scBtn) scBtn.addEventListener("click", function() { showOk("chk-ok"); setTimeout(function(){ closeMo("checklist"); }, 1500); });
+    // Doc filter badges
+    ["all","lease","inspection","receipt","notice"].forEach(function(cat) {
+      var fb = document.getElementById("doc-filter-" + cat);
+      if (fb) fb.addEventListener("click", function() { renderDocList(cat === "all" ? null : cat); });
+    });
+
+    // Syndication
+    var clBtn = document.getElementById("copy-listing-btn");
+    if (clBtn) clBtn.addEventListener("click", copyVacancyDetails);
+
+    // SMS
+    var ssSBtn = document.getElementById("save-sms-btn");
+    if (ssSBtn) ssSBtn.addEventListener("click", saveSmsSettings);
+    var snSBtn = document.getElementById("send-sms-btn");
+    if (snSBtn) snSBtn.addEventListener("click", sendSmsMessage);
+    var stSel = document.getElementById("sms-template");
+    if (stSel) stSel.addEventListener("change", updateSmsTemplate);
+    var stoSel = document.getElementById("sms-to-tenant");
+    if (stoSel) stoSel.addEventListener("change", updateSmsTemplate);
+  })();
 
   // Dashboard action buttons
   document.getElementById("btn-issue-notice").addEventListener("click", function() { goDash("nt"); });
@@ -5381,13 +5355,19 @@ function saveDocument() {
   setTimeout(function() { closeMo("docupload"); }, 1500);
 }
 
-function renderDocList() {
+function renderDocList(filterCat) {
   var el = document.getElementById("doc-list");
   if (!el) return;
   try { _docs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]"); } catch(e) { _docs = []; }
-  if (!_docs.length) { el.innerHTML = "<div class='empty'>No documents yet.</div>"; return; }
+  var filtered = filterCat ? _docs.filter(function(d){ return (d.category||"").toLowerCase() === filterCat.toLowerCase(); }) : _docs;
+  // Update filter badge styles
+  ["all","lease","inspection","receipt","notice"].forEach(function(cat) {
+    var fb = document.getElementById("doc-filter-" + cat);
+    if (fb) { var active = (!filterCat && cat==="all") || filterCat===cat; fb.style.background=active?"#0f1e35":"rgba(15,30,53,.08)"; fb.style.color=active?"#fff":"#1a1a1a"; }
+  });
+  if (!filtered.length) { el.innerHTML = "<div class='empty'>" + (filterCat ? "No " + filterCat + " documents." : "No documents yet. Click Upload to add your first.") + "</div>"; return; }
   var icons = { Lease:"ti-file-text", Inspection:"ti-clipboard-check", Receipt:"ti-receipt", Notice:"ti-alert-triangle", Insurance:"ti-shield", Other:"ti-file" };
-  el.innerHTML = _docs.slice().reverse().map(function(d) {
+  el.innerHTML = filtered.slice().reverse().map(function(d) {
     var ico = icons[d.category] || "ti-file";
     return "<div class='lr'><div class='l-ico' style='background:#faeeda;color:#a06010'><i class='ti " + ico + "' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + d.name + "</div><div class='l-sub'>" + d.date + " &middot; " + d.category + "</div></div><button class='btn btn-r' style='font-size:11px;padding:3px 8px' data-del-doc='" + d.id + "'>Del</button></div>";
   }).join("");
@@ -5395,7 +5375,7 @@ function renderDocList() {
     btn.onclick = function() {
       _docs = _docs.filter(function(d) { return d.id !== parseInt(btn.getAttribute("data-del-doc")); });
       try { localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(e) {}
-      renderDocList();
+      renderDocList(filterCat);
     };
   });
 }
@@ -5574,6 +5554,15 @@ function checkApplicationFlow() {
     openMo("apply");
     window.history.replaceState({}, document.title, window.location.pathname);
   }
+}
+
+
+function populateSynDetails() {
+  var url = window.location.origin + window.location.pathname + "?apply=1";
+  var el1 = document.getElementById("app-link-display");
+  var el2 = document.getElementById("full-app-link");
+  if (el1) el1.textContent = url;
+  if (el2) el2.textContent = url;
 }
 
 // ---- FORM SUBMITS ----
