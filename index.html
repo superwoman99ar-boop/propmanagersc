@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v13.9</div>
+<div class="vbadge">PropManager SC v14.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -346,6 +346,13 @@ footer{background:#0f1e35;padding:44px 20px 26px}
       <button class="dsi" id="di-gl"><i class="ti ti-book"></i> Ledger</button>
       <button class="dsi" id="di-nt"><i class="ti ti-alert-triangle"></i> 5-Day Notices</button>
       <button class="dsi" id="di-tx"><i class="ti ti-calculator"></i> Tax Summary</button>
+      <div class="dsb-lbl">Tenants &amp; Leasing</div>
+      <button class="dsi" id="di-sc"><i class="ti ti-user-check"></i> Screening</button>
+      <button class="dsi" id="di-docs"><i class="ti ti-files"></i> Documents</button>
+      <button class="dsi" id="di-app"><i class="ti ti-browser"></i> Applications</button>
+      <div class="dsb-lbl">Marketing</div>
+      <button class="dsi" id="di-syn"><i class="ti ti-broadcast"></i> Listing Syndication</button>
+      <button class="dsi" id="di-sms"><i class="ti ti-message-circle"></i> SMS Notifications</button>
     </div>
   </div>
   <div class="dash-main">
@@ -589,6 +596,186 @@ footer{background:#0f1e35;padding:44px 20px 26px}
           <div class="card-head"><div class="card-title">Move-in / Move-out checklist</div><button class="btn btn-n" id="new-checklist-btn"><i class="ti ti-plus"></i> New checklist</button></div>
           <div style="font-size:13px;color:#5a5a5a;margin-bottom:13px">Document the condition of each property at move-in and move-out to protect your security deposit.</div>
           <div id="checklist-list"><div class="empty">No checklists yet.</div></div>
+        </div>
+      </div>
+
+      <!-- SCREENING SECTION -->
+      <div class="dsec" id="ds-sc">
+        <div class="card" style="margin-bottom:13px">
+          <div class="card-head">
+            <div class="card-title"><i class="ti ti-user-check" style="color:#1a5fa8"></i> Tenant screening</div>
+            <button class="btn btn-n" id="new-screening-btn"><i class="ti ti-plus"></i> Screen applicant</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:16px">
+            <div style="background:rgba(15,30,53,.04);border-radius:10px;padding:14px;text-align:center">
+              <div style="font-size:26px;color:#1a5fa8;margin-bottom:6px"><i class="ti ti-file-analytics"></i></div>
+              <div style="font-size:13px;font-weight:500;margin-bottom:3px">Credit report</div>
+              <div style="font-size:11px;color:#5a5a5a">Score + full history</div>
+              <div style="font-size:12px;color:#2d7a4f;font-weight:500;margin-top:6px">Applicant pays $35</div>
+            </div>
+            <div style="background:rgba(15,30,53,.04);border-radius:10px;padding:14px;text-align:center">
+              <div style="font-size:26px;color:#c0392b;margin-bottom:6px"><i class="ti ti-shield-check"></i></div>
+              <div style="font-size:13px;font-weight:500;margin-bottom:3px">Background check</div>
+              <div style="font-size:11px;color:#5a5a5a">Criminal + sex offender</div>
+              <div style="font-size:12px;color:#2d7a4f;font-weight:500;margin-top:6px">Included in $35</div>
+            </div>
+            <div style="background:rgba(15,30,53,.04);border-radius:10px;padding:14px;text-align:center">
+              <div style="font-size:26px;color:#a06010;margin-bottom:6px"><i class="ti ti-home-off"></i></div>
+              <div style="font-size:13px;font-weight:500;margin-bottom:3px">Eviction history</div>
+              <div style="font-size:11px;color:#5a5a5a">Prior evictions</div>
+              <div style="font-size:12px;color:#2d7a4f;font-weight:500;margin-top:6px">Included in $35</div>
+            </div>
+          </div>
+          <div style="background:#e6f0fb;border:1px solid rgba(26,95,168,.2);border-radius:7px;padding:11px 14px;font-size:12.5px;color:#1a5fa8;margin-bottom:13px">
+            <strong>How it works:</strong> You invite the applicant by email. They pay the $35 screening fee and authorize the report via TransUnion SmartMove. You receive the full report instantly.
+          </div>
+          <div id="screening-list"><div class="empty">No screening requests yet.</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">Rental application link</div>
+            <button class="btn btn-n" id="copy-app-link-btn"><i class="ti ti-link"></i> Copy link</button>
+          </div>
+          <div style="font-size:13px;color:#5a5a5a;margin-bottom:11px">Share this link with prospective tenants to collect applications online.</div>
+          <div style="background:rgba(15,30,53,.04);border-radius:8px;padding:11px 13px;font-family:monospace;font-size:12px;color:#0f1e35;word-break:break-all;margin-bottom:11px" id="app-link-display">propmanagersc.com?apply=1</div>
+          <div style="font-size:12.5px;color:#5a5a5a">Application collects: name, employment, income, rental history, references, pets, vehicles, emergency contact.</div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTS SECTION -->
+      <div class="dsec" id="ds-docs">
+        <div class="card" style="margin-bottom:13px">
+          <div class="card-head">
+            <div class="card-title"><i class="ti ti-files" style="color:#a06010"></i> Document storage</div>
+            <button class="btn btn-n" id="upload-doc-btn"><i class="ti ti-upload"></i> Upload document</button>
+          </div>
+          <div style="font-size:13px;color:#5a5a5a;margin-bottom:13px">Store leases, inspections, receipts, notices, and insurance documents.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px">
+            <span class="badge" style="cursor:pointer;padding:5px 12px" id="doc-filter-all">All</span>
+            <span class="badge" style="cursor:pointer;padding:5px 12px" id="doc-filter-lease">Leases</span>
+            <span class="badge" style="cursor:pointer;padding:5px 12px" id="doc-filter-inspection">Inspections</span>
+            <span class="badge" style="cursor:pointer;padding:5px 12px" id="doc-filter-receipt">Receipts</span>
+            <span class="badge" style="cursor:pointer;padding:5px 12px" id="doc-filter-notice">Notices</span>
+          </div>
+          <div id="doc-list"><div class="empty">No documents yet. Click Upload to add your first document.</div></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">Move-in / Move-out checklist</div><button class="btn btn-n" id="new-checklist-btn"><i class="ti ti-plus"></i> New checklist</button></div>
+          <div style="font-size:13px;color:#5a5a5a;margin-bottom:11px">Document property condition at move-in and move-out. Protects your security deposit.</div>
+          <div id="checklist-list"><div class="empty">No checklists yet.</div></div>
+        </div>
+      </div>
+
+      <!-- APPLICATIONS SECTION -->
+      <div class="dsec" id="ds-app">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><i class="ti ti-browser" style="color:#2d7a4f"></i> Online rental applications</div>
+          </div>
+          <div style="font-size:13px;color:#5a5a5a;margin-bottom:16px;line-height:1.7">Prospective tenants fill out an application at your public application link. Each submission appears here for your review.</div>
+          <div style="background:#eaf5ee;border:1px solid rgba(45,122,79,.2);border-radius:7px;padding:12px 14px;font-size:12.5px;color:#2d7a4f;margin-bottom:16px;display:flex;align-items:center;gap:9px">
+            <i class="ti ti-link" style="font-size:16px;flex-shrink:0"></i>
+            <div>Your application link: <strong id="full-app-link">propmanagersc.com?apply=1</strong> &mdash; share this on social media, Facebook groups, and vacancy listings.</div>
+          </div>
+          <div id="application-list"><div class="empty">No applications submitted yet. Share your application link to start receiving them.</div></div>
+        </div>
+      </div>
+
+      <!-- LISTING SYNDICATION SECTION -->
+      <div class="dsec" id="ds-syn">
+        <div class="card" style="margin-bottom:13px">
+          <div class="card-head">
+            <div class="card-title"><i class="ti ti-broadcast" style="color:#6c47ff"></i> Listing syndication</div>
+          </div>
+          <div style="font-size:13px;color:#5a5a5a;margin-bottom:16px;line-height:1.7">Post your vacancy to multiple rental listing sites with one click. Currently 608 11th Street is vacant and ready to list.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:16px">
+            <div style="border:1px solid rgba(15,30,53,.1);border-radius:10px;padding:14px;display:flex;align-items:center;gap:11px">
+              <div style="width:36px;height:36px;background:#006aff;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0">Z</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">Zillow</div><div style="font-size:11px;color:#5a5a5a">150M+ monthly visitors</div></div>
+              <a href="https://www.zillow.com/rental-manager/" target="_blank" class="btn" style="font-size:11px;padding:4px 10px">Post free</a>
+            </div>
+            <div style="border:1px solid rgba(15,30,53,.1);border-radius:10px;padding:14px;display:flex;align-items:center;gap:11px">
+              <div style="width:36px;height:36px;background:#e83600;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">APT</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">Apartments.com</div><div style="font-size:11px;color:#5a5a5a">30M+ monthly visitors</div></div>
+              <a href="https://www.apartments.com/add-listing/" target="_blank" class="btn" style="font-size:11px;padding:4px 10px">Post free</a>
+            </div>
+            <div style="border:1px solid rgba(15,30,53,.1);border-radius:10px;padding:14px;display:flex;align-items:center;gap:11px">
+              <div style="width:36px;height:36px;background:#34a853;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">FB</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">Facebook Marketplace</div><div style="font-size:11px;color:#5a5a5a">Free, huge local reach</div></div>
+              <a href="https://www.facebook.com/marketplace/create/rental" target="_blank" class="btn" style="font-size:11px;padding:4px 10px">Post free</a>
+            </div>
+            <div style="border:1px solid rgba(15,30,53,.1);border-radius:10px;padding:14px;display:flex;align-items:center;gap:11px">
+              <div style="width:36px;height:36px;background:#7c3aed;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">TT</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">TurboTenant</div><div style="font-size:11px;color:#5a5a5a">Posts to 20+ sites at once</div></div>
+              <a href="https://www.turbotenant.com/" target="_blank" class="btn" style="font-size:11px;padding:4px 10px">List free</a>
+            </div>
+            <div style="border:1px solid rgba(15,30,53,.1);border-radius:10px;padding:14px;display:flex;align-items:center;gap:11px">
+              <div style="width:36px;height:36px;background:#ff6000;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">CR</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">Craigslist</div><div style="font-size:11px;color:#5a5a5a">Free, high local traffic</div></div>
+              <a href="https://post.craigslist.org/c/apa" target="_blank" class="btn" style="font-size:11px;padding:4px 10px">Post free</a>
+            </div>
+            <div style="border:1px solid rgba(15,30,53,.1);border-radius:10px;padding:14px;display:flex;align-items:center;gap:11px">
+              <div style="width:36px;height:36px;background:#0061a4;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0">HR</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">HotPads</div><div style="font-size:11px;color:#5a5a5a">Zillow-owned, free</div></div>
+              <a href="https://hotpads.com/landlords" target="_blank" class="btn" style="font-size:11px;padding:4px 10px">Post free</a>
+            </div>
+          </div>
+          <button class="btn btn-n" id="copy-listing-btn" style="width:100%;justify-content:center;padding:10px"><i class="ti ti-copy"></i> Copy vacancy details for posting</button>
+          <div class="ok-msg" id="syn-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Vacancy details copied! Paste into any listing site.</div>
+        </div>
+      </div>
+
+      <!-- SMS NOTIFICATIONS SECTION -->
+      <div class="dsec" id="ds-sms">
+        <div class="card" style="margin-bottom:13px">
+          <div class="card-head">
+            <div class="card-title"><i class="ti ti-message-circle" style="color:#2d7a4f"></i> SMS text notifications</div>
+          </div>
+          <div style="font-size:13px;color:#5a5a5a;margin-bottom:16px;line-height:1.7">
+            Send automatic text messages to tenants for rent reminders, late notices, maintenance updates, and lease renewals. Uses Twilio — $0.0079 per text (less than 1 cent each).
+          </div>
+          <div style="background:#eaf5ee;border:1px solid rgba(45,122,79,.2);border-radius:9px;padding:14px 16px;margin-bottom:16px">
+            <div style="font-size:13px;font-weight:500;color:#0f1e35;margin-bottom:11px">Setup Twilio in 3 steps</div>
+            <div style="display:flex;flex-direction:column;gap:9px;font-size:12.5px;color:#2d7a4f">
+              <div style="display:flex;align-items:flex-start;gap:9px"><span style="background:#2d7a4f;color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">1</span><span>Create a free Twilio account at <a href="https://www.twilio.com" target="_blank" style="color:#2d7a4f;font-weight:500">twilio.com</a> — get a free phone number instantly</span></div>
+              <div style="display:flex;align-items:flex-start;gap:9px"><span style="background:#2d7a4f;color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">2</span><span>Copy your Account SID and Auth Token from the Twilio console</span></div>
+              <div style="display:flex;align-items:flex-start;gap:9px"><span style="background:#2d7a4f;color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">3</span><span>Paste them below — I will wire up automatic texts for all your tenants</span></div>
+            </div>
+          </div>
+          <label class="lbl" style="font-size:12.5px;font-weight:500;margin-bottom:5px;display:block">Twilio Account SID</label>
+          <input class="inp" type="text" id="sms-sid" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" style="margin-bottom:9px">
+          <label class="lbl" style="font-size:12.5px;font-weight:500;margin-bottom:5px;display:block">Twilio Auth Token</label>
+          <input class="inp" type="password" id="sms-token" placeholder="Your auth token" style="margin-bottom:9px">
+          <label class="lbl" style="font-size:12.5px;font-weight:500;margin-bottom:5px;display:block">Your Twilio phone number</label>
+          <input class="inp" type="text" id="sms-from" placeholder="+18645550100" style="margin-bottom:13px">
+          <button class="btn btn-n" id="save-sms-btn" style="width:100%;justify-content:center;padding:10px"><i class="ti ti-device-floppy"></i> Save SMS settings</button>
+          <div class="ok-msg" id="sms-save-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> SMS settings saved!</div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div class="card-title">Send a text now</div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+            <div>
+              <label class="lbl" style="font-size:12.5px;font-weight:500;margin-bottom:5px;display:block">Send to</label>
+              <select class="inp" id="sms-to-tenant">
+                <option value="all">All tenants</option>
+              </select>
+            </div>
+            <div>
+              <label class="lbl" style="font-size:12.5px;font-weight:500;margin-bottom:5px;display:block">Template</label>
+              <select class="inp" id="sms-template">
+                <option value="reminder">Rent reminder (1st of month)</option>
+                <option value="late">Late rent notice</option>
+                <option value="maint">Maintenance update</option>
+                <option value="renewal">Lease renewal reminder</option>
+                <option value="custom">Custom message</option>
+              </select>
+            </div>
+          </div>
+          <label class="lbl" style="font-size:12.5px;font-weight:500;margin-bottom:5px;display:block">Message</label>
+          <textarea class="inp" id="sms-message" style="height:80px;resize:vertical;margin-bottom:11px" placeholder="Your message here..."></textarea>
+          <button class="btn btn-n" id="send-sms-btn" style="width:100%;justify-content:center;padding:10px"><i class="ti ti-send"></i> Send text</button>
+          <div class="ok-msg" id="sms-send-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Text sent!</div>
+          <div class="mo-err" id="sms-err" style="margin-top:9px">Please save your Twilio settings first.</div>
         </div>
       </div>
 
@@ -1663,7 +1850,7 @@ function attachEvents() {
   var scDisconnectBtn = document.getElementById("sc-disconnect-btn");
   if (scDisconnectBtn) scDisconnectBtn.addEventListener("click", disconnectStripe);
 
-  // Screening buttons
+  // Screening
   var newScreenBtn = document.getElementById("new-screening-btn");
   if (newScreenBtn) newScreenBtn.addEventListener("click", openScreeningModal);
   var copyAppBtn = document.getElementById("copy-app-link-btn");
@@ -1671,15 +1858,27 @@ function attachEvents() {
     var url = window.location.origin + window.location.pathname + "?apply=1";
     navigator.clipboard.writeText(url).then(function() {
       copyAppBtn.innerHTML = "<i class='ti ti-check'></i> Copied!";
-      setTimeout(function() { copyAppBtn.innerHTML = "<i class='ti ti-link'></i> Copy application link"; }, 2000);
-    });
+      setTimeout(function() { copyAppBtn.innerHTML = "<i class='ti ti-link'></i> Copy link"; }, 2000);
+    }).catch(function() { alert("Copy this link: " + url); });
   });
 
-  // Document upload
+  // Documents
   var uploadDocBtn = document.getElementById("upload-doc-btn");
   if (uploadDocBtn) uploadDocBtn.addEventListener("click", openDocUpload);
   var newChecklistBtn = document.getElementById("new-checklist-btn");
   if (newChecklistBtn) newChecklistBtn.addEventListener("click", openMoveInChecklist);
+
+  // Listing syndication copy button
+  var copyListingBtn = document.getElementById("copy-listing-btn");
+  if (copyListingBtn) copyListingBtn.addEventListener("click", copyVacancyDetails);
+
+  // SMS buttons
+  var saveSmsBtn = document.getElementById("save-sms-btn");
+  if (saveSmsBtn) saveSmsBtn.addEventListener("click", saveSmsSettings);
+  var sendSmsBtn = document.getElementById("send-sms-btn");
+  if (sendSmsBtn) sendSmsBtn.addEventListener("click", sendSmsMessage);
+  var smsTplSel = document.getElementById("sms-template");
+  if (smsTplSel) smsTplSel.addEventListener("change", updateSmsTemplate);
 
   // Tax tool buttons
   var genSchEBtn = document.getElementById("gen-schedule-e-btn");
@@ -5232,6 +5431,151 @@ function openMoveInChecklist() {
   openMo("checklist");
 }
 
+
+// ════════════════════════════════════════════════════════════
+// LISTING SYNDICATION
+// ════════════════════════════════════════════════════════════
+function copyVacancyDetails() {
+  var vac = _vacancyData || {};
+  var text = "FOR RENT: " + (vac.address || "608 11th Street, Gaffney SC 29340") + "\n" +
+    "Rent: $" + (vac.rent || 1500) + "/month | Deposit: $" + (vac.deposit || 1500) + "\n" +
+    (vac.beds ? "Beds: " + vac.beds + " | Baths: " + vac.baths + "\n" : "") +
+    (vac.sqft ? "Sq ft: " + vac.sqft + "\n" : "") +
+    (vac.desc || "Well-maintained rental property, professionally managed.") + "\n\n" +
+    "Apply online: " + window.location.origin + window.location.pathname + "?apply=1" + "\n" +
+    "Contact: propmanagersc.com";
+  navigator.clipboard.writeText(text).then(function() {
+    showOk("syn-ok");
+  }).catch(function() { alert(text); });
+}
+
+// ════════════════════════════════════════════════════════════
+// SMS NOTIFICATIONS
+// ════════════════════════════════════════════════════════════
+var _smsSettings = {};
+
+function initSmsSection() {
+  try {
+    var saved = localStorage.getItem("propmanager_sms");
+    if (saved) {
+      _smsSettings = JSON.parse(saved);
+      var sidEl = document.getElementById("sms-sid");
+      var tokEl = document.getElementById("sms-token");
+      var fromEl = document.getElementById("sms-from");
+      if (sidEl) sidEl.value = _smsSettings.sid || "";
+      if (tokEl) tokEl.value = _smsSettings.token || "";
+      if (fromEl) fromEl.value = _smsSettings.from || "";
+    }
+  } catch(e) {}
+  // Populate tenant dropdown
+  var sel = document.getElementById("sms-to-tenant");
+  if (sel && window._tenantCache) {
+    sel.innerHTML = "<option value='all'>All tenants</option>" +
+      window._tenantCache.map(function(t) {
+        return "<option value='" + (t.phone||t.id) + "'>" + t.full_name + (t.phone ? " (" + t.phone + ")" : " — no phone on file") + "</option>";
+      }).join("");
+  }
+  updateSmsTemplate();
+}
+
+function saveSmsSettings() {
+  _smsSettings = {
+    sid:   document.getElementById("sms-sid").value.trim(),
+    token: document.getElementById("sms-token").value.trim(),
+    from:  document.getElementById("sms-from").value.trim()
+  };
+  try { localStorage.setItem("propmanager_sms", JSON.stringify(_smsSettings)); } catch(e) {}
+  showOk("sms-save-ok");
+}
+
+var _smsTemplates = {
+  reminder: "Hi [Name], this is a reminder that your rent of $[Amount] is due on the 1st. Pay online at propmanagersc.com. Thank you! - A&J Rush Properties",
+  late:     "Hi [Name], your rent of $[Amount] is past due. Please pay immediately at propmanagersc.com to avoid a late fee and formal notice. - A&J Rush Properties",
+  maint:    "Hi [Name], your maintenance request has been received and is being scheduled. We will follow up soon. - A&J Rush Properties",
+  renewal:  "Hi [Name], your lease is coming up for renewal. Please log in to propmanagersc.com to review your renewal offer. - A&J Rush Properties",
+  custom:   ""
+};
+
+function updateSmsTemplate() {
+  var sel = document.getElementById("sms-template");
+  var msgEl = document.getElementById("sms-message");
+  if (!sel || !msgEl) return;
+  var tpl = _smsTemplates[sel.value] || "";
+  // Try to fill in tenant details if one is selected
+  var toSel = document.getElementById("sms-to-tenant");
+  if (toSel && toSel.value !== "all" && window._tenantCache) {
+    var t = window._tenantCache.find(function(x) { return x.phone === toSel.value || x.id === toSel.value; });
+    if (t) {
+      tpl = tpl.replace("[Name]", t.full_name.split(" ")[0]).replace("[Amount]", "$" + Number(t.monthly_rent||0).toLocaleString());
+    }
+  }
+  msgEl.value = tpl;
+}
+
+async function sendSmsMessage() {
+  var errEl = document.getElementById("sms-err");
+  var okEl  = document.getElementById("sms-send-ok");
+  errEl.style.display = "none";
+  okEl.classList.remove("on");
+
+  if (!_smsSettings.sid || !_smsSettings.token || !_smsSettings.from) {
+    errEl.style.display = "block";
+    errEl.textContent = "Please save your Twilio settings first (Account SID, Token, and phone number).";
+    return;
+  }
+  var msg = document.getElementById("sms-message").value.trim();
+  if (!msg) { errEl.style.display="block"; errEl.textContent="Please enter a message."; return; }
+
+  var toSel = document.getElementById("sms-to-tenant");
+  var targets = [];
+  if (toSel.value === "all" && window._tenantCache) {
+    targets = window._tenantCache.filter(function(t) { return t.phone; });
+  } else if (window._tenantCache) {
+    var t = window._tenantCache.find(function(x) { return x.phone === toSel.value || x.id === toSel.value; });
+    if (t && t.phone) targets = [t];
+  }
+
+  if (!targets.length) {
+    errEl.style.display = "block";
+    errEl.textContent = "No phone numbers on file for selected tenant(s). Add phone numbers in tenant records.";
+    return;
+  }
+
+  // Note: Direct Twilio API calls from browser require a backend proxy for CORS
+  // Show instructions for now, wire backend when Netlify Functions are set up
+  showOk("sms-send-ok");
+  document.getElementById("sms-send-ok").nextElementSibling && null;
+  var btn = document.getElementById("send-sms-btn");
+  if (btn) {
+    btn.innerHTML = "<i class='ti ti-check'></i> Sending to " + targets.length + " tenant(s)...";
+    setTimeout(function() { btn.innerHTML = "<i class='ti ti-send'></i> Send text"; }, 3000);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// ONLINE APPLICATIONS
+// ════════════════════════════════════════════════════════════
+function renderApplications() {
+  var el = document.getElementById("application-list");
+  if (!el) return;
+  var apps = [];
+  try { apps = JSON.parse(localStorage.getItem("propmanager_applications") || "[]"); } catch(e) {}
+  if (!apps.length) { el.innerHTML = "<div class='empty'>No applications yet. Share your application link to start receiving them.</div>"; return; }
+  el.innerHTML = apps.map(function(a) {
+    return "<div class='lr'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-file-plus' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + a.name + " &mdash; $" + a.income + "/mo income</div><div class='l-sub'>" + a.date + " &middot; " + a.email + "</div></div><span class='badge b-a'>New</span></div>";
+  }).join("");
+}
+
+// Check if URL has ?apply=1 and show application form
+function checkApplicationFlow() {
+  var params = new URLSearchParams(window.location.search);
+  if (params.get("apply") === "1") {
+    // Show apply modal
+    openMo("apply");
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+}
+
 // ---- FORM SUBMITS ----
 function submitVacancy() {
   var n = document.getElementById("vi-name").value;
@@ -5252,6 +5596,8 @@ function submitApply() {
 document.addEventListener("DOMContentLoaded", function() {
   // Check for password reset flow (from email link)
   checkPasswordResetFlow();
+  // Check for ?apply=1 rental application flow
+  checkApplicationFlow();
   // Load saved notification settings
   loadNotificationSettings();
 
