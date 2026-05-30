@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v13.8</div>
+<div class="vbadge">PropManager SC v13.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -497,6 +497,98 @@ footer{background:#0f1e35;padding:44px 20px 26px}
             <div style="font-size:11px;font-weight:600;color:#c0392b;letter-spacing:1px;text-transform:uppercase;padding:0 0 7px;border-bottom:1px solid rgba(15,30,53,.07);margin-bottom:7px">Expenses</div>
             <div id="expense-list"><div class="spin-wrap"><div class="spinner"></div></div></div>
           </div>
+        </div>
+      </div>
+
+      <!-- TENANT SCREENING SECTION -->
+      <div class="dsec" id="ds-sc">
+        <div class="card" style="margin-bottom:13px">
+          <div class="card-head">
+            <div class="card-title"><i class="ti ti-user-check" style="color:#1a5fa8"></i> Tenant screening</div>
+            <button class="btn btn-n" id="new-screening-btn"><i class="ti ti-plus"></i> Screen a new applicant</button>
+          </div>
+          <div style="font-size:13px;color:#5a5a5a;margin-bottom:16px;line-height:1.7">
+            Run background checks, credit reports, and eviction history on prospective tenants before signing a lease.
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:18px">
+            <div style="background:rgba(15,30,53,.04);border-radius:10px;padding:16px;text-align:center">
+              <div style="font-size:28px;color:#1a5fa8;margin-bottom:7px"><i class="ti ti-file-analytics"></i></div>
+              <div style="font-size:13px;font-weight:500;margin-bottom:4px">Credit report</div>
+              <div style="font-size:11.5px;color:#5a5a5a">Score, history, accounts</div>
+              <div style="font-size:12px;color:#2d7a4f;font-weight:500;margin-top:7px">Tenant pays $35</div>
+            </div>
+            <div style="background:rgba(15,30,53,.04);border-radius:10px;padding:16px;text-align:center">
+              <div style="font-size:28px;color:#c0392b;margin-bottom:7px"><i class="ti ti-shield-check"></i></div>
+              <div style="font-size:13px;font-weight:500;margin-bottom:4px">Background check</div>
+              <div style="font-size:11.5px;color:#5a5a5a">Criminal, sex offender</div>
+              <div style="font-size:12px;color:#2d7a4f;font-weight:500;margin-top:7px">Included in $35</div>
+            </div>
+            <div style="background:rgba(15,30,53,.04);border-radius:10px;padding:16px;text-align:center">
+              <div style="font-size:28px;color:#a06010;margin-bottom:7px"><i class="ti ti-home-off"></i></div>
+              <div style="font-size:13px;font-weight:500;margin-bottom:4px">Eviction history</div>
+              <div style="font-size:11.5px;color:#5a5a5a">Prior eviction records</div>
+              <div style="font-size:12px;color:#2d7a4f;font-weight:500;margin-top:7px">Included in $35</div>
+            </div>
+          </div>
+          <div style="background:#e6f0fb;border:1px solid rgba(26,95,168,.2);border-radius:7px;padding:13px 15px;font-size:12.5px;color:#1a5fa8;margin-bottom:16px">
+            <strong>How it works:</strong> You invite the applicant by email. They pay the $35 screening fee and authorize the report. You receive the full report instantly via TransUnion SmartMove — the same service used by major property management companies.
+          </div>
+          <div id="screening-list">
+            <div class="empty">No screening requests yet. Click &ldquo;Screen a new applicant&rdquo; to get started.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-title">Online rental application</div><button class="btn btn-n" id="copy-app-link-btn"><i class="ti ti-link"></i> Copy application link</button></div>
+          <div style="font-size:13px;color:#5a5a5a;margin-bottom:13px;line-height:1.7">
+            Share your application link with prospective tenants. They fill out the form online and you review their application directly in your dashboard.
+          </div>
+          <div style="background:rgba(15,30,53,.04);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:11px;margin-bottom:13px">
+            <i class="ti ti-link" style="color:#1a5fa8;font-size:18px;flex-shrink:0"></i>
+            <div style="font-family:monospace;font-size:12px;color:#0f1e35;word-break:break-all">propmanagersc.com?apply=1</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;font-size:12.5px;color:#5a5a5a">
+            <div style="display:flex;align-items:center;gap:7px"><i class="ti ti-check" style="color:#2d7a4f"></i> Name, employment, income</div>
+            <div style="display:flex;align-items:center;gap:7px"><i class="ti ti-check" style="color:#2d7a4f"></i> Rental history &amp; references</div>
+            <div style="display:flex;align-items:center;gap:7px"><i class="ti ti-check" style="color:#2d7a4f"></i> Pet and vehicle info</div>
+            <div style="display:flex;align-items:center;gap:7px"><i class="ti ti-check" style="color:#2d7a4f"></i> Emergency contact</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTS SECTION -->
+      <div class="dsec" id="ds-docs">
+        <div class="card" style="margin-bottom:13px">
+          <div class="card-head">
+            <div class="card-title"><i class="ti ti-files" style="color:#a06010"></i> Document storage</div>
+            <button class="btn btn-n" id="upload-doc-btn"><i class="ti ti-upload"></i> Upload document</button>
+          </div>
+          <div style="font-size:13px;color:#5a5a5a;margin-bottom:14px">Store leases, inspection reports, receipts, move-in checklists, and other property documents.</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:16px">
+            <div style="background:rgba(15,30,53,.04);border-radius:8px;padding:13px;text-align:center;cursor:pointer" id="doc-cat-lease">
+              <i class="ti ti-file-text" style="font-size:24px;color:#1a5fa8;display:block;margin-bottom:6px"></i>
+              <div style="font-size:12px;font-weight:500">Leases</div>
+            </div>
+            <div style="background:rgba(15,30,53,.04);border-radius:8px;padding:13px;text-align:center;cursor:pointer" id="doc-cat-inspection">
+              <i class="ti ti-clipboard-check" style="font-size:24px;color:#2d7a4f;display:block;margin-bottom:6px"></i>
+              <div style="font-size:12px;font-weight:500">Inspections</div>
+            </div>
+            <div style="background:rgba(15,30,53,.04);border-radius:8px;padding:13px;text-align:center;cursor:pointer" id="doc-cat-receipt">
+              <i class="ti ti-receipt" style="font-size:24px;color:#a06010;display:block;margin-bottom:6px"></i>
+              <div style="font-size:12px;font-weight:500">Receipts</div>
+            </div>
+            <div style="background:rgba(15,30,53,.04);border-radius:8px;padding:13px;text-align:center;cursor:pointer" id="doc-cat-other">
+              <i class="ti ti-file" style="font-size:24px;color:#5a5a5a;display:block;margin-bottom:6px"></i>
+              <div style="font-size:12px;font-weight:500">Other</div>
+            </div>
+          </div>
+          <div id="doc-list"><div class="empty">No documents uploaded yet. Click Upload to add your first document.</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><div class="card-title">Move-in / Move-out checklist</div><button class="btn btn-n" id="new-checklist-btn"><i class="ti ti-plus"></i> New checklist</button></div>
+          <div style="font-size:13px;color:#5a5a5a;margin-bottom:13px">Document the condition of each property at move-in and move-out to protect your security deposit.</div>
+          <div id="checklist-list"><div class="empty">No checklists yet.</div></div>
         </div>
       </div>
 
@@ -1571,6 +1663,24 @@ function attachEvents() {
   var scDisconnectBtn = document.getElementById("sc-disconnect-btn");
   if (scDisconnectBtn) scDisconnectBtn.addEventListener("click", disconnectStripe);
 
+  // Screening buttons
+  var newScreenBtn = document.getElementById("new-screening-btn");
+  if (newScreenBtn) newScreenBtn.addEventListener("click", openScreeningModal);
+  var copyAppBtn = document.getElementById("copy-app-link-btn");
+  if (copyAppBtn) copyAppBtn.addEventListener("click", function() {
+    var url = window.location.origin + window.location.pathname + "?apply=1";
+    navigator.clipboard.writeText(url).then(function() {
+      copyAppBtn.innerHTML = "<i class='ti ti-check'></i> Copied!";
+      setTimeout(function() { copyAppBtn.innerHTML = "<i class='ti ti-link'></i> Copy application link"; }, 2000);
+    });
+  });
+
+  // Document upload
+  var uploadDocBtn = document.getElementById("upload-doc-btn");
+  if (uploadDocBtn) uploadDocBtn.addEventListener("click", openDocUpload);
+  var newChecklistBtn = document.getElementById("new-checklist-btn");
+  if (newChecklistBtn) newChecklistBtn.addEventListener("click", openMoveInChecklist);
+
   // Tax tool buttons
   var genSchEBtn = document.getElementById("gen-schedule-e-btn");
   if (genSchEBtn) genSchEBtn.addEventListener("click", generateScheduleE);
@@ -1743,7 +1853,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial","leasedoc"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial","leasedoc","screening","docupload","checklist"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -1918,7 +2028,7 @@ function attachEvents() {
     });
   });
 
-  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal","mo-vacancyedit","mo-markrente","mo-register","mo-stripeconnect","mo-forgotpass","mo-changepass","mo-notifications","mo-partial","mo-leasedoc"].forEach(function(id) {
+  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal","mo-vacancyedit","mo-markrente","mo-register","mo-stripeconnect","mo-forgotpass","mo-changepass","mo-notifications","mo-partial","mo-leasedoc","mo-screening","mo-docupload","mo-checklist"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", function(e) {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
@@ -2485,8 +2595,9 @@ async function loadDashboardData() {
     }
     checkStripeConnectStatus();
     requestBrowserNotifications();
-    // Poll every 60 seconds for new messages/maintenance
     setInterval(pollForNotifications, 60000);
+    renderScreeningList();
+    renderDocList();
   }
 
   var alertEl = document.getElementById("overdue-alert");
@@ -4906,11 +5017,10 @@ async function saveLeaseDocument() {
   if (!window._currentLeaseDoc || !sb) return;
   var doc = window._currentLeaseDoc;
   var result = await sb.from("tenants").update({
-    lease_start:     doc.start,
-    lease_end:       doc.end,
-    monthly_rent:    doc.rent,
-    security_deposit:doc.deposit,
-    lease_terms:     doc.special_terms || ""
+    lease_start:      doc.start,
+    lease_end:        doc.end,
+    monthly_rent:     doc.rent,
+    security_deposit: doc.deposit
   }).eq("id", doc.id);
   if (result.error) {
     document.getElementById("leasedoc-err").style.display = "block";
@@ -4926,19 +5036,19 @@ async function saveLeaseDocument() {
 async function deleteLease() {
   if (!window._currentLeaseDoc) return;
   var doc = window._currentLeaseDoc;
-  if (!confirm("Delete lease for " + doc.tenant_name + "? This will clear their lease dates and terms. The tenant record will not be deleted.")) return;
+  if (!confirm("Delete lease for " + doc.tenant_name + "? This will clear their lease dates. The tenant record will not be deleted.")) return;
   if (!sb) return;
+  // Only update columns guaranteed to exist in the tenants table
   var result = await sb.from("tenants").update({
-    lease_start:  null,
-    lease_end:    null,
-    lease_terms:  null,
-    lease_status: null
+    lease_start: null,
+    lease_end:   null
   }).eq("id", doc.id);
   if (result.error) {
-    document.getElementById("leasedoc-err").style.display = "block";
-    document.getElementById("leasedoc-err").textContent = result.error.message;
+    var errEl = document.getElementById("leasedoc-err");
+    if (errEl) { errEl.style.display = "block"; errEl.textContent = "Delete error: " + result.error.message; }
   } else {
-    document.getElementById("leasedoc-ok-msg").textContent = "Lease deleted.";
+    var okMsg = document.getElementById("leasedoc-ok-msg");
+    if (okMsg) okMsg.textContent = "Lease deleted successfully.";
     showOk("leasedoc-ok");
     setTimeout(function() { closeMo("leasedoc"); loadDashboardData(); }, 1500);
   }
@@ -4963,6 +5073,163 @@ async function sendLeaseToTenant() {
   if (sb2) { sb2.textContent = "Sent"; sb2.className = "badge b-b"; }
   document.getElementById("leasedoc-ok-msg").textContent = "Lease sent to " + doc.tenant_name + " via portal message!";
   showOk("leasedoc-ok");
+}
+
+
+// ════════════════════════════════════════════════════════════
+// TENANT SCREENING
+// ════════════════════════════════════════════════════════════
+function openScreeningModal() {
+  var sel = document.getElementById("scr-prop");
+  if (sel && window._propCache) {
+    sel.innerHTML = window._propCache.map(function(p) {
+      return "<option value='" + p.id + "'>" + p.address + "</option>";
+    }).join("");
+  }
+  document.getElementById("scr-first").value = "";
+  document.getElementById("scr-last").value  = "";
+  document.getElementById("scr-email").value = "";
+  document.getElementById("scr-ok").classList.remove("on");
+  document.getElementById("scr-err").style.display = "none";
+  openMo("screening");
+
+  var closeScr = document.getElementById("close-screening-mo");
+  if (closeScr) closeScr.onclick = function() { closeMo("screening"); };
+  var sendScr = document.getElementById("send-screening-btn");
+  if (sendScr) sendScr.onclick = sendScreeningInvite;
+}
+
+async function sendScreeningInvite() {
+  var first = document.getElementById("scr-first").value.trim();
+  var last  = document.getElementById("scr-last").value.trim();
+  var email = document.getElementById("scr-email").value.trim();
+  var errEl = document.getElementById("scr-err");
+  if (!first || !last || !email) {
+    errEl.style.display = "block";
+    errEl.textContent = "Please fill in all fields.";
+    return;
+  }
+  errEl.style.display = "none";
+  // Store screening request in localStorage
+  var requests = [];
+  try { requests = JSON.parse(localStorage.getItem("propmanager_screenings") || "[]"); } catch(e) {}
+  requests.push({
+    id: Date.now(), name: first + " " + last, email: email,
+    status: "invited", date: new Date().toISOString().split("T")[0],
+    property: document.getElementById("scr-prop").options[document.getElementById("scr-prop").selectedIndex].text
+  });
+  try { localStorage.setItem("propmanager_screenings", JSON.stringify(requests)); } catch(e) {}
+  showOk("scr-ok");
+  renderScreeningList();
+  setTimeout(function() { closeMo("screening"); }, 2000);
+}
+
+function renderScreeningList() {
+  var el = document.getElementById("screening-list");
+  if (!el) return;
+  var requests = [];
+  try { requests = JSON.parse(localStorage.getItem("propmanager_screenings") || "[]"); } catch(e) {}
+  if (!requests.length) { el.innerHTML = "<div class='empty'>No screening requests yet.</div>"; return; }
+  el.innerHTML = requests.slice().reverse().map(function(r) {
+    var badge = r.status === "complete" ? "<span class='badge b-g'>Complete</span>" : "<span class='badge b-a'>Invited</span>";
+    return "<div class='lr'><div class='l-ico' style='background:#e6f0fb;color:#1a5fa8'><i class='ti ti-user-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + r.name + " &mdash; " + r.property + "</div><div class='l-sub'>" + r.date + " &middot; " + r.email + "</div></div>" + badge + "</div>";
+  }).join("");
+}
+
+// ════════════════════════════════════════════════════════════
+// DOCUMENT STORAGE
+// ════════════════════════════════════════════════════════════
+var _docs = [];
+function openDocUpload() {
+  document.getElementById("doc-name").value = "";
+  document.getElementById("doc-file-name").style.display = "none";
+  document.getElementById("doc-ok").classList.remove("on");
+  // Populate tenant dropdown
+  var sel = document.getElementById("doc-tenant-link");
+  if (sel && window._tenantCache) {
+    sel.innerHTML = "<option value=''>All properties</option>" +
+      window._tenantCache.map(function(t) {
+        return "<option value='" + t.id + "'>" + t.full_name + " &mdash; " + (t.properties ? t.properties.address : "") + "</option>";
+      }).join("");
+  }
+  var dropZone = document.getElementById("doc-file-drop");
+  var fileInput = document.getElementById("doc-file-input");
+  if (dropZone) dropZone.onclick = function() { fileInput.click(); };
+  if (fileInput) fileInput.onchange = function() {
+    if (fileInput.files[0]) {
+      var fn = document.getElementById("doc-file-name");
+      if (fn) { fn.textContent = fileInput.files[0].name + " (" + Math.round(fileInput.files[0].size/1024) + " KB)"; fn.style.display="block"; }
+    }
+  };
+  var saveBtn = document.getElementById("save-doc-btn");
+  if (saveBtn) saveBtn.onclick = saveDocument;
+  var closeDU = document.getElementById("close-docupload-mo");
+  if (closeDU) closeDU.onclick = function() { closeMo("docupload"); };
+  openMo("docupload");
+}
+
+function saveDocument() {
+  var name = document.getElementById("doc-name").value.trim();
+  var cat  = document.getElementById("doc-category").value;
+  if (!name) { alert("Please enter a document name."); return; }
+  try {
+    _docs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]");
+  } catch(e) { _docs = []; }
+  _docs.push({ id: Date.now(), name:name, category:cat, date: new Date().toISOString().split("T")[0] });
+  try { localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(e) {}
+  showOk("doc-ok");
+  renderDocList();
+  setTimeout(function() { closeMo("docupload"); }, 1500);
+}
+
+function renderDocList() {
+  var el = document.getElementById("doc-list");
+  if (!el) return;
+  try { _docs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]"); } catch(e) { _docs = []; }
+  if (!_docs.length) { el.innerHTML = "<div class='empty'>No documents yet.</div>"; return; }
+  var icons = { Lease:"ti-file-text", Inspection:"ti-clipboard-check", Receipt:"ti-receipt", Notice:"ti-alert-triangle", Insurance:"ti-shield", Other:"ti-file" };
+  el.innerHTML = _docs.slice().reverse().map(function(d) {
+    var ico = icons[d.category] || "ti-file";
+    return "<div class='lr'><div class='l-ico' style='background:#faeeda;color:#a06010'><i class='ti " + ico + "' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + d.name + "</div><div class='l-sub'>" + d.date + " &middot; " + d.category + "</div></div><button class='btn btn-r' style='font-size:11px;padding:3px 8px' data-del-doc='" + d.id + "'>Del</button></div>";
+  }).join("");
+  el.querySelectorAll("[data-del-doc]").forEach(function(btn) {
+    btn.onclick = function() {
+      _docs = _docs.filter(function(d) { return d.id !== parseInt(btn.getAttribute("data-del-doc")); });
+      try { localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(e) {}
+      renderDocList();
+    };
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// MOVE-IN / MOVE-OUT CHECKLIST
+// ════════════════════════════════════════════════════════════
+function openMoveInChecklist() {
+  var tSel = document.getElementById("chk-tenant");
+  if (tSel && window._tenantCache) {
+    tSel.innerHTML = window._tenantCache.map(function(t) {
+      return "<option value='" + t.id + "'>" + t.full_name + " &mdash; " + (t.properties ? t.properties.address : "") + "</option>";
+    }).join("");
+  }
+  document.getElementById("chk-date").value = new Date().toISOString().split("T")[0];
+  document.getElementById("chk-notes").value = "";
+  document.getElementById("chk-ok").classList.remove("on");
+
+  var rooms = ["Living Room","Kitchen","Master Bedroom","Bedroom 2","Bathroom","Bathroom 2","Garage","Yard/Exterior","Appliances","Walls/Paint","Floors","Windows/Doors"];
+  var roomsEl = document.getElementById("chk-rooms");
+  if (roomsEl) {
+    roomsEl.innerHTML = rooms.map(function(room) {
+      return "<div style='display:flex;align-items:center;gap:11px;padding:9px 11px;background:rgba(15,30,53,.03);border-radius:7px'><div style='font-size:13px;flex:1'>" + room + "</div><select style='font-size:12px;padding:4px 8px;border:1px solid rgba(15,30,53,.2);border-radius:5px'><option>Excellent</option><option>Good</option><option>Fair</option><option>Poor</option><option>N/A</option></select><input type='text' placeholder='Notes...' style='font-size:11px;padding:4px 8px;border:1px solid rgba(15,30,53,.2);border-radius:5px;width:130px'></div>";
+    }).join("");
+  }
+  var saveChk = document.getElementById("save-checklist-btn");
+  if (saveChk) saveChk.onclick = function() {
+    showOk("chk-ok");
+    setTimeout(function() { closeMo("checklist"); }, 1500);
+  };
+  var closeChk = document.getElementById("close-checklist-mo");
+  if (closeChk) closeChk.onclick = function() { closeMo("checklist"); };
+  openMo("checklist");
 }
 
 // ---- FORM SUBMITS ----
@@ -5883,6 +6150,96 @@ document.addEventListener("DOMContentLoaded", function() {
 
     <div class="ok-msg" id="leasedoc-ok" style="margin:0 18px 11px"><i class="ti ti-circle-check" style="font-size:17px"></i> <span id="leasedoc-ok-msg">Lease saved!</span></div>
     <div class="mo-err" id="leasedoc-err" style="margin:0 18px 11px">Error saving lease.</div>
+  </div>
+</div>
+
+
+<!-- TENANT SCREENING MODAL -->
+<div class="mo-overlay" id="mo-screening">
+  <div class="mo-box" style="max-width:480px">
+    <button class="mo-close" id="close-screening-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Screen a new applicant</div>
+    <div class="mo-sub">The applicant pays the $35 screening fee and authorizes their report. You receive results instantly.</div>
+    <label class="mo-lbl">Applicant first name</label>
+    <input class="mo-inp" type="text" id="scr-first" placeholder="First name">
+    <label class="mo-lbl">Applicant last name</label>
+    <input class="mo-inp" type="text" id="scr-last" placeholder="Last name">
+    <label class="mo-lbl">Applicant email address</label>
+    <input class="mo-inp" type="email" id="scr-email" placeholder="applicant@email.com">
+    <label class="mo-lbl">Property they are applying for</label>
+    <select class="mo-inp" id="scr-prop"></select>
+    <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:11px 13px;font-size:12.5px;color:#5a5a5a;margin-bottom:13px;line-height:1.7">
+      <strong>What the applicant will receive:</strong> An email invitation to complete screening via TransUnion SmartMove. They pay $35, authorize the credit/background/eviction check, and you receive the full report in your dashboard.
+    </div>
+    <div style="margin-bottom:13px">
+      <label class="mo-lbl">Screening type</label>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="scr-type" value="full" checked> Full report (credit + background + eviction) — $35</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="scr-type" value="credit"> Credit + background only — $25</label>
+      </div>
+    </div>
+    <button class="mo-btn" id="send-screening-btn">Send screening invitation</button>
+    <div class="ok-msg" id="scr-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Screening invitation sent! You will be notified when the report is ready.</div>
+    <div class="mo-err" id="scr-err">Please fill in all fields.</div>
+  </div>
+</div>
+
+<!-- DOCUMENT UPLOAD MODAL -->
+<div class="mo-overlay" id="mo-docupload">
+  <div class="mo-box" style="max-width:460px">
+    <button class="mo-close" id="close-docupload-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Upload document</div>
+    <div class="mo-sub">Store leases, inspections, receipts, and other files.</div>
+    <label class="mo-lbl">Document name</label>
+    <input class="mo-inp" type="text" id="doc-name" placeholder="e.g. Move-in inspection — 510 11th St">
+    <label class="mo-lbl">Category</label>
+    <select class="mo-inp" id="doc-category">
+      <option>Lease</option><option>Inspection</option><option>Receipt</option>
+      <option>Notice</option><option>Insurance</option><option>Other</option>
+    </select>
+    <label class="mo-lbl">Related property / tenant (optional)</label>
+    <select class="mo-inp" id="doc-tenant-link">
+      <option value="">All properties</option>
+    </select>
+    <label class="mo-lbl">File</label>
+    <div id="doc-file-drop" style="border:2px dashed rgba(15,30,53,.2);border-radius:9px;padding:24px;text-align:center;cursor:pointer;margin-bottom:11px">
+      <i class="ti ti-cloud-upload" style="font-size:28px;color:#999;display:block;margin-bottom:7px"></i>
+      <div style="font-size:13px;color:#5a5a5a">Drop file or <span style="color:#1a5fa8">click to browse</span></div>
+      <div style="font-size:11px;color:#999;margin-top:3px">PDF, DOC, JPG, PNG up to 10MB</div>
+      <input type="file" id="doc-file-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none">
+    </div>
+    <div id="doc-file-name" style="font-size:12.5px;color:#2d7a4f;margin-bottom:11px;display:none"></div>
+    <button class="mo-btn" id="save-doc-btn">Save document</button>
+    <div class="ok-msg" id="doc-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Document saved!</div>
+  </div>
+</div>
+
+<!-- MOVE-IN CHECKLIST MODAL -->
+<div class="mo-overlay" id="mo-checklist">
+  <div class="mo-box" style="max-width:560px;max-height:88vh;overflow-y:auto">
+    <button class="mo-close" id="close-checklist-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Move-in / Move-out checklist</div>
+    <div class="mo-sub">Document property condition at move-in or move-out. Both parties should sign.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:13px">
+      <div>
+        <label class="mo-lbl">Tenant</label>
+        <select class="mo-inp" id="chk-tenant"></select>
+      </div>
+      <div>
+        <label class="mo-lbl">Type</label>
+        <select class="mo-inp" id="chk-type">
+          <option>Move-in</option><option>Move-out</option>
+        </select>
+      </div>
+    </div>
+    <label class="mo-lbl">Inspection date</label>
+    <input class="mo-inp" type="date" id="chk-date">
+    <div style="font-size:13px;font-weight:500;margin:13px 0 9px">Room conditions</div>
+    <div id="chk-rooms" style="display:flex;flex-direction:column;gap:9px;margin-bottom:13px"></div>
+    <label class="mo-lbl">General notes</label>
+    <textarea class="mo-inp" id="chk-notes" style="height:70px;resize:vertical" placeholder="Overall condition notes, repairs needed, keys provided..."></textarea>
+    <button class="mo-btn" id="save-checklist-btn">Save checklist</button>
+    <div class="ok-msg" id="chk-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Checklist saved!</div>
   </div>
 </div>
 
