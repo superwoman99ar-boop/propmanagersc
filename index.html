@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v14.7</div>
+<div class="vbadge">PropManager SC v14.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1969,23 +1969,7 @@ function attachEvents() {
   if (cancelRented) cancelRented.addEventListener("click", function() { closeMo("markrente"); });
   var confirmRented = document.getElementById("confirm-rented-btn");
   if (confirmRented) confirmRented.addEventListener("click", markAsRented);
-  // Photo tab switching (tabs only, actual upload wired inside openVacancyEdit)
-  var photoTabUp = document.getElementById("photo-tab-upload");
-  var photoTabUrl = document.getElementById("photo-tab-url");
-  if (photoTabUp) photoTabUp.addEventListener("click", function() {
-    photoTabUp.classList.add("on"); if (photoTabUrl) photoTabUrl.classList.remove("on");
-    var up = document.getElementById("photo-upload-panel");
-    var ur = document.getElementById("photo-url-panel");
-    if (up) up.style.display = "block";
-    if (ur) ur.style.display = "none";
-  });
-  if (photoTabUrl) photoTabUrl.addEventListener("click", function() {
-    photoTabUrl.classList.add("on"); if (photoTabUp) photoTabUp.classList.remove("on");
-    var up = document.getElementById("photo-upload-panel");
-    var ur = document.getElementById("photo-url-panel");
-    if (up) up.style.display = "none";
-    if (ur) ur.style.display = "block";
-  });
+  // Photo upload wired inside openVacancyEdit via label[for]
   var vacPrevBtn = document.getElementById("vac-photo-prev");
   var vacNextBtn = document.getElementById("vac-photo-next");
   if (vacPrevBtn) vacPrevBtn.addEventListener("click", function() { changeVacPhoto(-1); });
@@ -4510,89 +4494,76 @@ function changeVacPhoto(dir) {
 }
 
 function openVacancyEdit(isEdit) {
+  var d = (isEdit && _vacancyData) ? _vacancyData : {};
+
+  // Fill form fields
+  var setVal = function(id, val) { var el = document.getElementById(id); if (el) el.value = val || ""; };
+  setVal("ve-address", d.address || "608 11th Street, Gaffney SC 29340");
+  setVal("ve-rent",    d.rent    || 1500);
+  setVal("ve-deposit", d.deposit || d.rent || 1500);
+  setVal("ve-beds",    d.beds    || "");
+  setVal("ve-baths",   d.baths   || "");
+  setVal("ve-sqft",    d.sqft    || "");
+  setVal("ve-desc",    d.desc    || "");
+  setVal("ve-avail",   d.avail   || new Date().toISOString().split("T")[0]);
   document.getElementById("vac-edit-title").textContent = isEdit ? "Edit listing" : "Add new listing";
-  var d = isEdit && _vacancyData ? _vacancyData : {};
-  document.getElementById("ve-address").value = d.address || "608 11th Street, Gaffney SC 29340";
-  document.getElementById("ve-rent").value = d.rent || 1500;
-  document.getElementById("ve-deposit").value = d.deposit || d.rent || 1500;
-  document.getElementById("ve-beds").value = d.beds || "";
-  document.getElementById("ve-baths").value = d.baths || "";
-  document.getElementById("ve-sqft").value = d.sqft || "";
-  document.getElementById("ve-desc").value = d.desc || "";
-  document.getElementById("ve-avail").value = d.avail || new Date().toISOString().split("T")[0];
   var typeEl = document.getElementById("ve-type");
   if (typeEl && d.type) typeEl.value = d.type;
 
-  // Amenity checkboxes
+  // Amenities
   ["am-washer","am-ac","am-heat","am-parking","am-yard","am-garage","am-pets","am-dishwasher","am-hardwood"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.checked = !!(d.amenities && d.amenities.includes(el.value));
   });
 
-  // Reset photo tabs to upload tab
-  var upPanel  = document.getElementById("photo-upload-panel");
-  var urlPanel = document.getElementById("photo-url-panel");
-  var tabUp    = document.getElementById("photo-tab-upload");
-  var tabUrl   = document.getElementById("photo-tab-url");
-  if (upPanel)  upPanel.style.display  = "block";
-  if (urlPanel) urlPanel.style.display = "none";
-  if (tabUp)  { tabUp.classList.add("on");    }
-  if (tabUrl) { tabUrl.classList.remove("on"); }
-
-  // RE-WIRE file input every time modal opens (critical for mobile + hidden modals)
+  // Wire file input — use label[for] approach so no JS click() needed
   var fileInput = document.getElementById("ve-photo-input");
-  var dropZone  = document.getElementById("ve-photo-drop");
   if (fileInput) {
-    // Clone to remove any stale listeners
-    var newInput = fileInput.cloneNode(true);
-    fileInput.parentNode.replaceChild(newInput, fileInput);
-    fileInput = newInput;
-    fileInput.value = ""; // reset so same file can be re-selected
-    fileInput.addEventListener("change", function() {
-      if (fileInput.files && fileInput.files.length > 0) {
-        handleVacancyPhotos(fileInput.files);
-        fileInput.value = ""; // reset after handling
-      }
-    });
-  }
-  if (dropZone && fileInput) {
-    dropZone.onclick = null;
-    dropZone.onclick = function(e) {
-      e.preventDefault();
-      fileInput.click();
-    };
-    dropZone.ondragover  = function(e) { e.preventDefault(); dropZone.style.background = "rgba(26,95,168,.08)"; };
-    dropZone.ondragleave = function()  { dropZone.style.background = "rgba(15,30,53,.02)"; };
-    dropZone.ondrop = function(e) {
-      e.preventDefault();
-      dropZone.style.background = "rgba(15,30,53,.02)";
-      if (e.dataTransfer && e.dataTransfer.files.length) {
-        handleVacancyPhotos(e.dataTransfer.files);
+    fileInput.onchange = null;
+    fileInput.onchange = function(e) {
+      if (e.target.files && e.target.files.length > 0) {
+        handleVacancyPhotos(e.target.files);
       }
     };
   }
 
-  // URL tab photo add
-  var urlInput = document.getElementById("ve-photo-url");
+  // Wire URL add button
+  var urlInput  = document.getElementById("ve-photo-url");
   var addUrlBtn = document.getElementById("add-photo-url-btn");
-  if (addUrlBtn && urlInput) {
-    addUrlBtn.onclick = null;
+  if (addUrlBtn) {
     addUrlBtn.onclick = function() {
-      var url = (urlInput.value || "").trim();
-      if (!url) { alert("Please enter a photo URL."); return; }
-      if (!url.startsWith("http")) { alert("Please enter a valid URL starting with http."); return; }
-      if (_vacancyPhotos.length >= 10) { alert("Maximum 10 photos."); return; }
+      var url = urlInput ? urlInput.value.trim() : "";
+      if (!url) return;
+      if (_vacancyPhotos.length >= 10) { alert("Maximum 10 photos allowed."); return; }
       _vacancyPhotos.push(url);
-      urlInput.value = "";
+      if (urlInput) urlInput.value = "";
       renderEditPhotoPreview();
+      updatePhotoCount();
     };
-    urlInput.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); addUrlBtn.click(); } };
+  }
+  if (urlInput) {
+    urlInput.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); if (addUrlBtn) addUrlBtn.click(); } };
   }
 
+  // Show photos
   renderEditPhotoPreview();
-  document.getElementById("ve-ok").classList.remove("on");
-  document.getElementById("ve-err").style.display = "none";
+  updatePhotoCount();
+
+  // Reset status messages
+  var okEl  = document.getElementById("ve-ok");
+  var errEl = document.getElementById("ve-err");
+  if (okEl)  okEl.classList.remove("on");
+  if (errEl) errEl.style.display = "none";
+
   openMo("vacancyedit");
+}
+
+function updatePhotoCount() {
+  var el = document.getElementById("ve-photo-count");
+  if (!el) return;
+  var n = _vacancyPhotos.length;
+  el.textContent = n === 0 ? "No photos added yet." : n + " photo" + (n===1?"":"s") + " added" + (n>=10?" (maximum reached)":"");
+  el.style.color = n >= 10 ? "#c0392b" : "#2d7a4f";
 }
 
 function handleVacancyPhotos(files) {
@@ -4635,11 +4606,11 @@ function handleVacancyPhotos(files) {
         _vacancyPhotos.push(e.target.result);
       }
       loaded++;
-      if (loaded === toAdd.length) renderEditPhotoPreview();
+      if (loaded === toAdd.length) { renderEditPhotoPreview(); updatePhotoCount(); }
     };
     reader.onerror = function() {
       loaded++;
-      if (loaded === toAdd.length) renderEditPhotoPreview();
+      if (loaded === toAdd.length) { renderEditPhotoPreview(); updatePhotoCount(); }
     };
     reader.readAsDataURL(file);
   });
@@ -4716,6 +4687,7 @@ function renderEditPhotoPreview() {
 
     el.appendChild(wrap);
   });
+  updatePhotoCount();
 }
 
 function saveVacancyListing() {
@@ -4744,10 +4716,13 @@ function saveVacancyListing() {
 
   document.getElementById("ve-ok").classList.add("on");
   _vacancyPhotoIndex = 0;
+  updatePhotoCount();
   setTimeout(function() {
     closeMo("vacancyedit");
-    document.getElementById("vac-listing").style.display = "block";
-    document.getElementById("vac-empty").style.display = "none";
+    var lEl = document.getElementById("vac-listing");
+    var eEl = document.getElementById("vac-empty");
+    if (lEl) lEl.style.display = "block";
+    if (eEl) eEl.style.display = "none";
     renderVacancyListing();
   }, 1200);
 }
