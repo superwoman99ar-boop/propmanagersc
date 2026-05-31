@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v14.2</div>
+<div class="vbadge">PropManager SC v14.3</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4437,9 +4437,15 @@ function renderVacancyPhotos() {
   var nextBtn = document.getElementById("vac-photo-next");
   var countEl = document.getElementById("vac-photo-count");
 
-  if (!_vacancyPhotos.length) {
+  // Filter out broken/unsupported photos (HEIC etc)
+  var validPhotos = _vacancyPhotos.filter(function(p) {
+    // HEIC files cannot display in browser — filter them
+    return p && !p.toLowerCase().includes("heic");
+  });
+
+  if (!validPhotos.length) {
     if (mainImg) mainImg.style.display = "none";
-    if (noPhoto) noPhoto.style.display = "block";
+    if (noPhoto) { noPhoto.style.display = "block"; }
     if (prevBtn) prevBtn.style.display = "none";
     if (nextBtn) nextBtn.style.display = "none";
     if (countEl) countEl.style.display = "none";
@@ -4447,22 +4453,39 @@ function renderVacancyPhotos() {
     return;
   }
 
+  // Clamp index
+  if (_vacancyPhotoIndex >= validPhotos.length) _vacancyPhotoIndex = 0;
+
   if (noPhoto) noPhoto.style.display = "none";
   if (mainImg) {
     mainImg.style.display = "block";
-    mainImg.src = _vacancyPhotos[_vacancyPhotoIndex];
+    mainImg.src = validPhotos[_vacancyPhotoIndex];
+    // Handle broken image
+    mainImg.onerror = function() {
+      // Try next photo
+      _vacancyPhotoIndex = (_vacancyPhotoIndex + 1) % validPhotos.length;
+      mainImg.src = validPhotos[_vacancyPhotoIndex];
+    };
   }
-  if (prevBtn) prevBtn.style.display = _vacancyPhotos.length > 1 ? "block" : "none";
-  if (nextBtn) nextBtn.style.display = _vacancyPhotos.length > 1 ? "block" : "none";
+  if (prevBtn) prevBtn.style.display = validPhotos.length > 1 ? "block" : "none";
+  if (nextBtn) nextBtn.style.display = validPhotos.length > 1 ? "block" : "none";
   if (countEl) {
     countEl.style.display = "block";
-    countEl.textContent = (_vacancyPhotoIndex+1) + " / " + _vacancyPhotos.length;
+    countEl.textContent = (_vacancyPhotoIndex+1) + " / " + validPhotos.length;
   }
 
-  // Thumbnails
+  // Thumbnails — only show valid photos, label broken ones
   if (thumbsEl) {
-    thumbsEl.innerHTML = _vacancyPhotos.map(function(photo, i) {
-      return "<img src='" + photo + "' style='width:60px;height:44px;object-fit:cover;border-radius:5px;cursor:pointer;border:2px solid " + (i===_vacancyPhotoIndex?"#c9962a":"transparent") + ";flex-shrink:0' data-photo-idx='" + i + "' alt='Photo " + (i+1) + "'>";
+    thumbsEl.innerHTML = validPhotos.map(function(photo, i) {
+      var isActive = i === _vacancyPhotoIndex;
+      return "<div style='position:relative;flex-shrink:0'>" +
+        "<img src='" + photo + "' " +
+        "style='width:64px;height:48px;object-fit:cover;border-radius:5px;cursor:pointer;border:2px solid " + (isActive?"#c9962a":"transparent") + "' " +
+        "data-photo-idx='" + i + "' " +
+        "onerror="this.style.display='none'" " +
+        "alt='Photo " + (i+1) + "'>" +
+        (i===0 ? "<div style='position:absolute;bottom:2px;left:2px;background:#c9962a;color:#0f1e35;font-size:8px;font-weight:700;padding:1px 4px;border-radius:2px'>MAIN</div>" : "") +
+        "</div>";
     }).join("");
     thumbsEl.querySelectorAll("[data-photo-idx]").forEach(function(thumb) {
       thumb.addEventListener("click", function() {
@@ -4508,15 +4531,33 @@ function openVacancyEdit(isEdit) {
 }
 
 function handleVacancyPhotos(files) {
-  var arr = Array.from(files).slice(0, 10 - _vacancyPhotos.length);
+  var arr = Array.from(files);
+  var heicFiles = arr.filter(function(f) { return f.name.toLowerCase().endsWith(".heic") || f.type === "image/heic"; });
+  var goodFiles = arr.filter(function(f) { return !f.name.toLowerCase().endsWith(".heic") && f.type !== "image/heic"; });
+
+  // Warn about HEIC files
+  if (heicFiles.length > 0) {
+    var warn = document.getElementById("ve-photo-drop");
+    var warnMsg = document.createElement("div");
+    warnMsg.style.cssText = "background:#fdf3e0;border:1px solid rgba(160,96,16,.2);border-radius:6px;padding:9px 12px;font-size:12px;color:#a06010;margin-top:9px";
+    warnMsg.innerHTML = "<strong><i class='ti ti-alert-triangle'></i> " + heicFiles.length + " HEIC photo(s) skipped</strong><br>" +
+      "iPhone HEIC files cannot display in web browsers. Please convert them to JPG first.<br>" +
+      "<strong>Easy fix:</strong> On your iPhone, go to Settings &rarr; Camera &rarr; Formats &rarr; select <em>Most Compatible</em> to save future photos as JPG. Or email the photos to yourself and save from Gmail as JPG.";
+    if (warn && warn.parentNode) warn.parentNode.insertBefore(warnMsg, warn.nextSibling);
+    setTimeout(function() { if (warnMsg.parentNode) warnMsg.parentNode.removeChild(warnMsg); }, 8000);
+  }
+
+  if (!goodFiles.length) return;
+  var toAdd = goodFiles.slice(0, 10 - _vacancyPhotos.length);
   var loaded = 0;
-  arr.forEach(function(file) {
+  toAdd.forEach(function(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
       _vacancyPhotos.push(e.target.result);
       loaded++;
-      if (loaded === arr.length) renderEditPhotoPreview();
+      if (loaded === toAdd.length) renderEditPhotoPreview();
     };
+    reader.onerror = function() { loaded++; if (loaded === toAdd.length) renderEditPhotoPreview(); };
     reader.readAsDataURL(file);
   });
 }
@@ -4524,16 +4565,35 @@ function handleVacancyPhotos(files) {
 function renderEditPhotoPreview() {
   var el = document.getElementById("ve-photo-preview");
   if (!el) return;
+  if (!_vacancyPhotos.length) {
+    el.innerHTML = "<div style='font-size:12px;color:#999;padding:9px 0'>No photos added yet.</div>";
+    return;
+  }
   el.innerHTML = _vacancyPhotos.map(function(photo, i) {
-    return "<div style='position:relative;display:inline-block'>" +
-      "<img src='" + photo + "' style='width:80px;height:60px;object-fit:cover;border-radius:7px;border:1px solid rgba(15,30,53,.1)'>" +
-      "<button style='position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:#c0392b;border:none;color:#fff;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center' data-remove-photo='" + i + "'>&times;</button>" +
-      (i===0 ? "<div style='position:absolute;bottom:2px;left:2px;background:rgba(0,0,0,.6);color:#fff;font-size:9px;padding:1px 4px;border-radius:3px'>Main</div>" : "") +
+    var isMain = i === _vacancyMainPhotoIndex;
+    return "<div style='position:relative;display:inline-block;margin:3px'>" +
+      "<img src='" + photo + "' style='width:90px;height:68px;object-fit:cover;border-radius:7px;border:" + (isMain?"3px solid #c9962a":"1px solid rgba(15,30,53,.1)") + "' onerror="this.parentNode.style.display='none'">" +
+      "<button style='position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;border:none;color:#fff;cursor:pointer;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center' data-remove-photo='" + i + "'>&times;</button>" +
+      (isMain
+        ? "<div style='position:absolute;bottom:3px;left:3px;background:#c9962a;color:#0f1e35;font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px'>MAIN</div>"
+        : "<button style='position:absolute;bottom:3px;left:3px;background:rgba(0,0,0,.55);color:#fff;font-size:9px;border:none;border-radius:3px;padding:2px 5px;cursor:pointer' data-set-main='" + i + "'>Set main</button>") +
       "</div>";
   }).join("");
   el.querySelectorAll("[data-remove-photo]").forEach(function(btn) {
     btn.addEventListener("click", function() {
-      _vacancyPhotos.splice(parseInt(btn.getAttribute("data-remove-photo")), 1);
+      var idx = parseInt(btn.getAttribute("data-remove-photo"));
+      _vacancyPhotos.splice(idx, 1);
+      if (_vacancyMainPhotoIndex >= _vacancyPhotos.length) _vacancyMainPhotoIndex = 0;
+      renderEditPhotoPreview();
+    });
+  });
+  el.querySelectorAll("[data-set-main]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      _vacancyMainPhotoIndex = parseInt(btn.getAttribute("data-set-main"));
+      // Move main photo to front of array
+      var mainPhoto = _vacancyPhotos.splice(_vacancyMainPhotoIndex, 1)[0];
+      _vacancyPhotos.unshift(mainPhoto);
+      _vacancyMainPhotoIndex = 0;
       renderEditPhotoPreview();
     });
   });
