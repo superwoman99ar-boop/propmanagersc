@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v14.6</div>
+<div class="vbadge">PropManager SC v14.7</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1969,46 +1969,22 @@ function attachEvents() {
   if (cancelRented) cancelRented.addEventListener("click", function() { closeMo("markrente"); });
   var confirmRented = document.getElementById("confirm-rented-btn");
   if (confirmRented) confirmRented.addEventListener("click", markAsRented);
-  var vePhotoInput = document.getElementById("ve-photo-input");
-  var vePhotoDrop = document.getElementById("ve-photo-drop");
-  if (vePhotoDrop && vePhotoInput) {
-    vePhotoDrop.addEventListener("click", function() { vePhotoInput.click(); });
-    vePhotoDrop.addEventListener("dragover", function(e) { e.preventDefault(); vePhotoDrop.style.background = "rgba(26,95,168,.08)"; });
-    vePhotoDrop.addEventListener("dragleave", function() { vePhotoDrop.style.background = "rgba(15,30,53,.02)"; });
-    vePhotoDrop.addEventListener("drop", function(e) {
-      e.preventDefault(); vePhotoDrop.style.background = "rgba(15,30,53,.02)";
-      handleVacancyPhotos(e.dataTransfer.files);
-    });
-    vePhotoInput.addEventListener("change", function() { handleVacancyPhotos(vePhotoInput.files); });
-  }
-  // Photo tabs
+  // Photo tab switching (tabs only, actual upload wired inside openVacancyEdit)
   var photoTabUp = document.getElementById("photo-tab-upload");
   var photoTabUrl = document.getElementById("photo-tab-url");
   if (photoTabUp) photoTabUp.addEventListener("click", function() {
-    photoTabUp.classList.add("on"); photoTabUrl.classList.remove("on");
-    document.getElementById("photo-upload-panel").style.display = "block";
-    document.getElementById("photo-url-panel").style.display = "none";
+    photoTabUp.classList.add("on"); if (photoTabUrl) photoTabUrl.classList.remove("on");
+    var up = document.getElementById("photo-upload-panel");
+    var ur = document.getElementById("photo-url-panel");
+    if (up) up.style.display = "block";
+    if (ur) ur.style.display = "none";
   });
   if (photoTabUrl) photoTabUrl.addEventListener("click", function() {
-    photoTabUrl.classList.add("on"); photoTabUp.classList.remove("on");
-    document.getElementById("photo-url-panel").style.display = "block";
-    document.getElementById("photo-upload-panel").style.display = "none";
-  });
-  // Add URL button
-  var addUrlBtn = document.getElementById("add-photo-url-btn");
-  if (addUrlBtn) addUrlBtn.addEventListener("click", function() {
-    var urlInput = document.getElementById("ve-photo-url");
-    var url = (urlInput.value || "").trim();
-    if (!url) return;
-    if (_vacancyPhotos.length >= 10) { alert("Maximum 10 photos allowed."); return; }
-    _vacancyPhotos.push(url);
-    urlInput.value = "";
-    renderEditPhotoPreview();
-  });
-  // Enter key on URL input
-  var urlInp = document.getElementById("ve-photo-url");
-  if (urlInp) urlInp.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") { e.preventDefault(); document.getElementById("add-photo-url-btn").click(); }
+    photoTabUrl.classList.add("on"); if (photoTabUp) photoTabUp.classList.remove("on");
+    var up = document.getElementById("photo-upload-panel");
+    var ur = document.getElementById("photo-url-panel");
+    if (up) up.style.display = "none";
+    if (ur) ur.style.display = "block";
   });
   var vacPrevBtn = document.getElementById("vac-photo-prev");
   var vacNextBtn = document.getElementById("vac-photo-next");
@@ -4547,14 +4523,72 @@ function openVacancyEdit(isEdit) {
   var typeEl = document.getElementById("ve-type");
   if (typeEl && d.type) typeEl.value = d.type;
 
-  // Set amenity checkboxes
-  var amenityIds = ["am-washer","am-ac","am-heat","am-parking","am-yard","am-garage","am-pets","am-dishwasher","am-hardwood"];
-  amenityIds.forEach(function(id) {
+  // Amenity checkboxes
+  ["am-washer","am-ac","am-heat","am-parking","am-yard","am-garage","am-pets","am-dishwasher","am-hardwood"].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) el.checked = d.amenities && d.amenities.includes(el.value);
+    if (el) el.checked = !!(d.amenities && d.amenities.includes(el.value));
   });
 
-  // Show existing photos in preview
+  // Reset photo tabs to upload tab
+  var upPanel  = document.getElementById("photo-upload-panel");
+  var urlPanel = document.getElementById("photo-url-panel");
+  var tabUp    = document.getElementById("photo-tab-upload");
+  var tabUrl   = document.getElementById("photo-tab-url");
+  if (upPanel)  upPanel.style.display  = "block";
+  if (urlPanel) urlPanel.style.display = "none";
+  if (tabUp)  { tabUp.classList.add("on");    }
+  if (tabUrl) { tabUrl.classList.remove("on"); }
+
+  // RE-WIRE file input every time modal opens (critical for mobile + hidden modals)
+  var fileInput = document.getElementById("ve-photo-input");
+  var dropZone  = document.getElementById("ve-photo-drop");
+  if (fileInput) {
+    // Clone to remove any stale listeners
+    var newInput = fileInput.cloneNode(true);
+    fileInput.parentNode.replaceChild(newInput, fileInput);
+    fileInput = newInput;
+    fileInput.value = ""; // reset so same file can be re-selected
+    fileInput.addEventListener("change", function() {
+      if (fileInput.files && fileInput.files.length > 0) {
+        handleVacancyPhotos(fileInput.files);
+        fileInput.value = ""; // reset after handling
+      }
+    });
+  }
+  if (dropZone && fileInput) {
+    dropZone.onclick = null;
+    dropZone.onclick = function(e) {
+      e.preventDefault();
+      fileInput.click();
+    };
+    dropZone.ondragover  = function(e) { e.preventDefault(); dropZone.style.background = "rgba(26,95,168,.08)"; };
+    dropZone.ondragleave = function()  { dropZone.style.background = "rgba(15,30,53,.02)"; };
+    dropZone.ondrop = function(e) {
+      e.preventDefault();
+      dropZone.style.background = "rgba(15,30,53,.02)";
+      if (e.dataTransfer && e.dataTransfer.files.length) {
+        handleVacancyPhotos(e.dataTransfer.files);
+      }
+    };
+  }
+
+  // URL tab photo add
+  var urlInput = document.getElementById("ve-photo-url");
+  var addUrlBtn = document.getElementById("add-photo-url-btn");
+  if (addUrlBtn && urlInput) {
+    addUrlBtn.onclick = null;
+    addUrlBtn.onclick = function() {
+      var url = (urlInput.value || "").trim();
+      if (!url) { alert("Please enter a photo URL."); return; }
+      if (!url.startsWith("http")) { alert("Please enter a valid URL starting with http."); return; }
+      if (_vacancyPhotos.length >= 10) { alert("Maximum 10 photos."); return; }
+      _vacancyPhotos.push(url);
+      urlInput.value = "";
+      renderEditPhotoPreview();
+    };
+    urlInput.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); addUrlBtn.click(); } };
+  }
+
   renderEditPhotoPreview();
   document.getElementById("ve-ok").classList.remove("on");
   document.getElementById("ve-err").style.display = "none";
@@ -4563,32 +4597,50 @@ function openVacancyEdit(isEdit) {
 
 function handleVacancyPhotos(files) {
   var arr = Array.from(files);
-  var heicFiles = arr.filter(function(f) { return f.name.toLowerCase().endsWith(".heic") || f.type === "image/heic"; });
-  var goodFiles = arr.filter(function(f) { return !f.name.toLowerCase().endsWith(".heic") && f.type !== "image/heic"; });
+  var heicFiles = arr.filter(function(f) {
+    var name = (f.name || "").toLowerCase();
+    return name.endsWith(".heic") || name.endsWith(".heif") || f.type === "image/heic";
+  });
+  var goodFiles = arr.filter(function(f) {
+    var name = (f.name || "").toLowerCase();
+    return !name.endsWith(".heic") && !name.endsWith(".heif") && f.type !== "image/heic";
+  });
 
-  // Warn about HEIC files
   if (heicFiles.length > 0) {
-    var warn = document.getElementById("ve-photo-drop");
+    // DOM-only warning, no innerHTML
+    var previewEl = document.getElementById("ve-photo-preview");
     var warnMsg = document.createElement("div");
-    warnMsg.style.cssText = "background:#fdf3e0;border:1px solid rgba(160,96,16,.2);border-radius:6px;padding:9px 12px;font-size:12px;color:#a06010;margin-top:9px";
-    warnMsg.innerHTML = "<strong><i class='ti ti-alert-triangle'></i> " + heicFiles.length + " HEIC photo(s) skipped</strong><br>" +
-      "iPhone HEIC files cannot display in web browsers. Please convert them to JPG first.<br>" +
-      "<strong>Easy fix:</strong> On your iPhone, go to Settings &rarr; Camera &rarr; Formats &rarr; select <em>Most Compatible</em> to save future photos as JPG. Or email the photos to yourself and save from Gmail as JPG.";
-    if (warn && warn.parentNode) warn.parentNode.insertBefore(warnMsg, warn.nextSibling);
-    setTimeout(function() { if (warnMsg.parentNode) warnMsg.parentNode.removeChild(warnMsg); }, 8000);
+    warnMsg.style.cssText = "background:#fdf3e0;border:1px solid rgba(160,96,16,.2);border-radius:7px;padding:10px 13px;font-size:12.5px;color:#a06010;margin-bottom:9px";
+    var t = document.createTextNode(heicFiles.length + " iPhone HEIC photo(s) were skipped. ");
+    var strong = document.createElement("strong");
+    strong.textContent = "Fix: ";
+    var fix = document.createTextNode("On iPhone go to Settings > Camera > Formats > Most Compatible. Then retake or screenshot your photos and re-upload as JPG.");
+    warnMsg.appendChild(t);
+    warnMsg.appendChild(strong);
+    warnMsg.appendChild(fix);
+    if (previewEl && previewEl.parentNode) previewEl.parentNode.insertBefore(warnMsg, previewEl);
+    setTimeout(function() { if (warnMsg.parentNode) warnMsg.parentNode.removeChild(warnMsg); }, 9000);
   }
 
   if (!goodFiles.length) return;
-  var toAdd = goodFiles.slice(0, 10 - _vacancyPhotos.length);
+
+  var toAdd = goodFiles.slice(0, Math.max(0, 10 - _vacancyPhotos.length));
+  if (!toAdd.length) { alert("Maximum 10 photos allowed."); return; }
+
   var loaded = 0;
   toAdd.forEach(function(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
-      _vacancyPhotos.push(e.target.result);
+      if (e.target && e.target.result) {
+        _vacancyPhotos.push(e.target.result);
+      }
       loaded++;
       if (loaded === toAdd.length) renderEditPhotoPreview();
     };
-    reader.onerror = function() { loaded++; if (loaded === toAdd.length) renderEditPhotoPreview(); };
+    reader.onerror = function() {
+      loaded++;
+      if (loaded === toAdd.length) renderEditPhotoPreview();
+    };
     reader.readAsDataURL(file);
   });
 }
