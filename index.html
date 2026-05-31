@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v15.4</div>
+<div class="vbadge">PropManager SC v15.5</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4521,12 +4521,39 @@ function openVacancyEdit(isEdit) {
     if (el) el.checked = !!(d.amenities && d.amenities.includes(el.value));
   });
 
-  // Wire photo file input — direct, simple, no tricks
-  var fileInput = document.getElementById("ve-photo-input");
+  // Wire photo file input + Add Photos button
+  var fileInput    = document.getElementById("ve-photo-input");
+  var addPhotosBtn = document.getElementById("ve-photo-add-btn");
+  if (addPhotosBtn && fileInput) {
+    addPhotosBtn.onclick = function() {
+      if (fileInput.files && fileInput.files.length > 0) {
+        handleVacancyPhotos(fileInput.files);
+        // Reset the input so same files can be re-selected if needed
+        try { fileInput.value = ""; } catch(e) {}
+      } else {
+        // No files chosen yet — prompt user
+        addPhotosBtn.innerHTML = "<i class='ti ti-alert-circle'></i> Select files first";
+        addPhotosBtn.style.background = "#c0392b";
+        addPhotosBtn.style.borderColor = "#c0392b";
+        setTimeout(function() {
+          addPhotosBtn.innerHTML = "<i class='ti ti-photo-plus'></i> Add photos";
+          addPhotosBtn.style.background = "";
+          addPhotosBtn.style.borderColor = "";
+        }, 2000);
+      }
+    };
+  }
+  // Also wire onchange as a convenience — auto-add when files selected
   if (fileInput) {
     fileInput.onchange = function() {
       if (fileInput.files && fileInput.files.length > 0) {
-        handleVacancyPhotos(fileInput.files);
+        // Update button to show count
+        var addBtn = document.getElementById("ve-photo-add-btn");
+        if (addBtn) {
+          addBtn.innerHTML = "<i class='ti ti-photo-plus'></i> Add " + fileInput.files.length + " photo" + (fileInput.files.length > 1 ? "s" : "");
+          addBtn.style.background = "#2d7a4f";
+          addBtn.style.borderColor = "#2d7a4f";
+        }
       }
     };
   }
@@ -6263,20 +6290,28 @@ document.addEventListener("DOMContentLoaded", function() {
       <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="am-hardwood" value="Hardwood floors"> Hardwood floors</label>
     </div>
 
-    <label class="mo-lbl">Photos (select JPG or PNG files)</label>
-    <div style="margin-bottom:13px;padding:14px;background:rgba(15,30,53,.04);border-radius:9px">
-      <div style="font-size:13px;color:#0f1e35;font-weight:500;margin-bottom:9px"><i class="ti ti-photo-up" style="color:#1a5fa8"></i> Upload photos from your device</div>
-      <input type="file" id="ve-photo-input" accept="image/jpeg,image/png,image/gif,image/webp" multiple style="display:block;width:100%;padding:8px;border:1.5px solid rgba(15,30,53,.2);border-radius:7px;background:#fff;font-size:13px;cursor:pointer;font-family:inherit">
-      <div style="font-size:11px;color:#999;margin-top:6px">Hold Ctrl (Windows) or Cmd (Mac) to select multiple photos at once. JPG and PNG only — iPhone users set Camera to Most Compatible first.</div>
+    <label class="mo-lbl">Photos</label>
+
+    <!-- Step 1: Choose files -->
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;padding:12px 14px;background:rgba(15,30,53,.04);border-radius:9px;flex-wrap:wrap">
+      <input type="file" id="ve-photo-input" accept="image/jpeg,image/png,image/gif,image/webp" multiple style="flex:1;min-width:0;font-size:13px;cursor:pointer">
+      <button class="btn btn-n" id="ve-photo-add-btn" style="white-space:nowrap;padding:8px 16px;font-size:13px">
+        <i class="ti ti-photo-plus"></i> Add photos
+      </button>
     </div>
-    <div style="margin-bottom:13px;padding:14px;background:rgba(15,30,53,.04);border-radius:9px">
-      <div style="font-size:13px;color:#0f1e35;font-weight:500;margin-bottom:9px"><i class="ti ti-link" style="color:#1a5fa8"></i> Or add by URL (Imgur, Google Photos, etc.)</div>
-      <div style="display:flex;gap:8px">
-        <input class="mo-inp" type="text" id="ve-photo-url" placeholder="https://i.imgur.com/example.jpg" style="margin:0;flex:1">
-        <button class="btn btn-n" id="add-photo-url-btn" style="white-space:nowrap;padding:8px 14px"><i class="ti ti-plus"></i> Add</button>
-      </div>
+    <div style="font-size:11.5px;color:#5a5a5a;margin-bottom:13px">
+      1. Click <strong>Choose Files</strong> and select your photos &nbsp;&bull;&nbsp;
+      2. Click <strong>Add photos</strong> to attach them &nbsp;&bull;&nbsp;
+      JPG/PNG only &nbsp;&bull;&nbsp; iPhone: Settings &rarr; Camera &rarr; Most Compatible
     </div>
-    <div id="ve-photo-count" style="font-size:12px;margin-bottom:7px;font-weight:500"></div>
+
+    <!-- URL option -->
+    <div style="display:flex;gap:8px;margin-bottom:13px">
+      <input class="mo-inp" type="text" id="ve-photo-url" placeholder="Or paste photo URL: https://i.imgur.com/example.jpg" style="margin:0;flex:1;font-size:12.5px">
+      <button class="btn btn-n" id="add-photo-url-btn" style="white-space:nowrap;padding:8px 14px"><i class="ti ti-link"></i> Add URL</button>
+    </div>
+
+    <div id="ve-photo-count" style="font-size:12.5px;font-weight:500;margin-bottom:7px;color:#2d7a4f"></div>
     <div id="ve-photo-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
 
     <button class="mo-btn" id="save-vacancy-btn">Save listing</button>
