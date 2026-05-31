@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v15.1</div>
+<div class="vbadge">PropManager SC v15.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1969,7 +1969,14 @@ function attachEvents() {
   if (cancelRented) cancelRented.addEventListener("click", function() { closeMo("markrente"); });
   var confirmRented = document.getElementById("confirm-rented-btn");
   if (confirmRented) confirmRented.addEventListener("click", markAsRented);
-  // Photo upload wired inside openVacancyEdit via label[for]
+  // Photo upload — input is at body level, trigger button inside modal
+  // Primary wiring is in openVacancyEdit, this is a fallback
+  document.addEventListener("click", function(e) {
+    if (e.target && (e.target.id === "ve-photo-trigger" || e.target.closest("#ve-photo-trigger"))) {
+      var fi = document.getElementById("ve-photo-input");
+      if (fi) fi.click();
+    }
+  });
   var vacPrevBtn = document.getElementById("vac-photo-prev");
   var vacNextBtn = document.getElementById("vac-photo-next");
   if (vacPrevBtn) vacPrevBtn.addEventListener("click", function() { changeVacPhoto(-1); });
@@ -4516,14 +4523,22 @@ function openVacancyEdit(isEdit) {
     if (el) el.checked = !!(d.amenities && d.amenities.includes(el.value));
   });
 
-  // Wire file input — use label[for] approach so no JS click() needed
-  var fileInput = document.getElementById("ve-photo-input");
+  // Wire photo trigger button → file input (input is outside modal at body level)
+  var fileInput   = document.getElementById("ve-photo-input");
+  var triggerBtn  = document.getElementById("ve-photo-trigger");
   if (fileInput) {
-    fileInput.onchange = null;
     fileInput.onchange = function(e) {
       if (e.target.files && e.target.files.length > 0) {
         handleVacancyPhotos(e.target.files);
+        fileInput.value = ""; // reset so same file can be re-selected
       }
+    };
+  }
+  if (triggerBtn && fileInput) {
+    triggerBtn.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      fileInput.click();
     };
   }
 
@@ -6261,12 +6276,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
     <label class="mo-lbl">Photos (JPG or PNG &mdash; up to 10)</label>
     <div style="margin-bottom:11px">
-      <label for="ve-photo-input" style="display:flex;align-items:center;justify-content:center;gap:9px;border:2px dashed rgba(15,30,53,.2);border-radius:9px;padding:22px 16px;cursor:pointer;background:rgba(15,30,53,.02);text-align:center;flex-direction:column;user-select:none">
-        <i class="ti ti-photo-up" style="font-size:32px;color:#1a5fa8"></i>
+      <button type="button" id="ve-photo-trigger" style="display:flex;align-items:center;justify-content:center;gap:9px;border:2px dashed rgba(15,30,53,.2);border-radius:9px;padding:22px 16px;cursor:pointer;background:rgba(15,30,53,.02);text-align:center;flex-direction:column;width:100%;font-family:inherit">
+        <i class="ti ti-photo-up" style="font-size:32px;color:#1a5fa8;display:block"></i>
         <span style="font-size:13px;color:#0f1e35;font-weight:500">Tap or click here to choose photos</span>
-        <span style="font-size:11px;color:#999">JPG or PNG only &bull; HEIC from iPhone will not work &bull; Use Most Compatible setting in iPhone Camera</span>
-      </label>
-      <input type="file" id="ve-photo-input" accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp" multiple style="position:fixed;top:-9999px;left:-9999px;opacity:0;width:1px;height:1px;pointer-events:none">
+        <span style="font-size:11px;color:#999">JPG or PNG only &bull; HEIC from iPhone will not work &bull; Use Most Compatible in iPhone Camera settings</span>
+      </button>
+
     </div>
     <div style="margin-bottom:11px">
       <label class="mo-lbl" style="margin-bottom:5px">Or add by URL (from Imgur, Google Photos, etc.)</label>
@@ -6724,5 +6739,7 @@ document.addEventListener("DOMContentLoaded", function() {
   </div>
 </div>
 
+<!-- File input for vacancy photos — must be outside all modals -->
+<input type="file" id="ve-photo-input" accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp" multiple style="position:fixed;top:-9999px;left:-9999px;opacity:0;width:1px;height:1px">
 </body>
 </html>
