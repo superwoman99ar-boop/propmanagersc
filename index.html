@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v14.9</div>
+<div class="vbadge">PropManager SC v15.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2712,7 +2712,7 @@ async function loadDashboardData() {
   renderMaintList(maints);
   renderLeaseList(tenants);
   // New unified ledger renderer
-  var recurring = expenses.filter(function(e){ return (e.notes||"") === "recurring"; });
+  var recurring = expenses.filter(function(e){ return (e.description||"").startsWith("[Recurring]"); });
   var recurringMonthly = recurring.reduce(function(s,e){ return s+(Number(e.amount)||0); },0) / 12;
   var glRec = document.getElementById("gl-recurring");
   if (glRec) glRec.textContent = "$" + Math.round(recurringMonthly).toLocaleString();
@@ -3588,7 +3588,7 @@ async function saveRecurringExpense() {
     var y = yr + Math.floor((m-1)/12);
     var month = ((m-1) % 12) + 1;
     var dateStr = y + "-" + String(month).padStart(2,"0") + "-" + String(Math.min(day,28)).padStart(2,"0");
-    records.push({ description: desc, amount: amt, category: cat, expense_date: dateStr, notes: "recurring" });
+    records.push({ description: "[Recurring] " + desc, amount: amt, category: cat, expense_date: dateStr });
   }
   var result = await sb.from("expenses").insert(records);
   if (result.error) {
@@ -3695,7 +3695,7 @@ function renderLedger(data, sort, filters) {
       if (!exps.length) { expEl.innerHTML = "<div class='empty'>No expenses for selected period.</div>"; }
       else {
         expEl.innerHTML = exps.map(function(e) {
-          var isRec = (e.notes||"") === "recurring";
+          var isRec = (e.description||"").startsWith("[Recurring]");
           var recBadge = isRec ? "<span class='badge b-b' style='font-size:10px;margin-right:5px'><i class='ti ti-repeat' style='font-size:9px'></i> Recurring</span>" : "";
           return "<div class='lr'><div class='l-ico' style='background:#fdecea;color:#c0392b'><i class='ti ti-arrow-up-right' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + e.description + "</div><div class='l-sub'>" + e.expense_date + " &middot; " + (e.category||"Other") + "</div></div>" + recBadge + "<div class='l-dr' style='margin-right:8px'>-$" + Number(e.amount).toLocaleString() + "</div><button class='btn btn-r' style='font-size:11px;padding:3px 8px' data-exp-id='" + e.id + "'>Del</button></div>";
         }).join("");
@@ -5125,7 +5125,7 @@ async function submitPartialPayment() {
       payment_date: new Date().toISOString().split("T")[0],
       method:      method,
       status:      "partial",
-      notes:       "Partial payment" + (note ? ": " + note : "") + " (balance: $" + (rent - amt).toLocaleString() + ")"
+      notes:       "Partial payment" + (note ? ": " +
     });
     if (result.error) {
       errEl.style.display = "block";
@@ -5387,7 +5387,7 @@ async function sendLeaseToTenant() {
   // Save first
   await saveLeaseDocument();
   // Mark as sent
-  await sb.from("tenants").update({ lease_status: "sent" }).eq("id", doc.id);
+  // lease_status column not in schema - track in app state only
   // Log a message to the tenant
   await sb.from("messages").insert({
     tenant_id: doc.id,
