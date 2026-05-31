@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v14.8</div>
+<div class="vbadge">PropManager SC v14.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -6259,32 +6259,24 @@ document.addEventListener("DOMContentLoaded", function() {
       <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="am-hardwood" value="Hardwood floors"> Hardwood floors</label>
     </div>
 
-    <label class="mo-lbl">Photos</label>
-    <div class="tab-row" style="margin-bottom:11px">
-      <button class="tab on" id="photo-tab-upload">Upload from device</button>
-      <button class="tab" id="photo-tab-url">Add by URL</button>
+    <label class="mo-lbl">Photos (JPG or PNG &mdash; up to 10)</label>
+    <div style="margin-bottom:11px">
+      <label for="ve-photo-input" style="display:flex;align-items:center;justify-content:center;gap:9px;border:2px dashed rgba(15,30,53,.2);border-radius:9px;padding:22px 16px;cursor:pointer;background:rgba(15,30,53,.02);text-align:center;flex-direction:column;user-select:none">
+        <i class="ti ti-photo-up" style="font-size:32px;color:#1a5fa8"></i>
+        <span style="font-size:13px;color:#0f1e35;font-weight:500">Tap or click here to choose photos</span>
+        <span style="font-size:11px;color:#999">JPG or PNG only &bull; HEIC from iPhone will not work &bull; Use Most Compatible setting in iPhone Camera</span>
+      </label>
+      <input type="file" id="ve-photo-input" accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp" multiple style="position:fixed;top:-9999px;left:-9999px;opacity:0;width:1px;height:1px;pointer-events:none">
     </div>
-    <!-- Upload tab -->
-    <div id="photo-upload-panel">
-      <div id="ve-photo-drop" style="border:2px dashed rgba(15,30,53,.2);border-radius:9px;padding:20px;text-align:center;cursor:pointer;margin-bottom:11px;background:rgba(15,30,53,.02)">
-        <i class="ti ti-photo-up" style="font-size:28px;color:#999;display:block;margin-bottom:7px"></i>
-        <div style="font-size:13px;color:#5a5a5a">Drop photos here or <span style="color:#1a5fa8;font-weight:500">click to browse</span></div>
-        <div style="font-size:11px;color:#999;margin-top:3px">JPG, PNG up to 5MB each &mdash; first photo is the main listing photo</div>
-        <input type="file" id="ve-photo-input" accept="image/*" multiple style="display:none">
+    <div style="margin-bottom:11px">
+      <label class="mo-lbl" style="margin-bottom:5px">Or add by URL (from Imgur, Google Photos, etc.)</label>
+      <div style="display:flex;gap:8px">
+        <input class="mo-inp" type="text" id="ve-photo-url" placeholder="https://i.imgur.com/example.jpg" style="margin:0;flex:1">
+        <button class="btn btn-n" id="add-photo-url-btn" style="white-space:nowrap;padding:8px 14px"><i class="ti ti-plus"></i> Add</button>
       </div>
     </div>
-    <!-- URL tab -->
-    <div id="photo-url-panel" style="display:none;margin-bottom:11px">
-      <div style="font-size:12px;color:#5a5a5a;background:rgba(15,30,53,.04);border-radius:7px;padding:10px 12px;margin-bottom:9px">
-        <strong>Tip:</strong> Upload photos to <a href="https://imgur.com" target="_blank" style="color:#1a5fa8">imgur.com</a> or <a href="https://cloudinary.com" target="_blank" style="color:#1a5fa8">Cloudinary</a> (both free), then paste the direct image URL here. Photos stored by URL persist permanently.
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:9px">
-        <input class="mo-inp" type="url" id="ve-photo-url" placeholder="https://i.imgur.com/yourphoto.jpg" style="margin:0;flex:1">
-        <button class="btn btn-n" id="add-photo-url-btn" style="white-space:nowrap"><i class="ti ti-plus"></i> Add</button>
-      </div>
-      <div style="font-size:11px;color:#999">Add up to 10 photo URLs. First URL is the main listing photo.</div>
-    </div>
-    <div id="ve-photo-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
+    <div id="ve-photo-count" style="font-size:12px;color:#5a5a5a;margin-bottom:7px"></div>
+        <div id="ve-photo-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
 
     <button class="mo-btn" id="save-vacancy-btn">Save listing</button>
     <div class="ok-msg" id="ve-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Listing saved!</div>
