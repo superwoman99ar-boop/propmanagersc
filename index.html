@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v15.3</div>
+<div class="vbadge">PropManager SC v15.4</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1293,7 +1293,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
   <!-- Top bar -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:9px">
     <button class="btn" id="vac-back-btn"><i class="ti ti-arrow-left"></i> Back</button>
-    <div style="display:flex;gap:8px" id="vac-landlord-tools" style="display:none">
+    <div style="display:none" id="vac-landlord-tools">
       <button class="btn btn-n" id="vac-add-btn"><i class="ti ti-plus"></i> Add listing</button>
       <button class="btn" id="vac-edit-btn"><i class="ti ti-edit"></i> Edit listing</button>
       <button class="btn btn-r" id="vac-remove-btn"><i class="ti ti-eye-off"></i> Mark rented</button>
@@ -1305,7 +1305,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
     <i class="ti ti-home-check" style="font-size:48px;color:#ccc;display:block;margin-bottom:14px"></i>
     <div style="font-size:20px;color:#0f1e35;font-family:Georgia,serif;margin-bottom:7px">No vacancies at this time</div>
     <div style="font-size:14px;color:#5a5a5a;margin-bottom:18px">All units are currently occupied. Check back soon.</div>
-    <button class="btn btn-n" id="vac-add-btn2"><i class="ti ti-plus"></i> Add a listing</button>
+    <button class="btn btn-n" id="vac-add-btn2" style="display:none"><i class="ti ti-plus"></i> Add a listing</button>
   </div>
 
   <!-- Active listing -->
@@ -4340,13 +4340,18 @@ function initVacancyPage() {
     }
   } catch(e) {}
 
-  // Show landlord tools if logged in as landlord
+  // Show landlord tools ONLY for landlord role — never for tenants or public
   var tools = document.getElementById("vac-landlord-tools");
-  if (tools && currentRole === "landlord") tools.style.display = "flex";
+  if (tools) {
+    tools.style.display = (currentRole === "landlord") ? "flex" : "none";
+  }
 
   if (!_vacancyData || _vacancyData.status === "rented") {
     document.getElementById("vac-listing").style.display = "none";
     document.getElementById("vac-empty").style.display = "block";
+    // Show add button only to landlord
+    var addBtn2 = document.getElementById("vac-add-btn2");
+    if (addBtn2) addBtn2.style.display = (currentRole === "landlord") ? "inline-flex" : "none";
     return;
   }
 
