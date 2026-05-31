@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v14.5</div>
+<div class="vbadge">PropManager SC v14.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4483,11 +4483,9 @@ function renderVacancyPhotos() {
   if (mainImg) {
     mainImg.style.display = "block";
     mainImg.src = validPhotos[_vacancyPhotoIndex];
-    // Handle broken image
     mainImg.onerror = function() {
-      // Try next photo
       _vacancyPhotoIndex = (_vacancyPhotoIndex + 1) % validPhotos.length;
-      mainImg.src = validPhotos[_vacancyPhotoIndex];
+      if (validPhotos[_vacancyPhotoIndex]) mainImg.src = validPhotos[_vacancyPhotoIndex];
     };
   }
   if (prevBtn) prevBtn.style.display = validPhotos.length > 1 ? "block" : "none";
@@ -4497,29 +4495,34 @@ function renderVacancyPhotos() {
     countEl.textContent = (_vacancyPhotoIndex+1) + " / " + validPhotos.length;
   }
 
-  // Thumbnails — safe version, no inline event handlers
+  // Thumbnails — built with DOM API, no string concatenation of src
   if (thumbsEl) {
-    thumbsEl.innerHTML = validPhotos.map(function(photo, i) {
+    while (thumbsEl.firstChild) thumbsEl.removeChild(thumbsEl.firstChild);
+    validPhotos.forEach(function(photo, i) {
       var isActive = i === _vacancyPhotoIndex;
-      var border = isActive ? "#c9962a" : "transparent";
-      return "<div style='position:relative;flex-shrink:0' data-photo-idx='" + i + "'>" +
-        "<img src='" + photo + "' " +
-        "style='width:64px;height:48px;object-fit:cover;border-radius:5px;cursor:pointer;border:2px solid " + border + "' " +
-        "alt='Photo " + (i+1) + "'>" +
-        (i===0 ? "<div style='position:absolute;bottom:2px;left:2px;background:#c9962a;color:#0f1e35;font-size:8px;font-weight:700;padding:1px 4px;border-radius:2px'>MAIN</div>" : "") +
-        "</div>";
-    }).join("");
-    // Attach click and error handlers after DOM update
-    thumbsEl.querySelectorAll("[data-photo-idx]").forEach(function(wrap) {
-      var idx = parseInt(wrap.getAttribute("data-photo-idx"));
-      var img = wrap.querySelector("img");
-      if (img) {
+      var wrap = document.createElement("div");
+      wrap.style.cssText = "position:relative;flex-shrink:0";
+
+      var img = document.createElement("img");
+      img.src = photo;
+      img.alt = "Photo " + (i + 1);
+      img.style.cssText = "width:64px;height:48px;object-fit:cover;border-radius:5px;cursor:pointer;border:2px solid " + (isActive ? "#c9962a" : "transparent");
+      (function(idx) {
         img.addEventListener("error", function() { wrap.style.display = "none"; });
         img.addEventListener("click", function() {
           _vacancyPhotoIndex = idx;
           renderVacancyPhotos();
         });
+      })(i);
+      wrap.appendChild(img);
+
+      if (i === 0) {
+        var mainLabel = document.createElement("div");
+        mainLabel.style.cssText = "position:absolute;bottom:2px;left:2px;background:#c9962a;color:#0f1e35;font-size:8px;font-weight:700;padding:1px 4px;border-radius:2px";
+        mainLabel.textContent = "MAIN";
+        wrap.appendChild(mainLabel);
       }
+      thumbsEl.appendChild(wrap);
     });
   }
 }
@@ -4593,44 +4596,73 @@ function handleVacancyPhotos(files) {
 function renderEditPhotoPreview() {
   var el = document.getElementById("ve-photo-preview");
   if (!el) return;
+  // Clear existing
+  while (el.firstChild) el.removeChild(el.firstChild);
+
   if (!_vacancyPhotos.length) {
-    el.innerHTML = "<div style='font-size:12px;color:#999;padding:9px 0'>No photos added yet.</div>";
+    var msg = document.createElement("div");
+    msg.style.cssText = "font-size:12px;color:#999;padding:9px 0";
+    msg.textContent = "No photos added yet.";
+    el.appendChild(msg);
     return;
   }
-  el.innerHTML = _vacancyPhotos.map(function(photo, i) {
+
+  _vacancyPhotos.forEach(function(photo, i) {
     var isMain = i === _vacancyMainPhotoIndex;
-    return "<div style='position:relative;display:inline-block;margin:3px'>" +
-      "<img src='" + photo + "' style='width:90px;height:68px;object-fit:cover;border-radius:7px;border:" + (isMain?"3px solid #c9962a":"1px solid rgba(15,30,53,.1)") + "' data-edit-photo-idx='" + i + "'>" +
-      "<button style='position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#c0392b;border:none;color:#fff;cursor:pointer;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center' data-remove-photo='" + i + "'>&times;</button>" +
-      (isMain
-        ? "<div style='position:absolute;bottom:3px;left:3px;background:#c9962a;color:#0f1e35;font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px'>MAIN</div>"
-        : "<button style='position:absolute;bottom:3px;left:3px;background:rgba(0,0,0,.55);color:#fff;font-size:9px;border:none;border-radius:3px;padding:2px 5px;cursor:pointer' data-set-main='" + i + "'>Set main</button>") +
-      "</div>";
-  }).join("");
-  // Attach error handlers to edit preview images (no onerror attribute needed)
-  el.querySelectorAll("[data-edit-photo-idx]").forEach(function(img) {
-    img.addEventListener("error", function() {
-      var wrap = img.parentNode;
-      if (wrap) wrap.style.display = "none";
-    });
-  });
-  el.querySelectorAll("[data-remove-photo]").forEach(function(btn) {
-    btn.addEventListener("click", function() {
-      var idx = parseInt(btn.getAttribute("data-remove-photo"));
-      _vacancyPhotos.splice(idx, 1);
-      if (_vacancyMainPhotoIndex >= _vacancyPhotos.length) _vacancyMainPhotoIndex = 0;
-      renderEditPhotoPreview();
-    });
-  });
-  el.querySelectorAll("[data-set-main]").forEach(function(btn) {
-    btn.addEventListener("click", function() {
-      _vacancyMainPhotoIndex = parseInt(btn.getAttribute("data-set-main"));
-      // Move main photo to front of array
-      var mainPhoto = _vacancyPhotos.splice(_vacancyMainPhotoIndex, 1)[0];
-      _vacancyPhotos.unshift(mainPhoto);
-      _vacancyMainPhotoIndex = 0;
-      renderEditPhotoPreview();
-    });
+
+    // Wrapper
+    var wrap = document.createElement("div");
+    wrap.style.cssText = "position:relative;display:inline-block;margin:3px";
+
+    // Image — set src via property not attribute to avoid parsing issues
+    var img = document.createElement("img");
+    img.style.cssText = "width:90px;height:68px;object-fit:cover;border-radius:7px;border:" +
+      (isMain ? "3px solid #c9962a" : "1px solid rgba(15,30,53,.1)");
+    img.src = photo;
+    img.alt = "Photo " + (i + 1);
+    img.addEventListener("error", function() { wrap.style.display = "none"; });
+    wrap.appendChild(img);
+
+    // Remove button
+    var removeBtn = document.createElement("button");
+    removeBtn.style.cssText = "position:absolute;top:-6px;right:-6px;width:20px;height:20px;" +
+      "border-radius:50%;background:#c0392b;border:none;color:#fff;cursor:pointer;" +
+      "font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;font-family:inherit";
+    removeBtn.textContent = "x";
+    removeBtn.title = "Remove photo";
+    (function(idx) {
+      removeBtn.addEventListener("click", function() {
+        _vacancyPhotos.splice(idx, 1);
+        if (_vacancyMainPhotoIndex >= _vacancyPhotos.length) _vacancyMainPhotoIndex = 0;
+        renderEditPhotoPreview();
+      });
+    })(i);
+    wrap.appendChild(removeBtn);
+
+    // Main badge or Set main button
+    if (isMain) {
+      var badge = document.createElement("div");
+      badge.style.cssText = "position:absolute;bottom:3px;left:3px;background:#c9962a;" +
+        "color:#0f1e35;font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px";
+      badge.textContent = "MAIN";
+      wrap.appendChild(badge);
+    } else {
+      var setMainBtn = document.createElement("button");
+      setMainBtn.style.cssText = "position:absolute;bottom:3px;left:3px;background:rgba(0,0,0,.6);" +
+        "color:#fff;font-size:9px;border:none;border-radius:3px;padding:2px 5px;cursor:pointer;font-family:inherit";
+      setMainBtn.textContent = "Set main";
+      (function(idx) {
+        setMainBtn.addEventListener("click", function() {
+          var mainPhoto = _vacancyPhotos.splice(idx, 1)[0];
+          _vacancyPhotos.unshift(mainPhoto);
+          _vacancyMainPhotoIndex = 0;
+          renderEditPhotoPreview();
+        });
+      })(i);
+      wrap.appendChild(setMainBtn);
+    }
+
+    el.appendChild(wrap);
   });
 }
 
