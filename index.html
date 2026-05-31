@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v14.3</div>
+<div class="vbadge">PropManager SC v14.4</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4407,6 +4407,29 @@ function renderVacancyListing() {
   setTxt("vac-beds", d.beds || "--");
   setTxt("vac-baths", d.baths || "--");
   setTxt("vac-sqft", d.sqft ? Number(d.sqft).toLocaleString() : "--");
+
+  // Availability badge — show actual date if in the future
+  var availBadge = document.getElementById("vac-avail-badge");
+  if (availBadge) {
+    if (d.avail) {
+      var availDate = new Date(d.avail + "T12:00:00");
+      var today = new Date();
+      today.setHours(0,0,0,0);
+      if (availDate > today) {
+        var mo = availDate.toLocaleDateString("en-US", {month:"long", day:"numeric", year:"numeric"});
+        availBadge.textContent = "Available " + mo;
+        availBadge.style.background = "#1a5fa8";
+        availBadge.style.color = "#fff";
+      } else {
+        availBadge.textContent = "Available now";
+        availBadge.style.background = "#2d7a4f";
+        availBadge.style.color = "#fff";
+      }
+    } else {
+      availBadge.textContent = "Available now";
+      availBadge.style.background = "#2d7a4f";
+    }
+  }
 
   var priceEl = document.getElementById("vac-price");
   if (priceEl) priceEl.innerHTML = "$" + Number(d.rent||1500).toLocaleString() + "<span style='font-size:14px;font-weight:400'>/mo</span>";
