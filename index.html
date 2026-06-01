@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v16.5</div>
+<div class="vbadge">PropManager SC v16.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2389,12 +2389,7 @@ function initSupabase() {
           currentRole = "landlord";
           var llName = currentUser.email === LANDLORD_EMAIL ? "Landlord" : "Co-landlord";
           showNavUser("LL", llName, "landlord");
-          // Fetch this landlord's account ID for data isolation
-          if (sb) {
-            sb.from("landlord_accounts").select("id").eq("email", currentUser.email).single().then(function(r) {
-              if (r.data) _currentLandlordId = r.data.id;
-            });
-          }
+          // landlord_id isolation pending schema update
           // Small delay so modal animation completes before redirect
           setTimeout(function() {
             closeMo("landlord");
@@ -2701,23 +2696,12 @@ async function recordPaymentInDB(method) {
 async function loadDashboardData() {
   if (!sb) return;
   if (currentRole !== "landlord") { console.warn("Dashboard access denied"); return; }
-  // Filter by landlord_id if available (multi-landlord isolation)
-  var tenantQuery = sb.from("tenants").select("*, properties(*)").order("full_name");
-  if (_currentLandlordId) tenantQuery = tenantQuery.eq("landlord_id", _currentLandlordId);
-  var tRes = await tenantQuery;
-  var propQuery = sb.from("properties").select("*").order("address");
-  if (_currentLandlordId) propQuery = propQuery.eq("landlord_id", _currentLandlordId);
-  var prRes = await propQuery;
+  var tRes = await sb.from("tenants").select("*, properties(*)").order("full_name");
+  var prRes = await sb.from("properties").select("*").order("address");
   if (prRes.data) window._propCache = prRes.data;
-  var payQuery = sb.from("payments").select("*").order("payment_date", { ascending: false });
-  if (_currentLandlordId) payQuery = payQuery.eq("landlord_id", _currentLandlordId);
-  var pRes = await payQuery;
-  var _mq = sb.from("maintenance").select("*, tenants(full_name), properties(address)").order("created_at", { ascending: false });
-  if (_currentLandlordId) _mq = _mq.eq("landlord_id", _currentLandlordId);
-  var mRes = await _mq;
-  var expQuery = sb.from("expenses").select("*").order("expense_date", { ascending: false });
-  if (_currentLandlordId) expQuery = expQuery.eq("landlord_id", _currentLandlordId);
-  var eRes = await expQuery;
+  var pRes = await sb.from("payments").select("*").order("payment_date", { ascending: false });
+  var mRes = await sb.from("maintenance").select("*, tenants(full_name), properties(address)").order("created_at", { ascending: false });
+  var eRes = await sb.from("expenses").select("*").order("expense_date", { ascending: false });
 
   var tenants = tRes.data || [];
   var payments = pRes.data || [];
