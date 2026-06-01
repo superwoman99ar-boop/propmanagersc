@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v15.5</div>
+<div class="vbadge">PropManager SC v15.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4210,77 +4210,131 @@ async function updateTaxMetrics(payments, expenses) {
 // ════════════════════════════════════════════════════════════
 async function checkLateRentAndNotify() {
   if (!sb || !window._tenantCache) return;
+
   var now = new Date();
   var dayOfMonth = now.getDate();
   var year = now.getFullYear();
   var month = now.getMonth();
   var monthStr = year + "-" + String(month+1).padStart(2,"0");
-  var monthName = now.toLocaleDateString("en-US", { month:"long", year:"numeric" });
+  var monthStart = monthStr + "-01";
+  var monthEnd   = monthStr + "-" + String(new Date(year, month+1, 0).getDate()).padStart(2,"0");
+  var monthName  = now.toLocaleDateString("en-US", { month:"long", year:"numeric" });
   var gracePeriodOver = dayOfMonth > 5;
 
-  // Get all payments for this month
-  var payRes = await sb.from("payments").select("tenant_id, status, payment_date")
-    .gte("payment_date", monthStr + "-01")
-    .lte("payment_date", monthStr + "-31");
+  // Check if landlord dismissed this banner today
+  var dismissKey = "propmanager_banner_dismissed_" + monthStr;
+  try {
+    var dismissed = localStorage.getItem(dismissKey);
+    if (dismissed === "true") return; // dismissed for this month
+  } catch(e) {}
+
+  // Get all payments made this month (any status counts as attempted)
+  var payRes = await sb.from("payments")
+    .select("tenant_id, status, amount")
+    .gte("payment_date", monthStart)
+    .lte("payment_date", monthEnd);
+
+  // Tenants who have ANY payment record this month are NOT late
   var paidThisMonth = new Set((payRes.data || []).map(function(p) { return p.tenant_id; }));
 
-  // Find tenants who have NOT paid this month
-  var lateTenants = window._tenantCache.filter(function(t) {
-    return t.monthly_rent > 0 && !paidThisMonth.has(t.id);
+  // Only flag tenants with rent > 0 who have NO payment this month
+  var lateTenants = (window._tenantCache || []).filter(function(t) {
+    return Number(t.monthly_rent || 0) > 0 && !paidThisMonth.has(t.id);
   });
 
-  if (lateTenants.length === 0) {
-    console.log("All tenants current for " + monthName);
+  // Remove banner entirely if everyone has paid
+  var bannerEl = document.getElementById("late-rent-banner");
+  if (!lateTenants.length) {
+    if (bannerEl) bannerEl.style.display = "none";
     return;
   }
 
-  // Mark them as overdue in DB if grace period is over
-  if (gracePeriodOver) {
-    for (var i = 0; i < lateTenants.length; i++) {
-      var t = lateTenants[i];
-      if (t.status !== "overdue") {
-        await sb.from("tenants").update({ status: "overdue" }).eq("id", t.id);
-      }
-    }
+  // Build or update banner
+  if (!bannerEl) {
+    bannerEl = document.createElement("div");
+    bannerEl.id = "late-rent-banner";
+    var dc = document.querySelector(".dc");
+    if (dc) dc.insertBefore(bannerEl, dc.firstChild);
   }
 
-  // Show notification banner in dashboard
-  var banner = document.getElementById("late-rent-banner");
-  if (!banner) {
-    banner = document.createElement("div");
-    banner.id = "late-rent-banner";
-    banner.style.cssText = "background:#fdecea;border:1px solid rgba(192,57,43,.2);border-radius:9px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:11px;flex-wrap:wrap";
-    var dc = document.querySelector(".dc");
-    if (dc) dc.insertBefore(banner, dc.firstChild);
-  }
+  bannerEl.style.cssText = "background:#fdecea;border:1px solid rgba(192,57,43,.2);border-radius:9px;padding:13px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:11px;flex-wrap:wrap;position:relative";
 
   var daysLate = Math.max(0, dayOfMonth - 1);
-  var feeInfo = gracePeriodOver ? " Late fees apply after day 5." : " Within 5-day grace period.";
+  var feeNote  = gracePeriodOver ? " Late fees apply." : " Within 5-day grace period — no fee yet.";
 
-  banner.innerHTML = "<i class='ti ti-alert-circle' style='font-size:20px;color:#c0392b;flex-shrink:0;margin-top:1px'></i>" +
-    "<div style='flex:1'>" +
-    "<div style='font-size:13.5px;font-weight:600;color:#c0392b;margin-bottom:5px'>" +
-    lateTenants.length + " tenant(s) have not paid " + monthName + " rent (Day " + daysLate + ")" + feeInfo + "</div>" +
-    "<div style='display:flex;gap:7px;flex-wrap:wrap'>" +
-    lateTenants.map(function(t) {
-      var fee = gracePeriodOver ? calcLateFee(t.monthly_rent, daysLate) : 0;
-      var feeStr = fee > 0 ? " + $" + fee + " late fee" : "";
-      return "<span style='background:#fff;border:1px solid rgba(192,57,43,.2);border-radius:6px;padding:3px 9px;font-size:12px;color:#c0392b'>" +
-        t.full_name + " - $" + Number(t.monthly_rent).toLocaleString() + feeStr + "</span>";
-    }).join("") +
-    "</div>" +
-    "<div style='margin-top:9px;display:flex;gap:7px'>" +
-    "<button class='btn btn-r' style='font-size:12px' id='send-late-notices-btn'><i class='ti ti-bell'></i> Send late notices to all</button>" +
-    "<button class='btn' style='font-size:12px' id='goto-notices-btn'><i class='ti ti-file-alert'></i> Issue 5-day notices</button>" +
-    "</div></div>";
-  // Attach events after DOM update - NO onclick attributes
-  setTimeout(function() {
-    var slnBtn = document.getElementById("send-late-notices-btn");
-    if (slnBtn) slnBtn.addEventListener("click", sendLateNotices);
-    var gnBtn = document.getElementById("goto-notices-btn");
-    if (gnBtn) gnBtn.addEventListener("click", function() { goDash("nt"); });
-  }, 50);
+  // Build banner content using DOM (no innerHTML with event handlers)
+  while (bannerEl.firstChild) bannerEl.removeChild(bannerEl.firstChild);
+
+  // Close button
+  var closeBtn = document.createElement("button");
+  closeBtn.style.cssText = "position:absolute;top:10px;right:12px;background:none;border:none;font-size:18px;color:#c0392b;cursor:pointer;line-height:1;font-family:inherit;padding:0";
+  closeBtn.textContent = "x";
+  closeBtn.title = "Dismiss for today";
+  closeBtn.addEventListener("click", function() {
+    bannerEl.style.display = "none";
+    try { localStorage.setItem(dismissKey, "true"); } catch(e) {}
+  });
+  bannerEl.appendChild(closeBtn);
+
+  // Icon
+  var icon = document.createElement("i");
+  icon.className = "ti ti-alert-circle";
+  icon.style.cssText = "font-size:20px;color:#c0392b;flex-shrink:0;margin-top:2px";
+  bannerEl.appendChild(icon);
+
+  // Content wrapper
+  var wrap = document.createElement("div");
+  wrap.style.flex = "1";
+
+  // Heading
+  var heading = document.createElement("div");
+  heading.style.cssText = "font-size:13.5px;font-weight:600;color:#c0392b;margin-bottom:7px";
+  heading.textContent = lateTenants.length + " tenant" + (lateTenants.length > 1 ? "s have" : " has") + " not paid " + monthName + " rent (Day " + daysLate + ")." + feeNote;
+  wrap.appendChild(heading);
+
+  // Tenant pills
+  var pillRow = document.createElement("div");
+  pillRow.style.cssText = "display:flex;gap:7px;flex-wrap:wrap;margin-bottom:11px";
+  lateTenants.forEach(function(t) {
+    var fee = gracePeriodOver ? calcLateFee(t.monthly_rent, daysLate) : 0;
+    var pill = document.createElement("span");
+    pill.style.cssText = "background:#fff;border:1px solid rgba(192,57,43,.25);border-radius:6px;padding:3px 10px;font-size:12px;color:#c0392b";
+    pill.textContent = t.full_name + " — $" + Number(t.monthly_rent).toLocaleString() + (fee > 0 ? " + $" + fee + " fee" : "");
+    pillRow.appendChild(pill);
+  });
+  wrap.appendChild(pillRow);
+
+  // Action buttons
+  var btnRow = document.createElement("div");
+  btnRow.style.cssText = "display:flex;gap:7px;flex-wrap:wrap";
+
+  var sendBtn = document.createElement("button");
+  sendBtn.className = "btn btn-r";
+  sendBtn.style.fontSize = "12px";
+  sendBtn.innerHTML = "<i class='ti ti-bell'></i> Send late notices to all";
+  sendBtn.addEventListener("click", sendLateNotices);
+  btnRow.appendChild(sendBtn);
+
+  var noticeBtn = document.createElement("button");
+  noticeBtn.className = "btn";
+  noticeBtn.style.fontSize = "12px";
+  noticeBtn.innerHTML = "<i class='ti ti-file-alert'></i> Issue 5-day notices";
+  noticeBtn.addEventListener("click", function() { goDash("nt"); });
+  btnRow.appendChild(noticeBtn);
+
+  wrap.appendChild(btnRow);
+  bannerEl.appendChild(wrap);
+
+  // Mark overdue in DB if grace period passed
+  if (gracePeriodOver) {
+    lateTenants.forEach(function(t) {
+      if (t.status !== "overdue") {
+        sb.from("tenants").update({ status: "overdue" }).eq("id", t.id);
+      }
+    });
+  }
 }
+
 
 async function sendLateNotices() {
   if (!sb || !window._tenantCache) return;
