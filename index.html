@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v15.8</div>
+<div class="vbadge">PropManager SC v15.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -377,7 +377,8 @@ footer{background:#0f1e35;padding:44px 20px 26px}
           <div class="mc"><div class="mc-l">Overdue accounts</div><div class="mc-v mc-r" id="ov-overdue">--</div><div class="mc-s">need attention</div></div>
         </div>
         <div class="card">
-          <div class="card-head"><div class="card-title">Tenant rent roll</div></div>
+          <div style="display:flex;gap:11px;flex-wrap:wrap;margin-bottom:13px" id="payment-summary-bar"></div>
+        <div class="card-head"><div class="card-title">Tenant rent roll</div></div>
           <div id="ov-tenant-list">
             <div class="spin-wrap"><div class="spinner"></div> Loading from database...</div>
           </div>
@@ -2872,6 +2873,33 @@ function renderLeaseList(tenants) {
   
   var expiring = [];
   
+  // Payment summary bar
+  var barEl = document.getElementById("payment-summary-bar");
+  if (barEl) {
+    var totalTenants = tenants.filter(function(t){ return Number(t.monthly_rent||0) > 0; }).length;
+    var paidCount    = tenants.filter(function(t){ return paidThisMonth.has(t.id) && Number(t.monthly_rent||0) > 0; }).length;
+    var unpaidCount  = totalTenants - paidCount;
+    var totalRent    = tenants.reduce(function(s,t){ return s + Number(t.monthly_rent||0); }, 0);
+    var collectedAmt = (window._paymentCache||[]).filter(function(p){ return p.payment_date && p.payment_date.startsWith(monthStr); }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
+    var monthLabel   = new Date().toLocaleDateString("en-US",{month:"long",year:"numeric"});
+    barEl.innerHTML =
+      "<div style='flex:1;background:#eaf5ee;border:1.5px solid rgba(45,122,79,.25);border-radius:10px;padding:13px 16px'>" +
+        "<div style='font-size:11px;font-weight:600;color:#2d7a4f;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px'>" + monthLabel + " — Paid</div>" +
+        "<div style='font-size:24px;font-weight:700;color:#2d7a4f'>" + paidCount + "<span style='font-size:13px;font-weight:400;color:#5a5a5a'> of " + totalTenants + " tenants</span></div>" +
+        "<div style='font-size:12px;color:#2d7a4f;margin-top:3px'>$" + collectedAmt.toLocaleString() + " collected</div>" +
+      "</div>" +
+      "<div style='flex:1;background:" + (unpaidCount > 0 ? "#fdecea" : "#eaf5ee") + ";border:1.5px solid " + (unpaidCount > 0 ? "rgba(192,57,43,.25)" : "rgba(45,122,79,.25)") + ";border-radius:10px;padding:13px 16px'>" +
+        "<div style='font-size:11px;font-weight:600;color:" + (unpaidCount > 0 ? "#c0392b" : "#2d7a4f") + ";text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px'>" + monthLabel + " — Unpaid</div>" +
+        "<div style='font-size:24px;font-weight:700;color:" + (unpaidCount > 0 ? "#c0392b" : "#2d7a4f") + "'>" + unpaidCount + "<span style='font-size:13px;font-weight:400;color:#5a5a5a'> of " + totalTenants + " tenants</span></div>" +
+        "<div style='font-size:12px;color:" + (unpaidCount > 0 ? "#c0392b" : "#2d7a4f") + ";margin-top:3px'>" + (unpaidCount > 0 ? "$" + (totalRent - collectedAmt).toLocaleString() + " outstanding" : "All paid! &#10003;") + "</div>" +
+      "</div>" +
+      "<div style='flex:1;background:rgba(15,30,53,.04);border:1.5px solid rgba(15,30,53,.1);border-radius:10px;padding:13px 16px'>" +
+        "<div style='font-size:11px;font-weight:600;color:#5a5a5a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px'>Collection rate</div>" +
+        "<div style='font-size:24px;font-weight:700;color:#0f1e35'>" + (totalTenants > 0 ? Math.round(paidCount/totalTenants*100) : 0) + "<span style='font-size:18px'>%</span></div>" +
+        "<div style='font-size:12px;color:#5a5a5a;margin-top:3px'>$" + totalRent.toLocaleString() + "/mo total rent</div>" +
+      "</div>";
+  }
+
   el.innerHTML = tenants.map(function(t) {
     var p = t.properties;
     var badge = t.status === "current" ? "<span class='badge b-g'>Active</span>" :
@@ -4581,7 +4609,7 @@ function openVacancyEdit(isEdit) {
   var _ui  = document.getElementById("ve-photo-url");
   var _ub  = document.getElementById("add-photo-url-btn");
 
-  // Add button click — reads whatever files are currently selected
+  // Add button — resize photos then store
   if (_ab) {
     _ab.onclick = function() {
       var files = _fi ? _fi.files : null;
@@ -4589,29 +4617,59 @@ function openVacancyEdit(isEdit) {
         alert("Please select photos using the file picker above first.");
         return;
       }
-      _ab.textContent = "Reading photos...";
-      _ab.disabled = true;
       var list = [];
       for (var i = 0; i < files.length; i++) list.push(files[i]);
+      _ab.innerHTML = "<i class='ti ti-loader'></i> Processing " + list.length + " photo(s)...";
+      _ab.disabled = true;
       var done = 0;
+      var added = 0;
       list.forEach(function(file) {
-        var r = new FileReader();
-        r.onload = function(ev) {
-          if (ev.target && ev.target.result) _vacancyPhotos.push(ev.target.result);
-          done++;
-          if (done === list.length) {
-            renderEditPhotoPreview();
-            updatePhotoCount();
-            _ab.innerHTML = "<i class='ti ti-check'></i> " + _vacancyPhotos.length + " photo(s) added";
-            _ab.disabled = false;
-            setTimeout(function() {
-              _ab.innerHTML = "<i class='ti ti-photo-plus'></i> Add selected photos to listing";
-            }, 2000);
-          }
+        // Resize image to max 800px wide before storing to avoid 5MB localStorage limit
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          if (!ev.target || !ev.target.result) { done++; checkDone(); return; }
+          var img = new Image();
+          img.onload = function() {
+            try {
+              var canvas = document.createElement("canvas");
+              var MAX = 900;
+              var w = img.width, h = img.height;
+              if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+              canvas.width = w; canvas.height = h;
+              var ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, w, h);
+              var resized = canvas.toDataURL("image/jpeg", 0.82);
+              _vacancyPhotos.push(resized);
+              added++;
+            } catch(canvasErr) {
+              // Fallback: store original if canvas fails
+              _vacancyPhotos.push(ev.target.result);
+              added++;
+            }
+            done++;
+            checkDone();
+          };
+          img.onerror = function() { done++; checkDone(); };
+          img.src = ev.target.result;
         };
-        r.onerror = function() { done++; if (done === list.length) { renderEditPhotoPreview(); updatePhotoCount(); _ab.disabled = false; } };
-        r.readAsDataURL(file);
+        reader.onerror = function() { done++; checkDone(); };
+        reader.readAsDataURL(file);
       });
+      function checkDone() {
+        if (done < list.length) return;
+        renderEditPhotoPreview();
+        updatePhotoCount();
+        _ab.innerHTML = added > 0
+          ? "<i class='ti ti-check'></i> " + added + " photo(s) added successfully!"
+          : "<i class='ti ti-x'></i> No photos added — try JPG files";
+        _ab.style.background = added > 0 ? "#2d7a4f" : "#c0392b";
+        _ab.style.borderColor = added > 0 ? "#2d7a4f" : "#c0392b";
+        _ab.disabled = false;
+        setTimeout(function() {
+          _ab.innerHTML = "<i class='ti ti-photo-plus'></i> Add selected photos to listing";
+          _ab.style.background = ""; _ab.style.borderColor = "";
+        }, 3000);
+      }
     };
   }
 
