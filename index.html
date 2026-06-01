@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v16.0</div>
+<div class="vbadge">PropManager SC v16.1</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1816,6 +1816,16 @@ function attachEvents() {
   // Dashboard action buttons
   document.getElementById("btn-issue-notice").addEventListener("click", function() { goDash("nt"); });
 
+  // Notification bell
+  var notifBellBtn = document.getElementById("notif-bell-btn");
+  if (notifBellBtn) notifBellBtn.addEventListener("click", function() {
+    var neEl = document.getElementById("notif-email");
+    if (neEl && currentUser) neEl.value = currentUser.email || "";
+    var noEl = document.getElementById("notif-ok");
+    if (noEl) noEl.classList.remove("on");
+    openMo("notifications");
+  });
+
   // Stripe Connect buttons
   var dashStripeBtn = document.getElementById("dash-connect-stripe-btn");
   if (dashStripeBtn) dashStripeBtn.addEventListener("click", openStripeConnect);
@@ -1893,6 +1903,18 @@ function attachEvents() {
   document.getElementById("pi-ms").addEventListener("click", function() { goPortal("ms"); });
   document.getElementById("pi-ls").addEventListener("click", function() { goPortal("ls"); });
   document.getElementById("portal-signout-btn").addEventListener("click", signOut);
+  var pcpBtn = document.getElementById("portal-change-pass-btn");
+  if (pcpBtn) pcpBtn.addEventListener("click", function() {
+    var cpNew = document.getElementById("cp-new");
+    var cpCon = document.getElementById("cp-confirm");
+    var cpErr = document.getElementById("cp-err");
+    var cpOk  = document.getElementById("cp-ok");
+    if (cpNew)  cpNew.value = "";
+    if (cpCon)  cpCon.value = "";
+    if (cpErr)  cpErr.style.display = "none";
+    if (cpOk)   cpOk.classList.remove("on");
+    openMo("changepass");
+  });
   // Delegated signout for dynamically created nav button
   document.addEventListener("click", function(e) {
     if (e.target && e.target.id === "nav-signout-live") { signOut(); }
