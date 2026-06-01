@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v16.1</div>
+<div class="vbadge">PropManager SC v16.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2064,6 +2064,22 @@ function attachEvents() {
   // Lease document modal
   var closeLDMo = document.getElementById("close-leasedoc-mo");
   if (closeLDMo) closeLDMo.addEventListener("click", function() { closeMo("leasedoc"); });
+
+  // ── MISSING MODAL CLOSE BUTTONS ───────────────────────────────────────────
+  // Forgot password modal
+  var closeFPMo = document.getElementById("close-forgotpass-mo");
+  if (closeFPMo) closeFPMo.addEventListener("click", function() { closeMo("forgotpass"); });
+  // Change password modal
+  var closeCPMo2 = document.getElementById("close-changepass-mo");
+  if (closeCPMo2) closeCPMo2.addEventListener("click", function() { closeMo("changepass"); });
+  // Partial payment modal
+  var closePartMo = document.getElementById("close-partial-mo");
+  if (closePartMo) closePartMo.addEventListener("click", function() { closeMo("partial"); });
+  // Notifications save button
+  var saveNotifBtn = document.getElementById("save-notif-btn");
+  if (saveNotifBtn) saveNotifBtn.addEventListener("click", saveNotificationSettings);
+  var closeNotifMo2 = document.getElementById("close-notif-mo");
+  if (closeNotifMo2) closeNotifMo2.addEventListener("click", function() { closeMo("notifications"); });
   var ldEditToggle = document.getElementById("leasedoc-edit-toggle");
   if (ldEditToggle) ldEditToggle.addEventListener("click", function() {
     var ep = document.getElementById("lease-edit-panel");
