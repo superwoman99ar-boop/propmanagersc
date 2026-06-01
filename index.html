@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v16.6</div>
+<div class="vbadge">PropManager SC v16.7</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1744,10 +1744,24 @@ function attachEvents() {
   document.getElementById("di-tn").addEventListener("click", function() { goDash("tn"); });
   document.getElementById("di-rn").addEventListener("click", function() { goDash("rn"); });
   document.getElementById("di-mn").addEventListener("click", function() { goDash("mn"); });
-  document.getElementById("di-ls").addEventListener("click", function() { goDash("ls"); });
-  document.getElementById("di-gl").addEventListener("click", function() { goDash("gl"); });
+  document.getElementById("di-ls").addEventListener("click", function() {
+    goDash("ls");
+    if (window._tenantCache) {
+      window._paymentCache = window._paymentCache || [];
+      renderLeaseList(window._tenantCache);
+    }
+  });
+  document.getElementById("di-gl").addEventListener("click", function() {
+    goDash("gl");
+    if (window._ledgerCache) renderLedger(window._ledgerCache);
+  });
   document.getElementById("di-nt").addEventListener("click", function() { goDash("nt"); });
-  document.getElementById("di-tx").addEventListener("click", function() { goDash("tx"); });
+  document.getElementById("di-tx").addEventListener("click", function() {
+    goDash("tx");
+    if (window._paymentCache && window._expenseCache) {
+      updateTaxMetrics(window._paymentCache, window._expenseCache);
+    }
+  });
 
   // ── NEW SECTION LISTENERS ─────────────────────────────────────────────────
   (function() {
@@ -2757,6 +2771,7 @@ async function loadDashboardData() {
   var recurringMonthly = recurring.reduce(function(s,e){ return s+(Number(e.amount)||0); },0) / 12;
   var glRec = document.getElementById("gl-recurring");
   if (glRec) glRec.textContent = "$" + Math.round(recurringMonthly).toLocaleString();
+  window._expenseCache = expenses;
   renderLedger({ payments: payments, expenses: expenses });
   renderNoticeButtons(tenants);
   updateTaxMetrics(payments, expenses);
@@ -2913,14 +2928,14 @@ function renderLeaseList(tenants) {
   
   var expiring = [];
   
-  // Payment summary bar
+  // Payment summary bar — uses globals set by renderTenantTable
   var barEl = document.getElementById("payment-summary-bar");
   if (barEl) {
     var totalTenants = tenants.filter(function(t){ return Number(t.monthly_rent||0) > 0; }).length;
-    var paidCount    = tenants.filter(function(t){ return paidThisMonth.has(t.id) && Number(t.monthly_rent||0) > 0; }).length;
+    var paidCount    = tenants.filter(function(t){ return _paidThisMonth.has(t.id) && Number(t.monthly_rent||0) > 0; }).length;
     var unpaidCount  = totalTenants - paidCount;
     var totalRent    = tenants.reduce(function(s,t){ return s + Number(t.monthly_rent||0); }, 0);
-    var collectedAmt = (window._paymentCache||[]).filter(function(p){ return p.payment_date && p.payment_date.startsWith(monthStr); }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
+    var collectedAmt = (window._paymentCache||[]).filter(function(p){ return p.payment_date && p.payment_date.startsWith(_currentMonthStr); }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
     var monthLabel   = new Date().toLocaleDateString("en-US",{month:"long",year:"numeric"});
     barEl.innerHTML =
       "<div style='flex:1;background:#eaf5ee;border:1.5px solid rgba(45,122,79,.25);border-radius:10px;padding:13px 16px'>" +
@@ -4449,7 +4464,9 @@ async function sendLateNotices() {
 // VACANCY MANAGEMENT
 // ════════════════════════════════════════════════════════════
 var _vacancyData = null;
-var _vacancyPhotos = []; // base64 photo array
+var _vacancyPhotos = [];
+var _paidThisMonth = new Set(); // updated by renderTenantTable
+var _currentMonthStr = ""; // updated by renderTenantTable // base64 photo array
 var _vacancyPhotoIndex = 0;
 
 // Load vacancy data from localStorage on page load
@@ -4920,7 +4937,15 @@ function saveVacancyListing() {
     status:     "available"
   };
 
-  try { localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData)); } catch(e) {}
+  // Try to save — if photos are too large, save without photos and warn
+  try {
+    localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData));
+  } catch(e) {
+    // localStorage quota exceeded — save without photos
+    var dataNoPhotos = Object.assign({}, _vacancyData, { photos: [] });
+    try { localStorage.setItem("propmanager_vacancy", JSON.stringify(dataNoPhotos)); } catch(e2) {}
+    alert("Photos could not be saved — storage is full. Please use the 'Add by URL' option instead (paste Imgur links).");
+  }
 
   document.getElementById("ve-ok").classList.add("on");
   _vacancyPhotoIndex = 0;
@@ -4938,7 +4963,15 @@ function saveVacancyListing() {
 function markAsRented() {
   if (_vacancyData) {
     _vacancyData.status = "rented";
-    try { localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData)); } catch(e) {}
+    // Try to save — if photos are too large, save without photos and warn
+  try {
+    localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData));
+  } catch(e) {
+    // localStorage quota exceeded — save without photos
+    var dataNoPhotos = Object.assign({}, _vacancyData, { photos: [] });
+    try { localStorage.setItem("propmanager_vacancy", JSON.stringify(dataNoPhotos)); } catch(e2) {}
+    alert("Photos could not be saved — storage is full. Please use the 'Add by URL' option instead (paste Imgur links).");
+  }
   }
   closeMo("markrente");
   document.getElementById("vac-listing").style.display = "none";
