@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v15.7</div>
+<div class="vbadge">PropManager SC v15.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4575,61 +4575,59 @@ function openVacancyEdit(isEdit) {
     if (el) el.checked = !!(d.amenities && d.amenities.includes(el.value));
   });
 
-  // Wire photo file input + Add Photos button
-  var fileInput    = document.getElementById("ve-photo-input");
-  var addPhotosBtn = document.getElementById("ve-photo-add-btn");
-  if (addPhotosBtn && fileInput) {
-    addPhotosBtn.onclick = function() {
-      if (fileInput.files && fileInput.files.length > 0) {
-        // Copy FileList to real Array immediately — BEFORE any reset
-        var filesCopy = Array.from(fileInput.files);
-        // Now pass the copy — FileReader will read from the File objects
-        // which remain valid even after fileInput is reset
-        handleVacancyPhotosFromArray(filesCopy, addPhotosBtn);
-      } else {
-        addPhotosBtn.innerHTML = "<i class='ti ti-alert-circle'></i> Select files first";
-        addPhotosBtn.style.cssText += ";background:#c0392b;border-color:#c0392b";
-        setTimeout(function() {
-          addPhotosBtn.innerHTML = "<i class='ti ti-photo-plus'></i> Add photos";
-          addPhotosBtn.style.background = "";
-          addPhotosBtn.style.borderColor = "";
-        }, 2000);
+  // PHOTO UPLOAD — wired fresh every time modal opens
+  var _fi  = document.getElementById("ve-photo-input");
+  var _ab  = document.getElementById("ve-photo-add-btn");
+  var _ui  = document.getElementById("ve-photo-url");
+  var _ub  = document.getElementById("add-photo-url-btn");
+
+  // Add button click — reads whatever files are currently selected
+  if (_ab) {
+    _ab.onclick = function() {
+      var files = _fi ? _fi.files : null;
+      if (!files || files.length === 0) {
+        alert("Please select photos using the file picker above first.");
+        return;
       }
-    };
-  }
-  // onchange — auto-process files immediately when selected (no extra button click needed)
-  if (fileInput) {
-    fileInput.onchange = function() {
-      if (fileInput.files && fileInput.files.length > 0) {
-        var count = fileInput.files.length;
-        var filesCopy = Array.from(fileInput.files);
-        var addBtn = document.getElementById("ve-photo-add-btn");
-        if (addBtn) {
-          addBtn.innerHTML = "<i class='ti ti-loader'></i> Adding " + count + " photo" + (count > 1 ? "s" : "") + "...";
-          addBtn.style.background = "#2d7a4f";
-          addBtn.style.borderColor = "#2d7a4f";
-        }
-        handleVacancyPhotosFromArray(filesCopy, addBtn);
-      }
+      _ab.textContent = "Reading photos...";
+      _ab.disabled = true;
+      var list = [];
+      for (var i = 0; i < files.length; i++) list.push(files[i]);
+      var done = 0;
+      list.forEach(function(file) {
+        var r = new FileReader();
+        r.onload = function(ev) {
+          if (ev.target && ev.target.result) _vacancyPhotos.push(ev.target.result);
+          done++;
+          if (done === list.length) {
+            renderEditPhotoPreview();
+            updatePhotoCount();
+            _ab.innerHTML = "<i class='ti ti-check'></i> " + _vacancyPhotos.length + " photo(s) added";
+            _ab.disabled = false;
+            setTimeout(function() {
+              _ab.innerHTML = "<i class='ti ti-photo-plus'></i> Add selected photos to listing";
+            }, 2000);
+          }
+        };
+        r.onerror = function() { done++; if (done === list.length) { renderEditPhotoPreview(); updatePhotoCount(); _ab.disabled = false; } };
+        r.readAsDataURL(file);
+      });
     };
   }
 
-  // Wire URL add button
-  var urlInput  = document.getElementById("ve-photo-url");
-  var addUrlBtn = document.getElementById("add-photo-url-btn");
-  if (addUrlBtn) {
-    addUrlBtn.onclick = function() {
-      var url = urlInput ? urlInput.value.trim() : "";
+  // URL add button
+  if (_ub) {
+    _ub.onclick = function() {
+      var url = _ui ? _ui.value.trim() : "";
       if (!url) return;
-      if (_vacancyPhotos.length >= 10) { alert("Maximum 10 photos allowed."); return; }
       _vacancyPhotos.push(url);
-      if (urlInput) urlInput.value = "";
+      if (_ui) _ui.value = "";
       renderEditPhotoPreview();
       updatePhotoCount();
     };
   }
-  if (urlInput) {
-    urlInput.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); if (addUrlBtn) addUrlBtn.click(); } };
+  if (_ui) {
+    _ui.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); if (_ub) _ub.click(); } };
   }
 
   // Show photos
@@ -6372,30 +6370,24 @@ document.addEventListener("DOMContentLoaded", function() {
     </div>
 
     <label class="mo-lbl">Photos</label>
-
-    <!-- Step 1: Choose files -->
-    <div style="display:flex;align-items:center;gap:9px;margin-bottom:11px;padding:12px 14px;background:rgba(15,30,53,.04);border-radius:9px;flex-wrap:wrap">
-      <input type="file" id="ve-photo-input" accept="image/jpeg,image/png,image/gif,image/webp" multiple style="flex:1;min-width:0;font-size:13px;cursor:pointer">
-      <button class="btn btn-n" id="ve-photo-add-btn" style="white-space:nowrap;padding:8px 16px;font-size:13px">
-        <i class="ti ti-photo-plus"></i> Add photos
+    <div style="border:1.5px solid rgba(15,30,53,.2);border-radius:9px;padding:16px;margin-bottom:13px;background:rgba(15,30,53,.02)">
+      <input type="file" id="ve-photo-input" accept="image/jpeg,image/png,image/webp" multiple style="display:block;width:100%;margin-bottom:11px;font-size:13px;cursor:pointer">
+      <div style="font-size:11.5px;color:#5a5a5a;margin-bottom:11px">Select JPG/PNG photos above. iPhone users: Settings &rarr; Camera &rarr; Most Compatible first.</div>
+      <button type="button" class="btn btn-n" id="ve-photo-add-btn" style="width:100%;justify-content:center;padding:9px">
+        <i class="ti ti-photo-plus"></i> Add selected photos to listing
       </button>
     </div>
-    <div style="font-size:11.5px;color:#5a5a5a;margin-bottom:13px">
-      1. Click <strong>Choose Files</strong> and select your photos &nbsp;&bull;&nbsp;
-      2. Click <strong>Add photos</strong> to attach them &nbsp;&bull;&nbsp;
-      JPG/PNG only &nbsp;&bull;&nbsp; iPhone: Settings &rarr; Camera &rarr; Most Compatible
+    <div style="margin-bottom:11px">
+      <label class="mo-lbl" style="margin-bottom:5px">Add photo by URL (optional)</label>
+      <div style="display:flex;gap:7px">
+        <input class="mo-inp" type="text" id="ve-photo-url" placeholder="https://i.imgur.com/example.jpg" style="margin:0;flex:1">
+        <button type="button" class="btn btn-n" id="add-photo-url-btn"><i class="ti ti-plus"></i> Add</button>
+      </div>
     </div>
+    <div id="ve-photo-count" style="font-size:12.5px;font-weight:500;margin-bottom:7px"></div>
+    <div id="ve-photo-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px"></div>
 
-    <!-- URL option -->
-    <div style="display:flex;gap:8px;margin-bottom:13px">
-      <input class="mo-inp" type="text" id="ve-photo-url" placeholder="Or paste photo URL: https://i.imgur.com/example.jpg" style="margin:0;flex:1;font-size:12.5px">
-      <button class="btn btn-n" id="add-photo-url-btn" style="white-space:nowrap;padding:8px 14px"><i class="ti ti-link"></i> Add URL</button>
-    </div>
-
-    <div id="ve-photo-count" style="font-size:12.5px;font-weight:500;margin-bottom:7px;color:#2d7a4f"></div>
-    <div id="ve-photo-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
-
-    <button class="mo-btn" id="save-vacancy-btn">Save listing</button>
+        <button class="mo-btn" id="save-vacancy-btn">Save listing</button>
     <div class="ok-msg" id="ve-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Listing saved!</div>
     <div class="mo-err" id="ve-err">Error saving listing.</div>
   </div>
