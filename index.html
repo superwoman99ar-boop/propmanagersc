@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v15.6</div>
+<div class="vbadge">PropManager SC v15.7</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4581,14 +4581,14 @@ function openVacancyEdit(isEdit) {
   if (addPhotosBtn && fileInput) {
     addPhotosBtn.onclick = function() {
       if (fileInput.files && fileInput.files.length > 0) {
-        handleVacancyPhotos(fileInput.files);
-        // Reset the input so same files can be re-selected if needed
-        try { fileInput.value = ""; } catch(e) {}
+        // Copy FileList to real Array immediately — BEFORE any reset
+        var filesCopy = Array.from(fileInput.files);
+        // Now pass the copy — FileReader will read from the File objects
+        // which remain valid even after fileInput is reset
+        handleVacancyPhotosFromArray(filesCopy, addPhotosBtn);
       } else {
-        // No files chosen yet — prompt user
         addPhotosBtn.innerHTML = "<i class='ti ti-alert-circle'></i> Select files first";
-        addPhotosBtn.style.background = "#c0392b";
-        addPhotosBtn.style.borderColor = "#c0392b";
+        addPhotosBtn.style.cssText += ";background:#c0392b;border-color:#c0392b";
         setTimeout(function() {
           addPhotosBtn.innerHTML = "<i class='ti ti-photo-plus'></i> Add photos";
           addPhotosBtn.style.background = "";
@@ -4597,17 +4597,19 @@ function openVacancyEdit(isEdit) {
       }
     };
   }
-  // Also wire onchange as a convenience — auto-add when files selected
+  // onchange — auto-process files immediately when selected (no extra button click needed)
   if (fileInput) {
     fileInput.onchange = function() {
       if (fileInput.files && fileInput.files.length > 0) {
-        // Update button to show count
+        var count = fileInput.files.length;
+        var filesCopy = Array.from(fileInput.files);
         var addBtn = document.getElementById("ve-photo-add-btn");
         if (addBtn) {
-          addBtn.innerHTML = "<i class='ti ti-photo-plus'></i> Add " + fileInput.files.length + " photo" + (fileInput.files.length > 1 ? "s" : "");
+          addBtn.innerHTML = "<i class='ti ti-loader'></i> Adding " + count + " photo" + (count > 1 ? "s" : "") + "...";
           addBtn.style.background = "#2d7a4f";
           addBtn.style.borderColor = "#2d7a4f";
         }
+        handleVacancyPhotosFromArray(filesCopy, addBtn);
       }
     };
   }
@@ -4652,7 +4654,12 @@ function updatePhotoCount() {
 }
 
 function handleVacancyPhotos(files) {
-  var arr = Array.from(files);
+  // Wrapper that accepts FileList — copies to array first
+  handleVacancyPhotosFromArray(Array.from(files), null);
+}
+
+function handleVacancyPhotosFromArray(arr, triggerBtn) {
+  // arr is already a plain JS Array of File objects — safe to use async
   var heicFiles = arr.filter(function(f) {
     var name = (f.name || "").toLowerCase();
     return name.endsWith(".heic") || name.endsWith(".heif") || f.type === "image/heic";
@@ -4663,35 +4670,55 @@ function handleVacancyPhotos(files) {
   });
 
   if (heicFiles.length > 0) {
-    // DOM-only warning, no innerHTML
     var previewEl = document.getElementById("ve-photo-preview");
     var warnMsg = document.createElement("div");
     warnMsg.style.cssText = "background:#fdf3e0;border:1px solid rgba(160,96,16,.2);border-radius:7px;padding:10px 13px;font-size:12.5px;color:#a06010;margin-bottom:9px";
-    var t = document.createTextNode(heicFiles.length + " iPhone HEIC photo(s) were skipped. ");
-    var strong = document.createElement("strong");
-    strong.textContent = "Fix: ";
-    var fix = document.createTextNode("On iPhone go to Settings > Camera > Formats > Most Compatible. Then retake or screenshot your photos and re-upload as JPG.");
-    warnMsg.appendChild(t);
-    warnMsg.appendChild(strong);
-    warnMsg.appendChild(fix);
+    warnMsg.textContent = heicFiles.length + " HEIC photo(s) skipped. On iPhone: Settings > Camera > Formats > Most Compatible, then re-take as JPG.";
     if (previewEl && previewEl.parentNode) previewEl.parentNode.insertBefore(warnMsg, previewEl);
-    setTimeout(function() { if (warnMsg.parentNode) warnMsg.parentNode.removeChild(warnMsg); }, 9000);
+    setTimeout(function() { if (warnMsg.parentNode) warnMsg.parentNode.removeChild(warnMsg); }, 8000);
   }
 
-  if (!goodFiles.length) return;
+  if (!goodFiles.length) {
+    if (triggerBtn) {
+      triggerBtn.innerHTML = "<i class='ti ti-x'></i> No valid photos — use JPG/PNG";
+      setTimeout(function() { triggerBtn.innerHTML = "<i class='ti ti-photo-plus'></i> Add photos"; triggerBtn.style.background=""; triggerBtn.style.borderColor=""; }, 3000);
+    }
+    return;
+  }
 
-  var toAdd = goodFiles.slice(0, Math.max(0, 10 - _vacancyPhotos.length));
-  if (!toAdd.length) { alert("Maximum 10 photos allowed."); return; }
+  var slots = Math.max(0, 10 - _vacancyPhotos.length);
+  var toAdd = goodFiles.slice(0, slots);
+  if (!toAdd.length) { alert("Maximum 10 photos already added."); return; }
 
   var loaded = 0;
+  var succeeded = 0;
+
   toAdd.forEach(function(file) {
     var reader = new FileReader();
     reader.onload = function(e) {
       if (e.target && e.target.result) {
         _vacancyPhotos.push(e.target.result);
+        succeeded++;
       }
       loaded++;
-      if (loaded === toAdd.length) { renderEditPhotoPreview(); updatePhotoCount(); }
+      if (loaded === toAdd.length) {
+        renderEditPhotoPreview();
+        updatePhotoCount();
+        // Reset trigger button
+        if (triggerBtn) {
+          triggerBtn.innerHTML = "<i class='ti ti-check'></i> " + succeeded + " photo" + (succeeded > 1 ? "s" : "") + " added!";
+          triggerBtn.style.background = "#2d7a4f";
+          triggerBtn.style.borderColor = "#2d7a4f";
+          setTimeout(function() {
+            triggerBtn.innerHTML = "<i class='ti ti-photo-plus'></i> Add photos";
+            triggerBtn.style.background = "";
+            triggerBtn.style.borderColor = "";
+          }, 2500);
+        }
+        // Reset file input so user can add more
+        var fi = document.getElementById("ve-photo-input");
+        if (fi) { try { fi.value = ""; } catch(er) {} }
+      }
     };
     reader.onerror = function() {
       loaded++;
