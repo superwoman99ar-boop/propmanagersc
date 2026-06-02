@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v17.7</div>
+<div class="vbadge">PropManager SC v17.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -6344,8 +6344,8 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 
   try { attachEvents(); } catch(e) { console.error("attachEvents failed:", e); }
-  try { initSupabase();
-  
+  try { initSupabase(); } catch(e) { console.error("initSupabase failed:", e); }
+
   // PERMANENT GUARD: catches dynamically created buttons
   // Any button with data-action gets wired automatically - no onclick needed
   document.addEventListener("click", function(e) {
