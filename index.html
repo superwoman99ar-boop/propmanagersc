@@ -2928,14 +2928,20 @@ function renderLeaseList(tenants) {
   
   var expiring = [];
   
-  // Payment summary bar — uses globals set by renderTenantTable
+  // Payment summary bar
   var barEl = document.getElementById("payment-summary-bar");
   if (barEl) {
+    var _nowL = new Date();
+    var _msL  = _nowL.getFullYear() + "-" + String(_nowL.getMonth()+1).padStart(2,"0");
+    var _paidL = new Set();
+    (window._paymentCache||[]).forEach(function(p){
+      if (p.payment_date && p.payment_date.startsWith(_msL) && p.status==="paid") _paidL.add(p.tenant_id);
+    });
     var totalTenants = tenants.filter(function(t){ return Number(t.monthly_rent||0) > 0; }).length;
-    var paidCount    = tenants.filter(function(t){ return _paidThisMonth.has(t.id) && Number(t.monthly_rent||0) > 0; }).length;
+    var paidCount    = tenants.filter(function(t){ return _paidL.has(t.id) && Number(t.monthly_rent||0) > 0; }).length;
     var unpaidCount  = totalTenants - paidCount;
     var totalRent    = tenants.reduce(function(s,t){ return s + Number(t.monthly_rent||0); }, 0);
-    var collectedAmt = (window._paymentCache||[]).filter(function(p){ return p.payment_date && p.payment_date.startsWith(_currentMonthStr); }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
+    var collectedAmt = (window._paymentCache||[]).filter(function(p){ return p.payment_date && p.payment_date.startsWith(_msL); }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
     var monthLabel   = new Date().toLocaleDateString("en-US",{month:"long",year:"numeric"});
     barEl.innerHTML =
       "<div style='flex:1;background:#eaf5ee;border:1.5px solid rgba(45,122,79,.25);border-radius:10px;padding:13px 16px'>" +
@@ -3717,7 +3723,7 @@ function renderLedger(data, sort, filters) {
     exps = exps.filter(function(e) { return e.category === filters.cat; });
   }
   if (filters.type === "recurring") {
-    exps = exps.filter(function(e) { return (e.notes||"") === "recurring"; });
+    exps = exps.filter(function(e) { return (e.description||"").startsWith("[Recurring]") || (e.notes||"") === "recurring"; });
     pays = [];
   } else if (filters.type === "income") {
     exps = [];
@@ -4269,7 +4275,7 @@ async function exportExpensesSummary() {
 
 // Update tax summary metrics when dashboard loads
 async function updateTaxMetrics(payments, expenses) {
-  var year = new Date().getFullYear();
+  var year = String(new Date().getFullYear());
   var yearPays = payments.filter(function(p) { return p.payment_date && p.payment_date.startsWith(year); });
   var yearExps = expenses.filter(function(e) { return e.expense_date && e.expense_date.startsWith(year); });
   var grossInc = yearPays.reduce(function(s,p){ return s+Number(p.amount); }, 0);
@@ -4662,6 +4668,17 @@ function openVacancyEdit(isEdit) {
 
   // PHOTO UPLOAD — wired fresh every time modal opens
   var _fi  = document.getElementById("ve-photo-input");
+  // Auto-process when files selected (onchange)
+  if (_fi) {
+    _fi.onchange = function() {
+      var cnt = _fi.files ? _fi.files.length : 0;
+      if (_ab && cnt > 0) {
+        _ab.innerHTML = "<i class='ti ti-photo-plus'></i> Add " + cnt + " photo" + (cnt>1?"s":"") + " to listing";
+        _ab.style.background = "#1a5fa8";
+        _ab.style.borderColor = "#1a5fa8";
+      }
+    };
+  }
   var _ab  = document.getElementById("ve-photo-add-btn");
   var _ui  = document.getElementById("ve-photo-url");
   var _ub  = document.getElementById("add-photo-url-btn");
@@ -4669,9 +4686,11 @@ function openVacancyEdit(isEdit) {
   // Add button — resize photos then store
   if (_ab) {
     _ab.onclick = function() {
-      var files = _fi ? _fi.files : null;
+      // Always re-query the input to get fresh reference
+      var freshInput = document.getElementById("ve-photo-input");
+      var files = freshInput ? freshInput.files : null;
       if (!files || files.length === 0) {
-        alert("Please select photos using the file picker above first.");
+        alert("Please choose photos first using the Choose Files button above.");
         return;
       }
       var list = [];
