@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v17.5</div>
+<div class="vbadge">PropManager SC v17.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1729,15 +1729,25 @@ function swPayTab(tab) {
   document.getElementById("pay-flex-panel").style.display = tab === "flex" ? "block" : "none";
 }
 
+// ---- SAFE ELEMENT HELPERS (permanent) ----
+// on(id, event, fn) wires an event safely — never throws if element missing
+function on(id, evt, fn) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener(evt, fn);
+  return el;
+}
+
 // ---- ATTACH ALL BUTTON EVENTS ----
 function attachEvents() {
+  // Wrap entire function — if any line throws, buttons after it still work
+  try {
   // Logo
   var logo = document.getElementById("logo");
   if (logo) { logo.addEventListener("click", function() { goPage("home"); }); }
 
   // Nav buttons
-  document.getElementById("nb-home").addEventListener("click", function() { goPage("home"); });
-  document.getElementById("nb-dashboard").addEventListener("click", function() {
+  on("nb-home", "click", function() { goPage("home"); });
+  on("nb-dashboard", "click", function() {
     if (currentRole === "landlord") {
       goPage("dashboard");
     } else if (currentRole === "tenant") {
@@ -1746,10 +1756,10 @@ function attachEvents() {
       openMo("landlord");
     }
   });
-  document.getElementById("nb-portal").addEventListener("click", function() { openMo("tenant"); });
-  document.getElementById("nb-vacancy").addEventListener("click", function() { goPage("vacancy"); initVacancyPage(); });
-  document.getElementById("nb-contact").addEventListener("click", function() { goPage("contact"); });
-  document.getElementById("nb-pricing").addEventListener("click", function() { goPage("pricing"); });
+  on("nb-portal", "click", function() { openMo("tenant"); });
+  on("nb-vacancy", "click", function() { goPage("vacancy"); initVacancyPage(); });
+  on("nb-contact", "click", function() { goPage("contact"); });
+  on("nb-pricing", "click", function() { goPage("pricing"); });
 
   // Pricing page signup buttons
   ["signup-starter-btn","signup-growth-btn","signup-portfolio-btn"].forEach(function(btnId) {
@@ -1780,11 +1790,11 @@ function attachEvents() {
   if (regLoginBtn) regLoginBtn.addEventListener("click", function() { closeMo("register"); openMo("landlord"); });
 
   // Nav right
-  document.getElementById("btn-tenant-login").addEventListener("click", function() { openMo("tenant"); });
-  document.getElementById("btn-landlord-login").addEventListener("click", function() { openMo("landlord"); });
+  on("btn-tenant-login", "click", function() { openMo("tenant"); });
+  on("btn-landlord-login", "click", function() { openMo("landlord"); });
 
   // Hero buttons
-  document.getElementById("hero-tenant-btn").addEventListener("click", function() { openMo("tenant"); });
+  on("hero-tenant-btn", "click", function() { openMo("tenant"); });
   var heroPLogin = document.getElementById("hero-portal-login-btn");
   if (heroPLogin) heroPLogin.addEventListener("click", function() { openMo("tenant"); });
   var heroLLSignup = document.getElementById("hero-landlord-signup-btn");
@@ -1794,23 +1804,23 @@ function attachEvents() {
     document.getElementById("reg-step-2").style.display = "none";
     openMo("register");
   });
-  document.getElementById("hero-vacancy-btn").addEventListener("click", function() { goPage("vacancy"); initVacancyPage(); });
-  document.getElementById("cta-tenant-btn").addEventListener("click", function() { openMo("tenant"); });
+  on("hero-vacancy-btn", "click", function() { goPage("vacancy"); initVacancyPage(); });
+  on("cta-tenant-btn", "click", function() { openMo("tenant"); });
 
   // Footer links
-  document.getElementById("ft-vacancy-link").addEventListener("click", function() { goPage("vacancy"); initVacancyPage(); });
-  document.getElementById("ft-login-link").addEventListener("click", function() { openMo("tenant"); });
-  document.getElementById("ft-contact-link").addEventListener("click", function() { goPage("contact"); });
-  document.getElementById("ft-landlord-link").addEventListener("click", function() { openMo("landlord"); });
+  on("ft-vacancy-link", "click", function() { goPage("vacancy"); initVacancyPage(); });
+  on("ft-login-link", "click", function() { openMo("tenant"); });
+  on("ft-contact-link", "click", function() { goPage("contact"); });
+  on("ft-landlord-link", "click", function() { openMo("landlord"); });
   var ftPricingLink = document.getElementById("ft-pricing-link");
   if (ftPricingLink) ftPricingLink.addEventListener("click", function() { goPage("pricing"); });
 
   // Modal closes
-  document.getElementById("close-tenant-mo").addEventListener("click", function() { closeMo("tenant"); });
-  document.getElementById("close-landlord-mo").addEventListener("click", function() { closeMo("landlord"); });
-  document.getElementById("close-apply-mo").addEventListener("click", function() { closeMo("apply"); });
-  document.getElementById("close-addtenant-mo").addEventListener("click", function() { closeMo("addtenant"); });
-  document.getElementById("close-expense-mo").addEventListener("click", function() { closeMo("addexpense"); });
+  on("close-tenant-mo", "click", function() { closeMo("tenant"); });
+  on("close-landlord-mo", "click", function() { closeMo("landlord"); });
+  on("close-apply-mo", "click", function() { closeMo("apply"); });
+  on("close-addtenant-mo", "click", function() { closeMo("addtenant"); });
+  on("close-expense-mo", "click", function() { closeMo("addexpense"); });
 
   // Modal backdrop close
   document.querySelectorAll(".mo-overlay").forEach(function(o) {
@@ -1823,33 +1833,33 @@ function attachEvents() {
   });
 
   // Login buttons
-  document.getElementById("tenant-login-btn").addEventListener("click", tenantLogin);
-  document.getElementById("landlord-login-btn").addEventListener("click", landlordLogin);
-  document.getElementById("t-pass").addEventListener("keydown", function(e) { if (e.key === "Enter") { tenantLogin(); } });
-  document.getElementById("l-pass").addEventListener("keydown", function(e) { if (e.key === "Enter") { landlordLogin(); } });
+  on("tenant-login-btn", "click", tenantLogin);
+  on("landlord-login-btn", "click", landlordLogin);
+  on("t-pass", "keydown", function(e) { if (e.key === "Enter") { tenantLogin(); } });
+  on("l-pass", "keydown", function(e) { if (e.key === "Enter") { landlordLogin(); } });
 
   // Contact from login modal
-  document.getElementById("contact-link-from-login").addEventListener("click", function() { closeMo("tenant"); goPage("contact"); });
+  on("contact-link-from-login", "click", function() { closeMo("tenant"); goPage("contact"); });
 
   // Dashboard sidebar
-  document.getElementById("di-ov").addEventListener("click", function() { goDash("ov"); });
-  document.getElementById("di-pr").addEventListener("click", function() { goDash("pr"); });
-  document.getElementById("di-tn").addEventListener("click", function() { goDash("tn"); });
-  document.getElementById("di-rn").addEventListener("click", function() { goDash("rn"); });
-  document.getElementById("di-mn").addEventListener("click", function() { goDash("mn"); });
-  document.getElementById("di-ls").addEventListener("click", function() {
+  on("di-ov", "click", function() { goDash("ov"); });
+  on("di-pr", "click", function() { goDash("pr"); });
+  on("di-tn", "click", function() { goDash("tn"); });
+  on("di-rn", "click", function() { goDash("rn"); });
+  on("di-mn", "click", function() { goDash("mn"); });
+  on("di-ls", "click", function() {
     goDash("ls");
     if (window._tenantCache) {
       window._paymentCache = window._paymentCache || [];
       renderLeaseList(window._tenantCache);
     }
   });
-  document.getElementById("di-gl").addEventListener("click", function() {
+  on("di-gl", "click", function() {
     goDash("gl");
     if (window._ledgerCache) renderLedger(window._ledgerCache);
   });
-  document.getElementById("di-nt").addEventListener("click", function() { goDash("nt"); });
-  document.getElementById("di-tx").addEventListener("click", function() {
+  on("di-nt", "click", function() { goDash("nt"); });
+  on("di-tx", "click", function() {
     goDash("tx");
     if (window._paymentCache && window._expenseCache) {
       updateTaxMetrics(window._paymentCache, window._expenseCache);
@@ -1921,7 +1931,7 @@ function attachEvents() {
   })();
 
   // Dashboard action buttons
-  document.getElementById("btn-issue-notice").addEventListener("click", function() { goDash("nt"); });
+  on("btn-issue-notice", "click", function() { goDash("nt"); });
 
   // Quick action buttons on home page
   document.addEventListener("click", function(e) {
@@ -2032,30 +2042,30 @@ function attachEvents() {
   if (expExpBtn) expExpBtn.addEventListener("click", exportExpensesSummary);
   var newLsBtn = document.getElementById("new-lease-btn");
   if (newLsBtn) newLsBtn.addEventListener("click", function() { openLeaseModal(null); });
-  document.getElementById("btn-add-tenant").addEventListener("click", function() { openMo("addtenant"); });
-  document.getElementById("add-tenant-btn2").addEventListener("click", function() { openMo("addtenant"); });
-  document.getElementById("log-payment-btn").addEventListener("click", function() { openAddPaymentModal(); });
-  document.getElementById("add-expense-btn").addEventListener("click", function() { openMo("addexpense"); });
+  on("btn-add-tenant", "click", function() { openMo("addtenant"); });
+  on("add-tenant-btn2", "click", function() { openMo("addtenant"); });
+  on("log-payment-btn", "click", function() { openAddPaymentModal(); });
+  on("add-expense-btn", "click", function() { openMo("addexpense"); });
   var impExpBtn = document.getElementById("import-expense-btn");
   if (impExpBtn) impExpBtn.addEventListener("click", function() { openInnagoModal(); });
 
   var pnlBtn = document.getElementById("pnl-btn");
   if (pnlBtn) pnlBtn.addEventListener("click", function() { openPnlModal(); });
-  document.getElementById("save-maint-btn").addEventListener("click", saveMaintenance);
-  document.getElementById("save-tenant-btn").addEventListener("click", addTenant);
-  document.getElementById("save-expense-btn").addEventListener("click", saveExpense);
-  document.getElementById("send-notice-btn").addEventListener("click", function() { showOk("nt-ok"); });
+  on("save-maint-btn", "click", saveMaintenance);
+  on("save-tenant-btn", "click", addTenant);
+  on("save-expense-btn", "click", saveExpense);
+  on("send-notice-btn", "click", function() { showOk("nt-ok"); });
   var ovNotice = document.getElementById("ov-notice-btn");
   if (ovNotice) { ovNotice.addEventListener("click", function() { goDash("nt"); }); }
 
   // Portal sidebar
-  document.getElementById("pi-hm").addEventListener("click", function() { goPortal("hm"); });
-  document.getElementById("pi-py").addEventListener("click", function() { goPortal("py"); });
-  document.getElementById("pi-ph").addEventListener("click", function() { goPortal("ph"); });
-  document.getElementById("pi-mn").addEventListener("click", function() { goPortal("mn"); });
-  document.getElementById("pi-ms").addEventListener("click", function() { goPortal("ms"); });
-  document.getElementById("pi-ls").addEventListener("click", function() { goPortal("ls"); });
-  document.getElementById("portal-signout-btn").addEventListener("click", signOut);
+  on("pi-hm", "click", function() { goPortal("hm"); });
+  on("pi-py", "click", function() { goPortal("py"); });
+  on("pi-ph", "click", function() { goPortal("ph"); });
+  on("pi-mn", "click", function() { goPortal("mn"); });
+  on("pi-ms", "click", function() { goPortal("ms"); });
+  on("pi-ls", "click", function() { goPortal("ls"); });
+  on("portal-signout-btn", "click", signOut);
   var pcpBtn = document.getElementById("portal-change-pass-btn");
   if (pcpBtn) pcpBtn.addEventListener("click", function() {
     var cpNew = document.getElementById("cp-new");
@@ -2074,13 +2084,13 @@ function attachEvents() {
   });
 
   // Portal home cards
-  document.getElementById("home-maint-card").addEventListener("click", function() { goPortal("mn"); });
-  document.getElementById("home-msg-card").addEventListener("click", function() { goPortal("ms"); });
-  document.getElementById("pay-now-link").addEventListener("click", function() { goPortal("py"); });
+  on("home-maint-card", "click", function() { goPortal("mn"); });
+  on("home-msg-card", "click", function() { goPortal("ms"); });
+  on("pay-now-link", "click", function() { goPortal("py"); });
 
   // Pay tabs
-  document.getElementById("pay-tab-full").addEventListener("click", function() { swPayTab("full"); });
-  document.getElementById("pay-tab-flex").addEventListener("click", function() { swPayTab("flex"); });
+  on("pay-tab-full", "click", function() { swPayTab("full"); });
+  on("pay-tab-flex", "click", function() { swPayTab("flex"); });
   // Review button (step 1 -> step 2)
   var reviewBtn = document.getElementById("review-payment-btn");
   if (reviewBtn) reviewBtn.addEventListener("click", reviewPayment);
@@ -2117,19 +2127,19 @@ function attachEvents() {
   });
 
   // Maintenance submit
-  document.getElementById("submit-maint-btn").addEventListener("click", submitMaintenanceRequest);
+  on("submit-maint-btn", "click", submitMaintenanceRequest);
 
   // Message send
-  document.getElementById("msg-send-btn").addEventListener("click", sendMessage);
-  document.getElementById("msg-input").addEventListener("keydown", function(e) {
+  on("msg-send-btn", "click", sendMessage);
+  on("msg-input", "keydown", function(e) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
 
   // Lease page message button
-  document.getElementById("lease-msg-btn").addEventListener("click", function() { goPortal("ms"); });
+  on("lease-msg-btn", "click", function() { goPortal("ms"); });
 
   // Vacancy page
-  document.getElementById("vac-back-btn").addEventListener("click", function() { goPage("home"); });
+  on("vac-back-btn", "click", function() { goPage("home"); });
   var vacAddBtn = document.getElementById("vac-add-btn");
   if (vacAddBtn) vacAddBtn.addEventListener("click", function() { openVacancyEdit(false); });
   var vacAddBtn2 = document.getElementById("vac-add-btn2");
@@ -2151,14 +2161,14 @@ function attachEvents() {
   var vacNextBtn = document.getElementById("vac-photo-next");
   if (vacPrevBtn) vacPrevBtn.addEventListener("click", function() { changeVacPhoto(-1); });
   if (vacNextBtn) vacNextBtn.addEventListener("click", function() { changeVacPhoto(1); });
-  document.getElementById("apply-now-btn").addEventListener("click", function() { openMo("apply"); });
-  document.getElementById("vac-inquiry-btn").addEventListener("click", submitVacancy);
-  document.getElementById("submit-apply-btn").addEventListener("click", submitApply);
+  on("apply-now-btn", "click", function() { openMo("apply"); });
+  on("vac-inquiry-btn", "click", submitVacancy);
+  on("submit-apply-btn", "click", submitApply);
 
   // Contact page
-  document.getElementById("con-back-btn").addEventListener("click", function() { goPage("home"); });
-  document.getElementById("con-submit-btn").addEventListener("click", submitContact);
-  document.getElementById("con-vacancy-card").addEventListener("click", function() { goPage("vacancy"); });
+  on("con-back-btn", "click", function() { goPage("home"); });
+  on("con-submit-btn", "click", submitContact);
+  on("con-vacancy-card", "click", function() { goPage("vacancy"); });
 
   // Escape key
   document.addEventListener("keydown", function(e) {
@@ -2360,6 +2370,7 @@ function attachEvents() {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
     });
   });
+  } catch(err) { console.error("attachEvents error:", err && err.message ? err.message : err); }
 }
 
 // ---- AUTH ----
@@ -6333,8 +6344,8 @@ document.addEventListener("DOMContentLoaded", function() {
     console.warn("Stripe Connect error:", stripeError);
   }
 
-  attachEvents();
-  initSupabase();
+  try { attachEvents(); } catch(e) { console.error("attachEvents failed:", e); }
+  try { initSupabase();
   
   // PERMANENT GUARD: catches dynamically created buttons
   // Any button with data-action gets wired automatically - no onclick needed
