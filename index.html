@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v17.3</div>
+<div class="vbadge">PropManager SC v17.4</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1626,7 +1626,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://js.stripe.com/v3/" defer></script>
 
-<script>
+<script><script>
 // ============================================================
 // ALL JAVASCRIPT - NO STRING BUILDING, NO ONCLICK ATTRIBUTES
 // ALL EVENTS ATTACHED VIA addEventListener
@@ -4831,46 +4831,63 @@ function openVacancyEdit(isEdit) {
         alert("Please choose photos first using the Choose Files button above.");
         return;
       }
-      // Snapshot file list immediately
       var list = Array.prototype.slice.call(files);
       var total = list.length;
       var btn2 = document.getElementById("ve-photo-add-btn");
-      if (btn2) { btn2.textContent = "Adding " + total + " photo(s)..."; btn2.disabled = true; }
-      var done = 0;
-      var added = 0;
+      if (btn2) { btn2.textContent = "Uploading " + total + " photo(s)..."; btn2.disabled = true; }
+
+      var done = 0; var added = 0;
+
+      function oneDone(url) {
+        if (url) { _vacancyPhotos.push(url); added++; }
+        done++;
+        if (done < total) return;
+        renderEditPhotoPreview();
+        updatePhotoCount();
+        var b = document.getElementById("ve-photo-add-btn");
+        if (b) {
+          b.textContent = added > 0 ? added + " photo(s) added!" : "Upload failed — check storage";
+          b.style.background  = added > 0 ? "#2d7a4f" : "#c0392b";
+          b.style.borderColor = added > 0 ? "#2d7a4f" : "#c0392b";
+          b.disabled = false;
+          setTimeout(function() {
+            var b2 = document.getElementById("ve-photo-add-btn");
+            if (b2) { b2.textContent = "Add selected photos to listing"; b2.style.background=""; b2.style.borderColor=""; }
+          }, 3000);
+        }
+      }
+
       list.forEach(function(file) {
-        var fr = new FileReader();
-        fr.onload = function(ev) {
-          if (ev.target && ev.target.result) {
-            _vacancyPhotos.push(ev.target.result);
-            added++;
+        if (!sb || !sb.storage) {
+          // Fallback: convert to small base64 if no storage
+          var fr = new FileReader();
+          fr.onload = function(ev) { oneDone(ev.target ? ev.target.result : null); };
+          fr.onerror = function() { oneDone(null); };
+          fr.readAsDataURL(file);
+          return;
+        }
+        // Upload to Supabase Storage
+        var ext  = (file.name || "photo.jpg").split(".").pop().toLowerCase() || "jpg";
+        var path = "vacancy/" + Date.now() + "_" + Math.random().toString(36).slice(2) + "." + ext;
+        sb.storage.from("vacancy-photos").upload(path, file, { upsert: true }).then(function(res) {
+          if (res.error) {
+            // Storage bucket may not exist yet — fall back to base64
+            var fr2 = new FileReader();
+            fr2.onload = function(ev) { oneDone(ev.target ? ev.target.result : null); };
+            fr2.onerror = function() { oneDone(null); };
+            fr2.readAsDataURL(file);
+          } else {
+            var urlRes = sb.storage.from("vacancy-photos").getPublicUrl(path);
+            var publicUrl = urlRes.data ? urlRes.data.publicUrl : null;
+            oneDone(publicUrl);
           }
-          done++;
-          if (done >= total) {
-            renderEditPhotoPreview();
-            updatePhotoCount();
-            var b = document.getElementById("ve-photo-add-btn");
-            if (b) {
-              b.textContent = added > 0 ? added + " photo(s) added!" : "No photos — use JPG/PNG";
-              b.style.background   = added > 0 ? "#2d7a4f" : "#c0392b";
-              b.style.borderColor  = added > 0 ? "#2d7a4f" : "#c0392b";
-              b.disabled = false;
-              setTimeout(function() {
-                var b2 = document.getElementById("ve-photo-add-btn");
-                if (b2) { b2.textContent = "Add selected photos to listing"; b2.style.background=""; b2.style.borderColor=""; }
-              }, 3000);
-            }
-          }
-        };
-        fr.onerror = function() {
-          done++;
-          if (done >= total) {
-            renderEditPhotoPreview(); updatePhotoCount();
-            var b = document.getElementById("ve-photo-add-btn");
-            if (b) { b.textContent = "Error reading photos — try again"; b.disabled = false; }
-          }
-        };
-        fr.readAsDataURL(file);
+        }).catch(function() {
+          // Final fallback
+          var fr3 = new FileReader();
+          fr3.onload = function(ev) { oneDone(ev.target ? ev.target.result : null); };
+          fr3.onerror = function() { oneDone(null); };
+          fr3.readAsDataURL(file);
+        });
       });
     };
   }
