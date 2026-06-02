@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v17.0</div>
+<div class="vbadge">PropManager SC v17.1</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4824,71 +4824,55 @@ function openVacancyEdit(isEdit) {
 
   // Add button — resize photos then store
   if (_ab) {
-    _ab.onclick = function() {
-      var inp2 = document.getElementById("ve-photo-input");
+    _ab.oncl_ab.onclick = function() {
+      var inp2  = document.getElementById("ve-photo-input");
       var files = inp2 ? inp2.files : null;
       if (!files || files.length === 0) {
         alert("Please choose photos first using the Choose Files button above.");
         return;
       }
-      var list = [];
-      for (var i = 0; i < files.length; i++) list.push(files[i]);
+      // Snapshot file list immediately
+      var list = Array.prototype.slice.call(files);
+      var total = list.length;
       var btn2 = document.getElementById("ve-photo-add-btn");
-      if (btn2) { btn2.textContent = "Processing " + list.length + " photo(s)..."; btn2.disabled = true; }
+      if (btn2) { btn2.textContent = "Adding " + total + " photo(s)..."; btn2.disabled = true; }
       var done = 0;
       var added = 0;
       list.forEach(function(file) {
-        // Resize image to max 800px wide before storing to avoid 5MB localStorage limit
-        var reader = new FileReader();
-        reader.onload = function(ev) {
-          if (!ev.target || !ev.target.result) { done++; checkDone(); return; }
-          var img = new Image();
-          img.onload = function() {
-            try {
-              var canvas = document.createElement("canvas");
-              var MAX = 900;
-              var w = img.width, h = img.height;
-              if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
-              canvas.width = w; canvas.height = h;
-              var ctx = canvas.getContext("2d");
-              ctx.drawImage(img, 0, 0, w, h);
-              var resized = canvas.toDataURL("image/jpeg", 0.82);
-              _vacancyPhotos.push(resized);
-              added++;
-            } catch(canvasErr) {
-              // Fallback: store original if canvas fails
-              _vacancyPhotos.push(ev.target.result);
-              added++;
+        var fr = new FileReader();
+        fr.onload = function(ev) {
+          if (ev.target && ev.target.result) {
+            _vacancyPhotos.push(ev.target.result);
+            added++;
+          }
+          done++;
+          if (done >= total) {
+            renderEditPhotoPreview();
+            updatePhotoCount();
+            var b = document.getElementById("ve-photo-add-btn");
+            if (b) {
+              b.textContent = added > 0 ? added + " photo(s) added!" : "No photos — use JPG/PNG";
+              b.style.background   = added > 0 ? "#2d7a4f" : "#c0392b";
+              b.style.borderColor  = added > 0 ? "#2d7a4f" : "#c0392b";
+              b.disabled = false;
+              setTimeout(function() {
+                var b2 = document.getElementById("ve-photo-add-btn");
+                if (b2) { b2.textContent = "Add selected photos to listing"; b2.style.background=""; b2.style.borderColor=""; }
+              }, 3000);
             }
-            done++;
-            checkDone();
-          };
-          img.onerror = function() { done++; checkDone(); };
-          img.src = ev.target.result;
+          }
         };
-        reader.onerror = function() { done++; checkDone(); };
-        reader.readAsDataURL(file);
+        fr.onerror = function() {
+          done++;
+          if (done >= total) {
+            renderEditPhotoPreview(); updatePhotoCount();
+            var b = document.getElementById("ve-photo-add-btn");
+            if (b) { b.textContent = "Error reading photos — try again"; b.disabled = false; }
+          }
+        };
+        fr.readAsDataURL(file);
       });
-      function checkDone() {
-        if (done < list.length) return;
-        renderEditPhotoPreview();
-        updatePhotoCount();
-        var b = document.getElementById("ve-photo-add-btn");
-        if (b) {
-          b.textContent = added > 0 ? added + " photo(s) added!" : "No photos added — use JPG/PNG";
-          b.style.background = added > 0 ? "#2d7a4f" : "#c0392b";
-          b.style.borderColor = added > 0 ? "#2d7a4f" : "#c0392b";
-          b.disabled = false;
-          setTimeout(function() {
-            var b2 = document.getElementById("ve-photo-add-btn");
-            if (b2) { b2.textContent = "Add selected photos to listing"; b2.style.background=""; b2.style.borderColor=""; }
-          }, 3000);
-        }
-      }
-    };
-  }
-
-  // URL add button
+    }// URL add button
   if (_ub) {
     _ub.onclick = function() {
       var url = _ui ? _ui.value.trim() : "";
@@ -5964,17 +5948,41 @@ function openDocUpload() {
 }
 
 function saveDocument() {
-  var name = document.getElementById("doc-name").value.trim();
-  var cat  = document.getElementById("doc-category").value;
+  var name     = document.getElementById("doc-name").value.trim();
+  var cat      = document.getElementById("doc-category").value;
+  var fileInput = document.getElementById("doc-file-input");
   if (!name) { alert("Please enter a document name."); return; }
-  try {
-    _docs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]");
-  } catch(e) { _docs = []; }
-  _docs.push({ id: Date.now(), name:name, category:cat, date: new Date().toISOString().split("T")[0] });
-  try { localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(e) {}
-  showOk("doc-ok");
-  renderDocList();
-  setTimeout(function() { closeMo("docupload"); }, 1500);
+  try { _docs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]"); } catch(e) { _docs = []; }
+
+  if (fileInput && fileInput.files && fileInput.files[0]) {
+    var file = fileInput.files[0];
+    // Check size — localStorage limit is ~5MB total
+    if (file.size > 3 * 1024 * 1024) {
+      alert("File is too large (" + Math.round(file.size/1024/1024) + "MB). Maximum 3MB. For large files, use the URL option instead.");
+      return;
+    }
+    var fr = new FileReader();
+    fr.onload = function(ev) {
+      _docs.push({ id: Date.now(), name:name, category:cat, date: new Date().toISOString().split("T")[0], dataUrl: ev.target.result, fileName: file.name });
+      try { localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(storErr) {
+        // If localStorage full, save without file data
+        _docs[_docs.length-1].dataUrl = null;
+        _docs[_docs.length-1].note = "File too large to store — name recorded only";
+        try { localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(e2) {}
+      }
+      showOk("doc-ok");
+      renderDocList();
+      setTimeout(function() { closeMo("docupload"); }, 1500);
+    };
+    fr.readAsDataURL(file);
+  } else {
+    // No file — save name/category only (URL-based or name-only)
+    _docs.push({ id: Date.now(), name:name, category:cat, date: new Date().toISOString().split("T")[0] });
+    try { localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(e) {}
+    showOk("doc-ok");
+    renderDocList();
+    setTimeout(function() { closeMo("docupload"); }, 1500);
+  }
 }
 
 function renderDocList(filterCat) {
