@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v17.1</div>
+<div class="vbadge">PropManager SC v17.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4824,7 +4824,7 @@ function openVacancyEdit(isEdit) {
 
   // Add button — resize photos then store
   if (_ab) {
-    _ab.oncl_ab.onclick = function() {
+    _ab.onclick = function() {
       var inp2  = document.getElementById("ve-photo-input");
       var files = inp2 ? inp2.files : null;
       if (!files || files.length === 0) {
@@ -4872,7 +4872,9 @@ function openVacancyEdit(isEdit) {
         };
         fr.readAsDataURL(file);
       });
-    }// URL add button
+    }
+
+  // URL add button
   if (_ub) {
     _ub.onclick = function() {
       var url = _ui ? _ui.value.trim() : "";
@@ -5999,8 +6001,31 @@ function renderDocList(filterCat) {
   var icons = { Lease:"ti-file-text", Inspection:"ti-clipboard-check", Receipt:"ti-receipt", Notice:"ti-alert-triangle", Insurance:"ti-shield", Other:"ti-file" };
   el.innerHTML = filtered.slice().reverse().map(function(d) {
     var ico = icons[d.category] || "ti-file";
-    return "<div class='lr'><div class='l-ico' style='background:#faeeda;color:#a06010'><i class='ti " + ico + "' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + d.name + "</div><div class='l-sub'>" + d.date + " &middot; " + d.category + "</div></div><button class='btn btn-r' style='font-size:11px;padding:3px 8px' data-del-doc='" + d.id + "'>Del</button></div>";
+    var viewBtn = d.dataUrl
+      ? " <button class='btn' style='font-size:11px;padding:3px 8px;margin-right:4px' data-view-doc='" + d.id + "'><i class='ti ti-eye'></i> View</button>"
+      : "";
+    return "<div class='lr'>" +
+      "<div class='l-ico' style='background:#faeeda;color:#a06010'><i class='ti " + ico + "' style='font-size:11px'></i></div>" +
+      "<div style='flex:1'><div class='l-name'>" + d.name + "</div><div class='l-sub'>" + d.date + " &middot; " + d.category + (d.fileName ? " &middot; " + d.fileName : "") + "</div></div>" +
+      viewBtn +
+      "<button class='btn btn-r' style='font-size:11px;padding:3px 8px' data-del-doc='" + d.id + "'>Del</button>" +
+      "</div>";
   }).join("");
+  el.querySelectorAll("[data-view-doc]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var docId = parseInt(btn.getAttribute("data-view-doc"));
+      var doc = _docs.find(function(d) { return d.id === docId; });
+      if (!doc || !doc.dataUrl) return;
+      var win = window.open("", "_blank");
+      if (!win) { alert("Please allow pop-ups to view documents."); return; }
+      if (doc.dataUrl.indexOf("application/pdf") !== -1) {
+        win.document.write("<html><body style='margin:0;height:100vh'><embed src='" + doc.dataUrl + "' type='application/pdf' width='100%' height='100%'></body></html>");
+      } else {
+        win.document.write("<html><head><title>" + doc.name + "</title></head><body style='margin:0;background:#111;display:flex;align-items:center;justify-content:center;min-height:100vh'><img src='" + doc.dataUrl + "' style='max-width:100%;max-height:100vh;object-fit:contain'></body></html>");
+      }
+      win.document.title = doc.name;
+    });
+  });
   el.querySelectorAll("[data-del-doc]").forEach(function(btn) {
     btn.onclick = function() {
       _docs = _docs.filter(function(d) { return d.id !== parseInt(btn.getAttribute("data-del-doc")); });
