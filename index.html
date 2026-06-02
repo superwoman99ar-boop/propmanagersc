@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v16.7</div>
+<div class="vbadge">PropManager SC v16.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -5031,6 +5031,7 @@ async function registerNewLandlord() {
       email: email,
       password: pass,
       options: {
+        emailRedirectTo: "https://propmanagersc.com",
         data: { full_name: name, business_name: business || name + " Properties" }
       }
     });
@@ -5193,7 +5194,7 @@ async function sendPasswordReset() {
   document.getElementById("fp-err").style.display = "none";
   if (!sb) return;
   var result = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + window.location.pathname
+    redirectTo: "https://propmanagersc.com"
   });
   document.getElementById("fp-form").style.display = "none";
   document.getElementById("fp-ok").style.display = "block";
@@ -5227,18 +5228,60 @@ async function changePassword() {
 
 // Handle password reset redirect from email link
 function checkPasswordResetFlow() {
-  var hashParams = new URLSearchParams(window.location.hash.replace("#","?"));
-  var type = hashParams.get("type");
+  // Check hash fragment from Supabase email links
+  var hash = window.location.hash || "";
+  var search = window.location.search || "";
+  var hashParams = new URLSearchParams(hash.replace("#","?"));
+  var urlParams  = new URLSearchParams(search);
+
+  var type = hashParams.get("type") || urlParams.get("type");
+  var errorDesc = hashParams.get("error_description") || urlParams.get("error_description");
+
+  // Handle email confirmation success
+  if (type === "signup" || type === "email_change") {
+    window.history.replaceState({}, document.title, window.location.pathname);
+    setTimeout(function() {
+      showToast("Email confirmed! You can now sign in to your dashboard.", "success");
+      openMo("landlord");
+    }, 500);
+    return;
+  }
+
+  // Handle password recovery
   if (type === "recovery") {
-    // Open change password modal automatically
-    document.getElementById("cp-new").value = "";
-    document.getElementById("cp-confirm").value = "";
-    document.getElementById("cp-err").style.display = "none";
-    document.getElementById("cp-ok").classList.remove("on");
+    var cpNew = document.getElementById("cp-new");
+    var cpCon = document.getElementById("cp-confirm");
+    var cpErr = document.getElementById("cp-err");
+    var cpOk  = document.getElementById("cp-ok");
+    if (cpNew) cpNew.value = "";
+    if (cpCon) cpCon.value = "";
+    if (cpErr) cpErr.style.display = "none";
+    if (cpOk)  cpOk.classList.remove("on");
     openMo("changepass");
-    // Clean URL
+    window.history.replaceState({}, document.title, window.location.pathname);
+    return;
+  }
+
+  // Handle expired/invalid link error
+  if (errorDesc) {
+    setTimeout(function() {
+      showToast("The confirmation link expired. Please register again or request a new link.", "error");
+    }, 500);
     window.history.replaceState({}, document.title, window.location.pathname);
   }
+}
+
+function showToast(msg, type) {
+  var toast = document.createElement("div");
+  var bg    = type === "success" ? "#2d7a4f" : type === "error" ? "#c0392b" : "#0f1e35";
+  toast.style.cssText = "position:fixed;top:70px;left:50%;transform:translateX(-50%);background:" + bg + ";color:#fff;padding:13px 22px;border-radius:9px;font-size:13.5px;z-index:99999;max-width:380px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.25);font-family:inherit";
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(function() {
+    toast.style.transition = "opacity .5s";
+    toast.style.opacity = "0";
+    setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 500);
+  }, 5000);
 }
 
 // ════════════════════════════════════════════════════════════
