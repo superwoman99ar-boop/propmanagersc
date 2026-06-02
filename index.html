@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v16.9</div>
+<div class="vbadge">PropManager SC v17.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4825,17 +4825,16 @@ function openVacancyEdit(isEdit) {
   // Add button — resize photos then store
   if (_ab) {
     _ab.onclick = function() {
-      // Always re-query the input to get fresh reference
-      var freshInput = document.getElementById("ve-photo-input");
-      var files = freshInput ? freshInput.files : null;
+      var inp2 = document.getElementById("ve-photo-input");
+      var files = inp2 ? inp2.files : null;
       if (!files || files.length === 0) {
         alert("Please choose photos first using the Choose Files button above.");
         return;
       }
       var list = [];
       for (var i = 0; i < files.length; i++) list.push(files[i]);
-      _ab.innerHTML = "<i class='ti ti-loader'></i> Processing " + list.length + " photo(s)...";
-      _ab.disabled = true;
+      var btn2 = document.getElementById("ve-photo-add-btn");
+      if (btn2) { btn2.textContent = "Processing " + list.length + " photo(s)..."; btn2.disabled = true; }
       var done = 0;
       var added = 0;
       list.forEach(function(file) {
@@ -4874,16 +4873,17 @@ function openVacancyEdit(isEdit) {
         if (done < list.length) return;
         renderEditPhotoPreview();
         updatePhotoCount();
-        _ab.innerHTML = added > 0
-          ? "<i class='ti ti-check'></i> " + added + " photo(s) added successfully!"
-          : "<i class='ti ti-x'></i> No photos added — try JPG files";
-        _ab.style.background = added > 0 ? "#2d7a4f" : "#c0392b";
-        _ab.style.borderColor = added > 0 ? "#2d7a4f" : "#c0392b";
-        _ab.disabled = false;
-        setTimeout(function() {
-          _ab.innerHTML = "<i class='ti ti-photo-plus'></i> Add selected photos to listing";
-          _ab.style.background = ""; _ab.style.borderColor = "";
-        }, 3000);
+        var b = document.getElementById("ve-photo-add-btn");
+        if (b) {
+          b.textContent = added > 0 ? added + " photo(s) added!" : "No photos added — use JPG/PNG";
+          b.style.background = added > 0 ? "#2d7a4f" : "#c0392b";
+          b.style.borderColor = added > 0 ? "#2d7a4f" : "#c0392b";
+          b.disabled = false;
+          setTimeout(function() {
+            var b2 = document.getElementById("ve-photo-add-btn");
+            if (b2) { b2.textContent = "Add selected photos to listing"; b2.style.background=""; b2.style.borderColor=""; }
+          }, 3000);
+        }
       }
     };
   }
@@ -6199,8 +6199,40 @@ function submitContact() {
   if (n && e) { showOk("con-ok"); }
 }
 function submitApply() {
+  var first  = (document.getElementById("app-first")||{}).value||"";
+  var last   = (document.getElementById("app-last")||{}).value||"";
+  var email  = (document.getElementById("app-email")||{}).value||"";
+  var phone  = (document.getElementById("app-phone")||{}).value||"";
+  var income = (document.getElementById("app-income")||{}).value||"";
+  var emgN   = (document.getElementById("app-emg-name")||{}).value||"";
+  var emgP   = (document.getElementById("app-emg-phone")||{}).value||"";
+  var agreed = document.getElementById("app-agree") && document.getElementById("app-agree").checked;
+  var errEl  = document.getElementById("app-err");
+  if (!first || !last || !email || !phone || !income || !emgN || !emgP || !agreed) {
+    if (errEl) errEl.style.display = "block";
+    return;
+  }
+  if (errEl) errEl.style.display = "none";
+  // Save to localStorage for landlord Applications tab
+  var apps = [];
+  try { apps = JSON.parse(localStorage.getItem("propmanager_applications")||"[]"); } catch(e){}
+  apps.push({
+    id: Date.now(),
+    date: new Date().toISOString().split("T")[0],
+    name: first + " " + last,
+    email: email, phone: phone, income: income,
+    emg: emgN + " — " + emgP,
+    occupants: (document.getElementById("app-occupants")||{}).value||"",
+    pets: (document.getElementById("app-pets")||{}).value||"No",
+    vehicle: (document.getElementById("app-vehicle")||{}).value||"",
+    ssn_last4: ((document.getElementById("app-ssn")||{}).value||"").slice(-4),
+    employer: (document.getElementById("app-employer")||{}).value||"",
+    status: "New"
+  });
+  try { localStorage.setItem("propmanager_applications", JSON.stringify(apps)); } catch(e2){}
   document.getElementById("apply-form").style.display = "none";
-  document.getElementById("apply-ok").style.display = "block";
+  var okEl = document.getElementById("apply-ok");
+  if (okEl) { okEl.style.display = "block"; okEl.classList.add("on"); }
 }
 
 // ---- INIT ----
