@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v17.6</div>
+<div class="vbadge">PropManager SC v17.7</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1739,7 +1739,6 @@ function on(id, evt, fn) {
 
 // ---- ATTACH ALL BUTTON EVENTS ----
 function attachEvents() {
-  // Wrap entire function — if any line throws, buttons after it still work
   try {
   // Logo
   var logo = document.getElementById("logo");
@@ -2370,7 +2369,7 @@ function attachEvents() {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
     });
   });
-  } catch(err) { console.error("attachEvents error:", err && err.message ? err.message : err); }
+  } catch(ae_err) { console.error("attachEvents:", ae_err && ae_err.message ? ae_err.message : ae_err); }
 }
 
 // ---- AUTH ----
