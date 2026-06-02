@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v16.8</div>
+<div class="vbadge">PropManager SC v16.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -249,9 +249,10 @@ footer{background:#0f1e35;padding:44px 20px 26px}
           <div style="width:34px;height:34px;background:rgba(201,150,42,.2);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-credit-card" style="color:#f0c96b"></i></div>
           <div><div style="font-size:13px;font-weight:500;color:#fff">Pay rent online</div><div style="font-size:11px;color:rgba(255,255,255,.5)">ACH, card, or installments</div></div>
         </div>
-        <div style="display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.07);border-radius:9px;padding:13px">
+        <div style="display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.07);border-radius:9px;padding:13px;cursor:pointer" id="quick-maintenance-btn">
           <div style="width:34px;height:34px;background:rgba(45,122,79,.2);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-tool" style="color:#7ddba0"></i></div>
-          <div><div style="font-size:13px;font-weight:500;color:#fff">Submit maintenance</div><div style="font-size:11px;color:rgba(255,255,255,.5)">Track requests in real time</div></div>
+          <div style="flex:1"><div style="font-size:13px;font-weight:500;color:#fff">Submit maintenance request</div><div style="font-size:11px;color:rgba(255,255,255,.5)">No login needed &rarr; tap to submit</div></div>
+          <i class="ti ti-chevron-right" style="color:rgba(255,255,255,.4);font-size:14px"></i>
         </div>
         <div style="display:flex;align-items:center;gap:11px;background:rgba(255,255,255,.07);border-radius:9px;padding:13px">
           <div style="width:34px;height:34px;background:rgba(26,95,168,.2);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-file-text" style="color:#7eb8f5"></i></div>
@@ -1465,21 +1466,113 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 
 <!-- APPLY MODAL -->
 <div class="mo-overlay" id="mo-apply">
-  <div class="mo-box" style="max-width:440px">
+  <div class="mo-box" style="max-width:560px;max-height:90vh;overflow-y:auto">
     <button class="mo-close" id="close-apply-mo"><i class="ti ti-x"></i></button>
     <div id="apply-form">
-      <div class="mo-title">Apply &mdash; 608 11th St</div>
-      <div class="mo-sub">$1,500/mo &middot; Gaffney, SC &middot; Available immediately</div>
-      <label class="mo-lbl">Full name</label><input class="mo-inp" type="text" id="app-name" placeholder="Your full name">
-      <label class="mo-lbl">Email</label><input class="mo-inp" type="email" id="app-email" placeholder="your@email.com">
-      <label class="mo-lbl">Phone</label><input class="mo-inp" type="tel" id="app-phone" placeholder="(864) 555-0100">
-      <label class="mo-lbl">Monthly income</label><input class="mo-inp" type="text" id="app-income" placeholder="$0,000">
-      <button class="mo-btn" id="submit-apply-btn">Submit application</button>
+      <div class="mo-title">Rental Application &mdash; 608 11th St, Gaffney SC</div>
+      <div class="mo-sub" style="margin-bottom:16px">$1,500/mo &bull; 2 bed / 1 bath &bull; Available July 1, 2026 &bull; All fields required unless marked optional</div>
+
+      <div style="font-size:12px;font-weight:600;color:#0f1e35;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px;padding-bottom:5px;border-bottom:1px solid rgba(15,30,53,.1)">Personal information</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div><label class="mo-lbl">First name *</label><input class="mo-inp" type="text" id="app-first" placeholder="First name" style="margin-bottom:0"></div>
+        <div><label class="mo-lbl">Last name *</label><input class="mo-inp" type="text" id="app-last" placeholder="Last name" style="margin-bottom:0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div><label class="mo-lbl">Date of birth *</label><input class="mo-inp" type="date" id="app-dob" style="margin-bottom:0"></div>
+        <div><label class="mo-lbl">Social Security # *</label><input class="mo-inp" type="text" id="app-ssn" placeholder="XXX-XX-XXXX" style="margin-bottom:0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div><label class="mo-lbl">Email address *</label><input class="mo-inp" type="email" id="app-email" placeholder="your@email.com" style="margin-bottom:0"></div>
+        <div><label class="mo-lbl">Phone number *</label><input class="mo-inp" type="tel" id="app-phone" placeholder="(864) 555-0100" style="margin-bottom:0"></div>
+      </div>
+      <label class="mo-lbl">Driver license / ID number *</label>
+      <input class="mo-inp" type="text" id="app-id" placeholder="SC DL or state ID number">
+
+      <div style="font-size:12px;font-weight:600;color:#0f1e35;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 9px;padding-bottom:5px;border-bottom:1px solid rgba(15,30,53,.1)">Current address</div>
+      <input class="mo-inp" type="text" id="app-addr" placeholder="Street address">
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:9px;margin-bottom:9px">
+        <div><label class="mo-lbl">City</label><input class="mo-inp" type="text" id="app-city" placeholder="City" style="margin-bottom:0"></div>
+        <div><label class="mo-lbl">State</label><input class="mo-inp" type="text" id="app-state" placeholder="SC" style="margin-bottom:0"></div>
+        <div><label class="mo-lbl">ZIP</label><input class="mo-inp" type="text" id="app-zip" placeholder="29340" style="margin-bottom:0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div><label class="mo-lbl">How long at this address?</label><input class="mo-inp" type="text" id="app-duration" placeholder="e.g. 2 years" style="margin-bottom:0"></div>
+        <div><label class="mo-lbl">Reason for leaving</label><input class="mo-inp" type="text" id="app-leaving" placeholder="Reason" style="margin-bottom:0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div><label class="mo-lbl">Current landlord name</label><input class="mo-inp" type="text" id="app-ll-name" placeholder="Name" style="margin-bottom:0"></div>
+        <div><label class="mo-lbl">Landlord phone</label><input class="mo-inp" type="tel" id="app-ll-phone" placeholder="Phone" style="margin-bottom:0"></div>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:#0f1e35;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 9px;padding-bottom:5px;border-bottom:1px solid rgba(15,30,53,.1)">Employment &amp; income</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div><label class="mo-lbl">Employer name *</label><input class="mo-inp" type="text" id="app-employer" placeholder="Employer" style="margin-bottom:0"></div>
+        <div><label class="mo-lbl">Job title</label><input class="mo-inp" type="text" id="app-title" placeholder="Your position" style="margin-bottom:0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div><label class="mo-lbl">Gross monthly income *</label><input class="mo-inp" type="text" id="app-income" placeholder="$0,000" style="margin-bottom:0"></div>
+        <div><label class="mo-lbl">Employment start date</label><input class="mo-inp" type="date" id="app-emp-start" style="margin-bottom:0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div><label class="mo-lbl">Supervisor name</label><input class="mo-inp" type="text" id="app-supervisor" placeholder="Supervisor" style="margin-bottom:0"></div>
+        <div><label class="mo-lbl">Supervisor phone</label><input class="mo-inp" type="tel" id="app-sup-phone" placeholder="Phone" style="margin-bottom:0"></div>
+      </div>
+      <label class="mo-lbl">Other income sources (optional)</label>
+      <input class="mo-inp" type="text" id="app-other-income" placeholder="e.g. Social Security, child support, self-employment">
+
+      <div style="font-size:12px;font-weight:600;color:#0f1e35;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 9px;padding-bottom:5px;border-bottom:1px solid rgba(15,30,53,.1)">Occupants</div>
+      <label class="mo-lbl">Number of people who will occupy the unit *</label>
+      <input class="mo-inp" type="number" id="app-occupants" placeholder="Number of occupants" min="1">
+      <label class="mo-lbl">Names and ages of all occupants (other than yourself)</label>
+      <textarea class="mo-inp" id="app-occupant-names" placeholder="e.g. Jane Doe (32), John Doe (8)" style="height:60px;resize:vertical"></textarea>
+
+      <div style="font-size:12px;font-weight:600;color:#0f1e35;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 9px;padding-bottom:5px;border-bottom:1px solid rgba(15,30,53,.1)">Pets &amp; vehicles</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div><label class="mo-lbl">Do you have pets?</label><select class="mo-inp" id="app-pets" style="margin-bottom:0"><option>No</option><option>Yes</option></select></div>
+        <div><label class="mo-lbl">If yes, describe (type/weight)</label><input class="mo-inp" type="text" id="app-pet-desc" placeholder="e.g. Lab mix, 45 lbs" style="margin-bottom:0"></div>
+      </div>
+      <label class="mo-lbl">Vehicles (make, model, year, color, plate)</label>
+      <input class="mo-inp" type="text" id="app-vehicle" placeholder="e.g. 2019 Honda Civic, silver, SC ABC123">
+
+      <div style="font-size:12px;font-weight:600;color:#0f1e35;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 9px;padding-bottom:5px;border-bottom:1px solid rgba(15,30,53,.1)">Emergency contact</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div><label class="mo-lbl">Name *</label><input class="mo-inp" type="text" id="app-emg-name" placeholder="Emergency contact name" style="margin-bottom:0"></div>
+        <div><label class="mo-lbl">Relationship</label><input class="mo-inp" type="text" id="app-emg-rel" placeholder="e.g. Mother, Friend" style="margin-bottom:0"></div>
+      </div>
+      <label class="mo-lbl">Emergency contact phone *</label>
+      <input class="mo-inp" type="tel" id="app-emg-phone" placeholder="(864) 555-0100">
+
+      <div style="font-size:12px;font-weight:600;color:#0f1e35;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 9px;padding-bottom:5px;border-bottom:1px solid rgba(15,30,53,.1)">Background disclosure</div>
+      <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:13px">
+        <label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;cursor:pointer"><input type="checkbox" id="app-eviction"> Have you ever been evicted or asked to vacate?</label>
+        <label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;cursor:pointer"><input type="checkbox" id="app-criminal"> Have you ever been convicted of a felony?</label>
+        <label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;cursor:pointer"><input type="checkbox" id="app-bankruptcy"> Have you filed for bankruptcy in the last 7 years?</label>
+      </div>
+      <label class="mo-lbl">If yes to any above, please explain (optional)</label>
+      <textarea class="mo-inp" id="app-explain" placeholder="Explain..." style="height:60px;resize:vertical"></textarea>
+
+      <div style="font-size:12px;font-weight:600;color:#0f1e35;text-transform:uppercase;letter-spacing:.5px;margin:14px 0 9px;padding-bottom:5px;border-bottom:1px solid rgba(15,30,53,.1)">References</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div><label class="mo-lbl">Reference 1 name</label><input class="mo-inp" type="text" id="app-ref1-name" placeholder="Name" style="margin-bottom:0"></div>
+        <div><label class="mo-lbl">Reference 1 phone</label><input class="mo-inp" type="tel" id="app-ref1-phone" placeholder="Phone" style="margin-bottom:0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px">
+        <div><label class="mo-lbl">Reference 2 name</label><input class="mo-inp" type="text" id="app-ref2-name" placeholder="Name" style="margin-bottom:0"></div>
+        <div><label class="mo-lbl">Reference 2 phone</label><input class="mo-inp" type="tel" id="app-ref2-phone" placeholder="Phone" style="margin-bottom:0"></div>
+      </div>
+
+      <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:11px 13px;font-size:12px;color:#5a5a5a;margin-bottom:13px;line-height:1.7">
+        By submitting this application I authorize A&amp;J Rush Properties to verify all information provided including credit history, rental history, employment, and criminal background. I certify all information is true and complete. False statements may result in denial or termination of tenancy. A non-refundable application fee of $35 may be required for screening.
+      </div>
+      <label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;cursor:pointer;margin-bottom:13px"><input type="checkbox" id="app-agree"> I have read and agree to the above authorization statement *</label>
+
+      <button class="mo-btn" id="submit-apply-btn">Submit rental application</button>
+      <div class="mo-err" id="app-err" style="margin-top:9px">Please complete all required fields and agree to the authorization statement.</div>
     </div>
-    <div class="mo-ok" id="apply-ok">
-      <i class="ti ti-circle-check" style="color:#2d7a4f"></i>
-      <div style="font-size:17px;font-weight:500;color:#0f1e35;margin-bottom:5px">Application received!</div>
-      <div style="font-size:13px;color:#5a5a5a">We will contact you within 24 to 48 hours.</div>
+    <div class="mo-ok" id="apply-ok" style="display:none;text-align:center;padding:20px 0">
+      <i class="ti ti-circle-check" style="font-size:52px;color:#2d7a4f;display:block;margin-bottom:11px"></i>
+      <div style="font-size:19px;font-weight:500;color:#0f1e35;margin-bottom:7px">Application submitted!</div>
+      <div style="font-size:13px;color:#5a5a5a;line-height:1.7">Thank you for applying. We will review your application and contact you within 24-48 hours. A background check invitation may be sent to your email.</div>
     </div>
   </div>
 </div>
@@ -1830,6 +1923,52 @@ function attachEvents() {
   // Dashboard action buttons
   document.getElementById("btn-issue-notice").addEventListener("click", function() { goDash("nt"); });
 
+  // Quick action buttons on home page
+  document.addEventListener("click", function(e) {
+    var btn = e.target.closest("#quick-maintenance-btn");
+    if (btn) { openMo("quickmaint"); return; }
+    var btn2 = e.target.closest("#quick-message-btn");
+    if (btn2) { openMo("quickmsg"); return; }
+  });
+
+  // Quick maintenance modal
+  var closeQM = document.getElementById("close-quickmaint-mo");
+  if (closeQM) closeQM.addEventListener("click", function() { closeMo("quickmaint"); });
+  var submitQM = document.getElementById("submit-quickmaint-btn");
+  if (submitQM) submitQM.addEventListener("click", function() {
+    var n = (document.getElementById("qm-name")||{}).value||"";
+    var a = (document.getElementById("qm-address")||{}).value||"";
+    var p = (document.getElementById("qm-phone")||{}).value||"";
+    var i = (document.getElementById("qm-issue")||{}).value||"";
+    var errEl = document.getElementById("qm-err");
+    if (!n || !a || !p || !i) { if(errEl) errEl.style.display="block"; return; }
+    if(errEl) errEl.style.display="none";
+    // Save to localStorage for landlord visibility
+    var reqs = []; try { reqs = JSON.parse(localStorage.getItem("propmanager_quick_maint")||"[]"); } catch(e2){}
+    reqs.push({ date: new Date().toISOString().split("T")[0], name:n, address:a, phone:p, issue:i, priority:(document.getElementById("qm-priority")||{}).value||"Medium" });
+    try { localStorage.setItem("propmanager_quick_maint", JSON.stringify(reqs)); } catch(e3){}
+    showOk("qm-ok");
+    setTimeout(function() { closeMo("quickmaint"); document.getElementById("qm-name").value=""; document.getElementById("qm-address").value=""; document.getElementById("qm-phone").value=""; document.getElementById("qm-issue").value=""; }, 2500);
+  });
+
+  // Quick message modal
+  var closeQMsg = document.getElementById("close-quickmsg-mo");
+  if (closeQMsg) closeQMsg.addEventListener("click", function() { closeMo("quickmsg"); });
+  var submitQMsg = document.getElementById("submit-quickmsg-btn");
+  if (submitQMsg) submitQMsg.addEventListener("click", function() {
+    var n = (document.getElementById("qmsg-name")||{}).value||"";
+    var c = (document.getElementById("qmsg-contact")||{}).value||"";
+    var b = (document.getElementById("qmsg-body")||{}).value||"";
+    var errEl = document.getElementById("qmsg-err");
+    if (!n || !c || !b) { if(errEl) errEl.style.display="block"; return; }
+    if(errEl) errEl.style.display="none";
+    var msgs = []; try { msgs = JSON.parse(localStorage.getItem("propmanager_quick_msgs")||"[]"); } catch(e2){}
+    msgs.push({ date: new Date().toISOString().split("T")[0], name:n, contact:c, unit:(document.getElementById("qmsg-unit")||{}).value||"", body:b });
+    try { localStorage.setItem("propmanager_quick_msgs", JSON.stringify(msgs)); } catch(e3){}
+    showOk("qmsg-ok");
+    setTimeout(function() { closeMo("quickmsg"); document.getElementById("qmsg-name").value=""; document.getElementById("qmsg-contact").value=""; document.getElementById("qmsg-body").value=""; }, 2500);
+  });
+
   // Notification bell
   var notifBellBtn = document.getElementById("notif-bell-btn");
   if (notifBellBtn) notifBellBtn.addEventListener("click", function() {
@@ -2024,7 +2163,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial","leasedoc","screening","docupload","checklist"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","quickmaint","quickmsg","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial","leasedoc","screening","docupload","checklist"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -2215,7 +2354,7 @@ function attachEvents() {
     });
   });
 
-  ["mo-addpayment","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal","mo-vacancyedit","mo-markrente","mo-register","mo-stripeconnect","mo-forgotpass","mo-changepass","mo-notifications","mo-partial","mo-leasedoc","mo-screening","mo-docupload","mo-checklist"].forEach(function(id) {
+  ["mo-addpayment","mo-quickmaint","mo-quickmsg","mo-edittenant","mo-editpayment","mo-editprop","mo-lease","mo-importexpenses","mo-innagocsv","mo-pnl","mo-recurring","mo-tenantpreview","mo-latefee","mo-renewal","mo-vacancyedit","mo-markrente","mo-register","mo-stripeconnect","mo-forgotpass","mo-changepass","mo-notifications","mo-partial","mo-leasedoc","mo-screening","mo-docupload","mo-checklist"].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener("click", function(e) {
       if (e.target === el) { el.classList.remove("on"); document.body.style.overflow = ""; }
@@ -5237,7 +5376,33 @@ function checkPasswordResetFlow() {
   var type = hashParams.get("type") || urlParams.get("type");
   var errorDesc = hashParams.get("error_description") || urlParams.get("error_description");
 
-  // Handle email confirmation success
+  // Handle PKCE code exchange (Supabase v2 email confirmation)
+  var code = urlParams.get("code");
+  if (code) {
+    if (sb) {
+      sb.auth.exchangeCodeForSession(code).then(function(result) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        if (result.error) {
+          showToast("Confirmation failed: " + result.error.message + ". Please try registering again.", "error");
+        } else {
+          showToast("Email confirmed! Signing you in...", "success");
+          // Auto-load dashboard after short delay
+          setTimeout(function() {
+            if (result.data && result.data.user) {
+              currentUser = result.data.user;
+              currentRole = "landlord";
+              showNavUser("LL", "Landlord", "landlord");
+              goPage("dashboard");
+              loadDashboardData();
+            }
+          }, 800);
+        }
+      });
+    }
+    return;
+  }
+
+  // Handle email confirmation success (hash-based, older flow)
   if (type === "signup" || type === "email_change") {
     window.history.replaceState({}, document.title, window.location.pathname);
     setTimeout(function() {
@@ -7023,6 +7188,54 @@ document.addEventListener("DOMContentLoaded", function() {
     <textarea class="mo-inp" id="chk-notes" style="height:70px;resize:vertical" placeholder="Overall condition notes, repairs needed, keys provided..."></textarea>
     <button class="mo-btn" id="save-checklist-btn">Save checklist</button>
     <div class="ok-msg" id="chk-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Checklist saved!</div>
+  </div>
+</div>
+
+
+<!-- QUICK MAINTENANCE MODAL (no login needed) -->
+<div class="mo-overlay" id="mo-quickmaint">
+  <div class="mo-box" style="max-width:460px">
+    <button class="mo-close" id="close-quickmaint-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Submit a maintenance request</div>
+    <div class="mo-sub">No login required. We will follow up within 24 hours.</div>
+    <label class="mo-lbl">Your name *</label>
+    <input class="mo-inp" type="text" id="qm-name" placeholder="Full name">
+    <label class="mo-lbl">Your unit address *</label>
+    <input class="mo-inp" type="text" id="qm-address" placeholder="e.g. 510 11th St, Gaffney SC">
+    <label class="mo-lbl">Phone number *</label>
+    <input class="mo-inp" type="tel" id="qm-phone" placeholder="(864) 555-0100">
+    <label class="mo-lbl">Issue / description *</label>
+    <textarea class="mo-inp" id="qm-issue" placeholder="Describe the maintenance issue in detail..." style="height:90px;resize:vertical"></textarea>
+    <label class="mo-lbl">Priority</label>
+    <select class="mo-inp" id="qm-priority">
+      <option>Low — not urgent</option>
+      <option>Medium — needs attention soon</option>
+      <option>High — urgent</option>
+      <option>Emergency — immediate danger or no heat/water</option>
+    </select>
+    <button class="mo-btn" id="submit-quickmaint-btn">Submit request</button>
+    <div class="ok-msg" id="qm-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Request submitted! We will contact you within 24 hours.</div>
+    <div class="mo-err" id="qm-err" style="margin-top:9px">Please fill in all required fields.</div>
+  </div>
+</div>
+
+<!-- QUICK MESSAGE MODAL (no login needed) -->
+<div class="mo-overlay" id="mo-quickmsg">
+  <div class="mo-box" style="max-width:460px">
+    <button class="mo-close" id="close-quickmsg-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title">Message your landlord</div>
+    <div class="mo-sub">No login required. We will respond within 24 hours.</div>
+    <label class="mo-lbl">Your name *</label>
+    <input class="mo-inp" type="text" id="qmsg-name" placeholder="Full name">
+    <label class="mo-lbl">Your email or phone *</label>
+    <input class="mo-inp" type="text" id="qmsg-contact" placeholder="Email or phone number">
+    <label class="mo-lbl">Your unit (optional)</label>
+    <input class="mo-inp" type="text" id="qmsg-unit" placeholder="e.g. 510 11th St">
+    <label class="mo-lbl">Message *</label>
+    <textarea class="mo-inp" id="qmsg-body" placeholder="Type your message here..." style="height:100px;resize:vertical"></textarea>
+    <button class="mo-btn" id="submit-quickmsg-btn">Send message</button>
+    <div class="ok-msg" id="qmsg-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Message sent! We will get back to you soon.</div>
+    <div class="mo-err" id="qmsg-err" style="margin-top:9px">Please fill in all required fields.</div>
   </div>
 </div>
 
