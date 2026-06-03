@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v17.8</div>
+<div class="vbadge">PropManager SC v17.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2469,7 +2469,7 @@ async function updateHeroLandlordCard() {
           var lName = t.full_name.split(" ").slice(-1)[0];
           return "<div class='rent-row'>" +
             "<div class='r-av' style='background:" + (t.color||"rgba(255,255,255,.1)") + ";color:" + (t.text_color||"rgba(255,255,255,.7)") + "'>" + ini + "</div>" +
-            "<div class='r-name'>" + fName + " " + lName + " &middot; " + addr + "</div>" +
+            "<div class='r-name'>" + fName + " " + lName + " · " + addr + "</div>" +
             "<div class='r-amt'>$" + Number(t.monthly_rent||0).toLocaleString() + "</div>" +
             "<div class='r-badge " + (paid ? "rb-g" : "rb-r") + "'>" + (paid ? "Paid" : "Unpaid") + "</div></div>";
         }).join("");
@@ -2652,7 +2652,7 @@ async function loadPortalPayments() {
   var list = document.getElementById("pay-history-list");
   if (!result.data || result.data.length === 0) { list.innerHTML = "<div class='empty'>No payment records yet.</div>"; return; }
   list.innerHTML = result.data.map(function(p) {
-    return "<div class='lr'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + (p.notes || "Rent payment") + "</div><div class='l-sub'>" + p.payment_date + " &middot; " + p.method + "</div></div><div style='color:#2d7a4f;font-weight:500;margin-right:8px'>$" + p.amount.toLocaleString() + "</div><span class='badge b-g' style='font-size:10px'>Paid</span></div>";
+    return "<div class='lr'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + (p.notes || "Rent payment") + "</div><div class='l-sub'>" + p.payment_date + " · " + p.method + "</div></div><div style='color:#2d7a4f;font-weight:500;margin-right:8px'>$" + p.amount.toLocaleString() + "</div><span class='badge b-g' style='font-size:10px'>Paid</span></div>";
   }).join("");
 }
 
@@ -2664,7 +2664,7 @@ async function loadPortalMaintenance() {
   list.innerHTML = result.data.map(function(m) {
     var border = m.priority === "High" ? "#c0392b" : m.priority === "Medium" ? "#c9962a" : "#2d7a4f";
     var badge = m.status === "Open" ? "<span class='badge b-b'>Open</span>" : m.status === "In Progress" ? "<span class='badge b-a'>In Progress</span>" : "<span class='badge b-g'>Resolved</span>";
-    return "<div style='border:1px solid rgba(15,30,53,.1);border-radius:7px;padding:12px 14px;margin-bottom:9px;border-left:3px solid " + border + "'><div style='display:flex;align-items:flex-start;justify-content:space-between;gap:7px;margin-bottom:4px'><div style='font-size:13.5px;font-weight:500'>" + m.issue + "</div>" + badge + "</div><div style='font-size:12px;color:#999'>" + m.created_at.split("T")[0] + (m.landlord_notes ? " &mdash; " + m.landlord_notes : "") + "</div></div>";
+    return "<div style='border:1px solid rgba(15,30,53,.1);border-radius:7px;padding:12px 14px;margin-bottom:9px;border-left:3px solid " + border + "'><div style='display:flex;align-items:flex-start;justify-content:space-between;gap:7px;margin-bottom:4px'><div style='font-size:13.5px;font-weight:500'>" + m.issue + "</div>" + badge + "</div><div style='font-size:12px;color:#999'>" + m.created_at.split("T")[0] + (m.landlord_notes ? " — " + m.landlord_notes : "") + "</div></div>";
   }).join("");
 }
 
@@ -2694,7 +2694,7 @@ async function loadPortalLease() {
   card.innerHTML =
     "<div style='display:flex;align-items:center;gap:11px;margin-bottom:13px'>" +
     "<div style='width:36px;height:36px;background:#e6f0fb;color:#1a5fa8;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px'><i class='ti ti-file-text'></i></div>" +
-    "<div><div style='font-size:14px;font-weight:500'>Lease &mdash; " + addr + "</div><div style='font-size:12px;color:#5a5a5a'>South Carolina Residential Lease</div></div>" +
+    "<div><div style='font-size:14px;font-weight:500'>Lease — " + addr + "</div><div style='font-size:12px;color:#5a5a5a'>South Carolina Residential Lease</div></div>" +
     "<span class='badge b-g' style='margin-left:auto'>Active</span></div>" +
     "<div style='display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(15,30,53,.08);font-size:13px'><span style='color:#5a5a5a'>Monthly rent</span><span style='font-weight:500'>$" + rent + "</span></div>" +
     "<div style='display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(15,30,53,.08);font-size:13px'><span style='color:#5a5a5a'>Lease start</span><span style='font-weight:500'>" + start + "</span></div>" +
@@ -2862,7 +2862,7 @@ async function recordPaymentInDB(method) {
       errEl.textContent = "Error: " + res.error.message;
       errEl.style.display = "block";
       btn.disabled = false;
-      btn.innerHTML = "<i class='ti ti-lock'></i> Confirm &amp; pay";
+      btn.innerHTML = "<i class='ti ti-lock'></i> Confirm & pay";
       return;
     }
   }
@@ -2970,7 +2970,7 @@ async function loadDashboardData() {
   if (overdue > 0 && alertEl) {
     var overdueTenants = tenants.filter(function(t) { return t.status === "overdue"; });
     var names = overdueTenants.map(function(t) {
-      return t.full_name + (t.properties ? " &mdash; " + t.properties.address : "") + " &mdash; $" + ((t.monthly_rent||0)+80).toLocaleString();
+      return t.full_name + (t.properties ? " — " + t.properties.address : "") + " — $" + ((t.monthly_rent||0)+80).toLocaleString();
     }).join(", ");
     var msgEl = document.getElementById("overdue-alert-msg");
     if (msgEl) msgEl.innerHTML = names;
@@ -2989,7 +2989,7 @@ function renderTenantTable(tenants) {
     var ini = t.initials || t.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
     var bal = t.status === "overdue" ? "<span style='color:#c0392b;font-weight:500'>$" + ((t.monthly_rent||0)+80) + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
     var badge = t.status === "current" ? "<span class='badge b-g'>Current</span>" : t.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-a'>Other</span>";
-    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "&mdash;") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td></tr>";
+    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td></tr>";
   }).join("");
   el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:28%'>Tenant</th><th style='width:28%'>Address</th><th style='width:14%'>Rent</th><th style='width:16%'>Status</th><th style='width:14%'>Balance</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
 }
@@ -3003,7 +3003,7 @@ function renderTenantList(tenants) {
     var ini = t.initials || t.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
     var bal = t.status === "overdue" ? "<span style='color:#c0392b;font-weight:500'>$" + ((t.monthly_rent||0)+80) + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
     var badge = t.status === "current" ? "<span class='badge b-g'>Current</span>" : t.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-a'>Vacating</span>";
-    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "&mdash;") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td><button class='btn' style='font-size:11px;padding:3px 8px' data-tenant-id='" + t.id + "'>Edit</button></td></tr>";
+    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td><button class='btn' style='font-size:11px;padding:3px 8px' data-tenant-id='" + t.id + "'>Edit</button></td></tr>";
   }).join("");
   el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:23%'>Tenant</th><th style='width:23%'>Address</th><th style='width:11%'>Rent</th><th style='width:14%'>Status</th><th style='width:11%'>Balance</th><th style='width:10%'>Edit</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
   // Attach edit button events
@@ -3029,8 +3029,8 @@ function renderPropList(tenants) {
                   "<span class='badge b-g'>Occupied</span>";
       var bg = p.status === "vacant" ? "#fdf3e0" : p.status === "overdue" ? "#fdecea" : "rgba(15,30,53,.08)";
       var ic = p.status === "vacant" ? "#a06010" : p.status === "overdue" ? "#c0392b" : "#0f1e35";
-      var tenant = tByProp[p.id] ? "<span style='color:#5a5a5a'> &middot; " + tByProp[p.id] + "</span>" : "";
-      return "<div style='background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:13px'><div style='width:40px;height:40px;background:" + bg + ";border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;color:" + ic + "'><i class='ti ti-home'></i></div><div style='flex:1'><div style='font-size:14px;font-weight:500'>" + p.address + ", " + (p.city||"") + "</div><div style='font-size:12px;color:#5a5a5a'>" + (p.property_type||"") + " &middot; $" + Number(p.monthly_rent||0).toLocaleString() + "/mo" + tenant + "</div></div>" + badge + "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:8px' data-prop-id='" + p.id + "'>Edit</button></div>";
+      var tenant = tByProp[p.id] ? "<span style='color:#5a5a5a'> · " + tByProp[p.id] + "</span>" : "";
+      return "<div style='background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:13px'><div style='width:40px;height:40px;background:" + bg + ";border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;color:" + ic + "'><i class='ti ti-home'></i></div><div style='flex:1'><div style='font-size:14px;font-weight:500'>" + p.address + ", " + (p.city||"") + "</div><div style='font-size:12px;color:#5a5a5a'>" + (p.property_type||"") + " · $" + Number(p.monthly_rent||0).toLocaleString() + "/mo" + tenant + "</div></div>" + badge + "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:8px' data-prop-id='" + p.id + "'>Edit</button></div>";
     }).join("");
     el.querySelectorAll("[data-prop-id]").forEach(function(btn) {
       btn.addEventListener("click", function() {
@@ -3069,7 +3069,7 @@ function renderPaymentList(payments, tenants) {
     var name = tMap[p.tenant_id] || "Unknown";
     var badge = p.status === "paid" ? "<span class='badge b-g' style='font-size:10px'>Paid</span>" : p.status === "late" ? "<span class='badge b-r' style='font-size:10px'>Late</span>" : "<span class='badge b-a' style='font-size:10px'>Partial</span>";
     var color = p.status === "paid" ? "#2d7a4f" : p.status === "late" ? "#c0392b" : "#a06010";
-    return "<div class='lr' style='align-items:center'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + name + " &mdash; " + (p.notes||"Rent") + "</div><div class='l-sub'>" + p.payment_date + " &middot; " + p.method + "</div></div><div style='color:" + color + ";font-weight:500;margin-right:8px'>$" + Number(p.amount).toLocaleString() + "</div>" + badge + "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:7px' data-pay-id='" + p.id + "' data-tenant-name='" + name + "'>Edit</button></div>";
+    return "<div class='lr' style='align-items:center'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + name + " — " + (p.notes||"Rent") + "</div><div class='l-sub'>" + p.payment_date + " · " + p.method + "</div></div><div style='color:" + color + ";font-weight:500;margin-right:8px'>$" + Number(p.amount).toLocaleString() + "</div>" + badge + "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:7px' data-pay-id='" + p.id + "' data-tenant-name='" + name + "'>Edit</button></div>";
   }).join("");
   // Attach edit events
   el.querySelectorAll("[data-pay-id]").forEach(function(btn) {
@@ -3090,7 +3090,7 @@ function renderMaintList(maints) {
     var badge = m.status === "Open" ? "<span class='badge b-b'>Open</span>" : m.status === "In Progress" ? "<span class='badge b-a'>In Progress</span>" : "<span class='badge b-g'>Resolved</span>";
     var tname = m.tenants ? m.tenants.full_name : "";
     var addr = m.properties ? m.properties.address : "";
-    return "<div style='border:1px solid rgba(15,30,53,.1);border-radius:7px;padding:12px 14px;margin-bottom:9px;border-left:3px solid " + border + "'><div style='display:flex;align-items:flex-start;justify-content:space-between;gap:7px;margin-bottom:4px'><div style='font-size:13.5px;font-weight:500'>" + m.issue + "</div>" + badge + "</div><div style='font-size:12px;color:#5a5a5a;margin-bottom:7px'>" + addr + (tname ? " &middot; " + tname : "") + " &middot; " + m.created_at.split("T")[0] + "</div><div style='display:flex;gap:6px'><button class='btn' style='font-size:11px;padding:3px 7px' data-maint-id='" + m.id + "' data-maint-status='In Progress'>In Progress</button><button class='btn btn-g' style='font-size:11px;padding:3px 7px' data-maint-id='" + m.id + "' data-maint-status='Resolved'>Resolved</button></div></div>";
+    return "<div style='border:1px solid rgba(15,30,53,.1);border-radius:7px;padding:12px 14px;margin-bottom:9px;border-left:3px solid " + border + "'><div style='display:flex;align-items:flex-start;justify-content:space-between;gap:7px;margin-bottom:4px'><div style='font-size:13.5px;font-weight:500'>" + m.issue + "</div>" + badge + "</div><div style='font-size:12px;color:#5a5a5a;margin-bottom:7px'>" + addr + (tname ? " · " + tname : "") + " · " + m.created_at.split("T")[0] + "</div><div style='display:flex;gap:6px'><button class='btn' style='font-size:11px;padding:3px 7px' data-maint-id='" + m.id + "' data-maint-status='In Progress'>In Progress</button><button class='btn btn-g' style='font-size:11px;padding:3px 7px' data-maint-id='" + m.id + "' data-maint-status='Resolved'>Resolved</button></div></div>";
   }).join("");
   document.querySelectorAll("[data-maint-id]").forEach(function(btn) {
     btn.addEventListener("click", function() {
@@ -3165,8 +3165,8 @@ function renderLeaseList(tenants) {
     }
     return "<div style='display:flex;align-items:center;gap:11px;padding:11px 13px;border:1px solid " + expiryColor + ";border-radius:7px;margin-bottom:8px;background:" + (expiryColor !== "rgba(15,30,53,.1)" ? "rgba(255,248,240,.5)" : "#fff") + "'>" +
       "<div style='width:34px;height:34px;background:#e6f0fb;color:#1a5fa8;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px'><i class='ti ti-file-text'></i></div>" +
-      "<div style='flex:1'><div style='font-size:13px;font-weight:500'>" + t.full_name + " &mdash; " + (p ? p.address : "&mdash;") + "</div>" +
-      "<div style='font-size:11.5px;color:#999'>$" + Number(t.monthly_rent||0).toLocaleString() + "/mo &middot; " + (t.lease_start||"—") + " to " + (t.lease_end||"—") + daysLeft + "</div></div>" +
+      "<div style='flex:1'><div style='font-size:13px;font-weight:500'>" + t.full_name + " — " + (p ? p.address : "—") + "</div>" +
+      "<div style='font-size:11.5px;color:#999'>$" + Number(t.monthly_rent||0).toLocaleString() + "/mo · " + (t.lease_start||"—") + " to " + (t.lease_end||"—") + daysLeft + "</div></div>" +
       badge +
       "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:6px' data-lease-view='" + t.id + "' title='View full lease document'><i class='ti ti-file-text'></i> View</button>" +
       "<button class='btn btn-g' style='font-size:11px;padding:3px 8px;margin-left:4px' data-renew-id='" + t.id + "'><i class='ti ti-refresh'></i> Renew</button>" +
@@ -3181,7 +3181,7 @@ function renderLeaseList(tenants) {
       alertEl.innerHTML = "<i class='ti ti-clock' style='margin-right:6px'></i><strong>" + expiring.length + " lease(s) expiring soon:</strong> " +
         expiring.map(function(e) {
           return e.name + (e.days <= 0 ? " (expired)" : " (" + e.days + " days)");
-        }).join(", ") + " &mdash; <span style='cursor:pointer;text-decoration:underline' id='renew-all-link'>Send renewal offers</span>";
+        }).join(", ") + " — <span style='cursor:pointer;text-decoration:underline' id='renew-all-link'>Send renewal offers</span>";
     } else {
       alertEl.style.display = "none";
     }
@@ -3789,7 +3789,7 @@ async function generatePnL() {
 
   var html = "<div style='border:1px solid rgba(15,30,53,.1);border-radius:9px;overflow:hidden'>";
   html += "<div style='background:#0f1e35;padding:14px 16px;display:flex;justify-content:space-between;align-items:center'>";
-  html += "<div style='color:#fff;font-weight:500;font-size:14px'>PropManager SC &mdash; P&amp;L Report</div>";
+  html += "<div style='color:#fff;font-weight:500;font-size:14px'>PropManager SC — P&L Report</div>";
   html += "<div style='color:#f0c96b;font-size:12px'>" + start + " to " + end + "</div></div>";
   html += "<div style='padding:14px 16px'>";
   html += "<table style='width:100%;border-collapse:collapse'>";
@@ -3803,7 +3803,7 @@ async function generatePnL() {
   html += "</table></div></div>";
 
   // Download button
-  html += "<button class='btn btn-n' style='width:100%;justify-content:center;margin-top:11px;padding:9px' id='download-pnl-btn'><i class='ti ti-download'></i> Download P&amp;L as CSV</button>";
+  html += "<button class='btn btn-n' style='width:100%;justify-content:center;margin-top:11px;padding:9px' id='download-pnl-btn'><i class='ti ti-download'></i> Download P&L as CSV</button>";
 
   document.getElementById("pnl-report").innerHTML = html;
   document.getElementById("pnl-report").style.display = "block";
@@ -3935,7 +3935,7 @@ function renderLedger(data, sort, filters) {
           var name = tMap[p.tenant_id] || "Unknown tenant";
           var color = p.status === "paid" ? "#2d7a4f" : "#c0392b";
           var badge = p.status === "paid" ? "<span class='badge b-g' style='font-size:10px'>Paid</span>" : "<span class='badge b-r' style='font-size:10px'>Late</span>";
-          return "<div class='lr'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-arrow-down-right' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + name + " &mdash; " + (p.notes||"Rent") + "</div><div class='l-sub'>" + p.payment_date + " &middot; " + p.method + "</div></div><div style='color:" + color + ";font-weight:500;margin-right:8px'>+$" + Number(p.amount).toLocaleString() + "</div>" + badge + "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:7px' data-pay-id='" + p.id + "' data-tenant-name='" + name + "'>Edit</button></div>";
+          return "<div class='lr'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-arrow-down-right' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + name + " — " + (p.notes||"Rent") + "</div><div class='l-sub'>" + p.payment_date + " · " + p.method + "</div></div><div style='color:" + color + ";font-weight:500;margin-right:8px'>+$" + Number(p.amount).toLocaleString() + "</div>" + badge + "<button class='btn' style='font-size:11px;padding:3px 8px;margin-left:7px' data-pay-id='" + p.id + "' data-tenant-name='" + name + "'>Edit</button></div>";
         }).join("");
         // Re-attach edit events
         incEl.querySelectorAll("[data-pay-id]").forEach(function(btn) {
@@ -3963,7 +3963,7 @@ function renderLedger(data, sort, filters) {
         expEl.innerHTML = exps.map(function(e) {
           var isRec = (e.description||"").startsWith("[Recurring]");
           var recBadge = isRec ? "<span class='badge b-b' style='font-size:10px;margin-right:5px'><i class='ti ti-repeat' style='font-size:9px'></i> Recurring</span>" : "";
-          return "<div class='lr'><div class='l-ico' style='background:#fdecea;color:#c0392b'><i class='ti ti-arrow-up-right' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + e.description + "</div><div class='l-sub'>" + e.expense_date + " &middot; " + (e.category||"Other") + "</div></div>" + recBadge + "<div class='l-dr' style='margin-right:8px'>-$" + Number(e.amount).toLocaleString() + "</div><button class='btn btn-r' style='font-size:11px;padding:3px 8px' data-exp-id='" + e.id + "'>Del</button></div>";
+          return "<div class='lr'><div class='l-ico' style='background:#fdecea;color:#c0392b'><i class='ti ti-arrow-up-right' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + e.description + "</div><div class='l-sub'>" + e.expense_date + " · " + (e.category||"Other") + "</div></div>" + recBadge + "<div class='l-dr' style='margin-right:8px'>-$" + Number(e.amount).toLocaleString() + "</div><button class='btn btn-r' style='font-size:11px;padding:3px 8px' data-exp-id='" + e.id + "'>Del</button></div>";
         }).join("");
         expEl.querySelectorAll("[data-exp-id]").forEach(function(btn) {
           btn.addEventListener("click", async function() {
@@ -4056,7 +4056,7 @@ async function renderPreviewTab(tab, tenant) {
   } else if (tab === "py") {
     var now2 = new Date();
     el.innerHTML =
-      "<div class='card'><div style='font-size:14px;font-weight:500;margin-bottom:13px'>Pay Rent &mdash; " + now2.toLocaleDateString("en-US",{month:"long",year:"numeric"}) + "</div>" +
+      "<div class='card'><div style='font-size:14px;font-weight:500;margin-bottom:13px'>Pay Rent — " + now2.toLocaleDateString("en-US",{month:"long",year:"numeric"}) + "</div>" +
       "<div style='background:rgba(15,30,53,.04);border-radius:9px;padding:14px;margin-bottom:13px;display:flex;justify-content:space-between;align-items:center'><div><div style='font-size:11px;color:#5a5a5a;margin-bottom:3px'>Amount due</div><div style='font-size:26px;font-weight:500'>$" + rent.toLocaleString() + "</div></div><span class='badge b-a'>Due</span></div>" +
       "<div style='display:flex;gap:8px;margin-bottom:13px'><div style='flex:1;border:2px solid #0f1e35;border-radius:9px;padding:11px;text-align:center;cursor:pointer'><i class='ti ti-building-bank' style='font-size:20px;color:#2d7a4f;display:block;margin-bottom:5px'></i><div style='font-size:12px;font-weight:500'>Bank (ACH)</div><div style='font-size:10px;color:#5a5a5a'>Free</div></div>" +
       "<div style='flex:1;border:1.5px solid rgba(15,30,53,.15);border-radius:9px;padding:11px;text-align:center;cursor:pointer'><i class='ti ti-credit-card' style='font-size:20px;color:#1a5fa8;display:block;margin-bottom:5px'></i><div style='font-size:12px;font-weight:500'>Card</div><div style='font-size:10px;color:#5a5a5a'>2.9% fee</div></div>" +
@@ -4069,7 +4069,7 @@ async function renderPreviewTab(tab, tenant) {
     var payRows = pays.length === 0
       ? "<div class='empty'>No payment history yet.</div>"
       : pays.map(function(p) {
-          return "<div class='lr'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + (p.notes||"Rent payment") + "</div><div class='l-sub'>" + p.payment_date + " &middot; " + (p.method||"ACH") + "</div></div><div style='color:#2d7a4f;font-weight:500'>$" + Number(p.amount).toLocaleString() + "</div><span class='badge b-g' style='margin-left:7px;font-size:10px'>Paid</span></div>";
+          return "<div class='lr'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + (p.notes||"Rent payment") + "</div><div class='l-sub'>" + p.payment_date + " · " + (p.method||"ACH") + "</div></div><div style='color:#2d7a4f;font-weight:500'>$" + Number(p.amount).toLocaleString() + "</div><span class='badge b-g' style='margin-left:7px;font-size:10px'>Paid</span></div>";
         }).join("");
     el.innerHTML = "<div class='card'><div class='card-title' style='margin-bottom:13px'>Payment history</div>" + payRows + "</div>";
 
@@ -4103,7 +4103,7 @@ async function renderPreviewTab(tab, tenant) {
     var start = tenant.lease_start || "2026-01-01";
     var end = tenant.lease_end || "2026-12-31";
     var dep = (tenant.security_deposit || rent).toLocaleString();
-    el.innerHTML = "<div class='card'><div style='display:flex;align-items:center;gap:11px;margin-bottom:13px'><div style='width:36px;height:36px;background:#e6f0fb;color:#1a5fa8;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px'><i class='ti ti-file-text'></i></div><div><div style='font-size:14px;font-weight:500'>Lease &mdash; " + addr + "</div><div style='font-size:12px;color:#5a5a5a'>South Carolina Residential Lease</div></div><span class='badge b-g' style='margin-left:auto'>Active</span></div>" +
+    el.innerHTML = "<div class='card'><div style='display:flex;align-items:center;gap:11px;margin-bottom:13px'><div style='width:36px;height:36px;background:#e6f0fb;color:#1a5fa8;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px'><i class='ti ti-file-text'></i></div><div><div style='font-size:14px;font-weight:500'>Lease — " + addr + "</div><div style='font-size:12px;color:#5a5a5a'>South Carolina Residential Lease</div></div><span class='badge b-g' style='margin-left:auto'>Active</span></div>" +
       "<div style='display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(15,30,53,.08);font-size:13px'><span style='color:#5a5a5a'>Monthly rent</span><span style='font-weight:500'>$" + rent.toLocaleString() + "</span></div>" +
       "<div style='display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(15,30,53,.08);font-size:13px'><span style='color:#5a5a5a'>Lease start</span><span style='font-weight:500'>" + start + "</span></div>" +
       "<div style='display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(15,30,53,.08);font-size:13px'><span style='color:#5a5a5a'>Lease end</span><span style='font-weight:500'>" + end + "</span></div>" +
@@ -4197,7 +4197,7 @@ function openRenewalModal(tenant) {
   // Current lease info
   var infoEl = document.getElementById("renewal-current-info");
   infoEl.innerHTML = "<strong>Current lease:</strong> " + (tenant.lease_start||"—") + " to " + (tenant.lease_end||"—") +
-    " &middot; $" + Number(tenant.monthly_rent||0).toLocaleString() + "/mo";
+    " · $" + Number(tenant.monthly_rent||0).toLocaleString() + "/mo";
   // Default new dates: start = day after current end, end = 1 year later
   var curEnd = tenant.lease_end ? new Date(tenant.lease_end) : new Date();
   var newStart = new Date(curEnd);
@@ -4301,8 +4301,8 @@ async function generateScheduleE() {
 
   // Build preview
   var previewHTML = "<div style='background:#0f1e35;padding:14px 18px;color:#fff'>" +
-    "<div style='font-size:13px;font-weight:600'>SCHEDULE E (Form 1040) &mdash; Supplemental Income &amp; Loss &mdash; " + year + "</div>" +
-    "<div style='font-size:11px;color:rgba(255,255,255,.6);margin-top:2px'>" + ownerName + " &mdash; SSN ending " + ssn + "</div></div>" +
+    "<div style='font-size:13px;font-weight:600'>SCHEDULE E (Form 1040) — Supplemental Income & Loss — " + year + "</div>" +
+    "<div style='font-size:11px;color:rgba(255,255,255,.6);margin-top:2px'>" + ownerName + " — SSN ending " + ssn + "</div></div>" +
     "<div style='padding:14px;font-size:12px'>" +
     "<table style='width:100%;border-collapse:collapse'>" +
     "<tr style='background:rgba(15,30,53,.06)'><td style='padding:7px 9px;font-weight:600' colspan='2'>INCOME</td></tr>" +
@@ -4339,7 +4339,7 @@ async function generateScheduleE() {
   a.click();
   URL.revokeObjectURL(url);
 
-  btn.innerHTML = "<i class='ti ti-download'></i> Generate &amp; Download";
+  btn.innerHTML = "<i class='ti ti-download'></i> Generate & Download";
   showOk("tx-ok");
 }
 
@@ -5334,7 +5334,7 @@ function showStripeConnected(acct) {
     infoEl.innerHTML =
       "<strong>Account ID:</strong> " + acct.id + "<br>" +
       "<strong>Connected:</strong> " + new Date(acct.connected_at).toLocaleDateString() + "<br>" +
-      "<strong>Status:</strong> Active &mdash; ready to receive payments";
+      "<strong>Status:</strong> Active — ready to receive payments";
   }
   // Hide dashboard banner
   var banner = document.getElementById("stripe-connect-banner");
@@ -5969,7 +5969,7 @@ function renderScreeningList() {
   if (!requests.length) { el.innerHTML = "<div class='empty'>No screening requests yet.</div>"; return; }
   el.innerHTML = requests.slice().reverse().map(function(r) {
     var badge = r.status === "complete" ? "<span class='badge b-g'>Complete</span>" : "<span class='badge b-a'>Invited</span>";
-    return "<div class='lr'><div class='l-ico' style='background:#e6f0fb;color:#1a5fa8'><i class='ti ti-user-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + r.name + " &mdash; " + r.property + "</div><div class='l-sub'>" + r.date + " &middot; " + r.email + "</div></div>" + badge + "</div>";
+    return "<div class='lr'><div class='l-ico' style='background:#e6f0fb;color:#1a5fa8'><i class='ti ti-user-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + r.name + " — " + r.property + "</div><div class='l-sub'>" + r.date + " · " + r.email + "</div></div>" + badge + "</div>";
   }).join("");
 }
 
@@ -5986,7 +5986,7 @@ function openDocUpload() {
   if (sel && window._tenantCache) {
     sel.innerHTML = "<option value=''>All properties</option>" +
       window._tenantCache.map(function(t) {
-        return "<option value='" + t.id + "'>" + t.full_name + " &mdash; " + (t.properties ? t.properties.address : "") + "</option>";
+        return "<option value='" + t.id + "'>" + t.full_name + " — " + (t.properties ? t.properties.address : "") + "</option>";
       }).join("");
   }
   var dropZone = document.getElementById("doc-file-drop");
@@ -6062,7 +6062,7 @@ function renderDocList(filterCat) {
       : "";
     return "<div class='lr'>" +
       "<div class='l-ico' style='background:#faeeda;color:#a06010'><i class='ti " + ico + "' style='font-size:11px'></i></div>" +
-      "<div style='flex:1'><div class='l-name'>" + d.name + "</div><div class='l-sub'>" + d.date + " &middot; " + d.category + (d.fileName ? " &middot; " + d.fileName : "") + "</div></div>" +
+      "<div style='flex:1'><div class='l-name'>" + d.name + "</div><div class='l-sub'>" + d.date + " · " + d.category + (d.fileName ? " · " + d.fileName : "") + "</div></div>" +
       viewBtn +
       "<button class='btn btn-r' style='font-size:11px;padding:3px 8px' data-del-doc='" + d.id + "'>Del</button>" +
       "</div>";
@@ -6098,7 +6098,7 @@ function openMoveInChecklist() {
   var tSel = document.getElementById("chk-tenant");
   if (tSel && window._tenantCache) {
     tSel.innerHTML = window._tenantCache.map(function(t) {
-      return "<option value='" + t.id + "'>" + t.full_name + " &mdash; " + (t.properties ? t.properties.address : "") + "</option>";
+      return "<option value='" + t.id + "'>" + t.full_name + " — " + (t.properties ? t.properties.address : "") + "</option>";
     }).join("");
   }
   document.getElementById("chk-date").value = new Date().toISOString().split("T")[0];
@@ -6253,7 +6253,7 @@ function renderApplications() {
   try { apps = JSON.parse(localStorage.getItem("propmanager_applications") || "[]"); } catch(e) {}
   if (!apps.length) { el.innerHTML = "<div class='empty'>No applications yet. Share your application link to start receiving them.</div>"; return; }
   el.innerHTML = apps.map(function(a) {
-    return "<div class='lr'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-file-plus' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + a.name + " &mdash; $" + a.income + "/mo income</div><div class='l-sub'>" + a.date + " &middot; " + a.email + "</div></div><span class='badge b-a'>New</span></div>";
+    return "<div class='lr'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-file-plus' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + a.name + " — $" + a.income + "/mo income</div><div class='l-sub'>" + a.date + " · " + a.email + "</div></div><span class='badge b-a'>New</span></div>";
   }).join("");
 }
 
