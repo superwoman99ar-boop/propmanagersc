@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v18.4</div>
+<div class="vbadge">PropManager SC v18.5</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4844,120 +4844,20 @@ function openVacancyEdit(isEdit) {
     if (el) el.checked = !!(d.amenities && d.amenities.includes(el.value));
   });
 
-  // PHOTO UPLOAD — wired fresh every time modal opens
-  var _fi  = document.getElementById("ve-photo-input");
-  // Auto-process when files selected (onchange)
-  if (_fi) {
-    _fi.onchange = function() {
-      var cnt = _fi.files ? _fi.files.length : 0;
-      if (_ab && cnt > 0) {
-        _ab.innerHTML = "<i class='ti ti-photo-plus'></i> Add " + cnt + " photo" + (cnt>1?"s":"") + " to listing";
-        _ab.style.background = "#1a5fa8";
-        _ab.style.borderColor = "#1a5fa8";
-      }
-    };
-  }
-  var _ab  = document.getElementById("ve-photo-add-btn");
-  var _ui  = document.getElementById("ve-photo-url");
-  var _ub  = document.getElementById("add-photo-url-btn");
+
+
+
+
+
+
+
 
   // Add button — resize photos then store
-  if (_ab) {
-    _ab.onclick = function() {
-      var inp2  = document.getElementById("ve-photo-input");
-      var files = inp2 ? inp2.files : null;
-      if (!files || files.length === 0) {
-        alert("Please choose photos first.");
-        return;
-      }
-      var list  = Array.prototype.slice.call(files);
-      var total = list.length;
-      var btn2  = document.getElementById("ve-photo-add-btn");
-      if (btn2) { btn2.textContent = "Processing " + total + " photo(s)..."; btn2.disabled = true; }
-      var done  = 0;
-      var added = 0;
 
-      list.forEach(function(file) {
-        var reader = new FileReader();
-        reader.onload = function(ev) {
-          var dataUrl = ev.target && ev.target.result ? ev.target.result : null;
-          if (!dataUrl) { done++; finish(); return; }
 
-          // ALWAYS compress via canvas — target <150KB per photo
-          var img = new Image();
-          img.onload = function() {
-            try {
-              // Resize to max 900px on longest side
-              var MAX = 900;
-              var sw = img.naturalWidth  || 800;
-              var sh = img.naturalHeight || 600;
-              var scale = Math.min(MAX / sw, MAX / sh, 1);
-              var cw = Math.floor(sw * scale);
-              var ch = Math.floor(sh * scale);
-              var cv = document.createElement("canvas");
-              cv.width  = cw;
-              cv.height = ch;
-              cv.getContext("2d").drawImage(img, 0, 0, cw, ch);
-              // Start at quality 0.7, reduce until under 150KB
-              var q = 0.7;
-              var out = cv.toDataURL("image/jpeg", q);
-              if (out.length > 200000) { out = cv.toDataURL("image/jpeg", 0.5); }
-              if (out.length > 200000) { out = cv.toDataURL("image/jpeg", 0.35); }
-              _vacancyPhotos.push(out);
-              added++;
-            } catch(canvasErr) {
-              // Canvas unavailable — store original but warn
-              _vacancyPhotos.push(dataUrl);
-              added++;
-            }
-            done++; finish();
-          };
-          img.onerror = function() {
-            _vacancyPhotos.push(dataUrl);
-            added++; done++; finish();
-          };
-          img.src = dataUrl;
-        };
-        reader.onerror = function() { done++; finish(); };
-        reader.readAsDataURL(file);
-      });
 
-      function finish() {
-        if (done < total) return;
-        renderEditPhotoPreview();
-        updatePhotoCount();
-        var b = document.getElementById("ve-photo-add-btn");
-        if (b) {
-          b.textContent  = added > 0 ? added + " photo(s) added!" : "No photos added";
-          b.style.background  = added > 0 ? "#2d7a4f" : "#c0392b";
-          b.style.borderColor = added > 0 ? "#2d7a4f" : "#c0392b";
-          b.disabled = false;
-          setTimeout(function() {
-            var b2 = document.getElementById("ve-photo-add-btn");
-            if (b2) { b2.textContent = "Add selected photos to listing"; b2.style.background=""; b2.style.borderColor=""; }
-          }, 3000);
-        }
-      }
-    };
-  }
 
-  // URL add button
-  if (_ub) {
-    _ub.onclick = function() {
-      var url = _ui ? _ui.value.trim() : "";
-      if (!url) return;
-      _vacancyPhotos.push(url);
-      if (_ui) _ui.value = "";
-      renderEditPhotoPreview();
-      updatePhotoCount();
-    };
-  }
-  if (_ui) {
-    _ui.onkeydown = function(e) { if (e.key === "Enter") { e.preventDefault(); if (_ub) _ub.click(); } };
-  }
 
-  // Show photos
-  renderEditPhotoPreview();
   updatePhotoCount();
 
   // Reset status messages
@@ -5144,7 +5044,7 @@ function saveVacancyListing() {
     desc:       document.getElementById("ve-desc").value,
     avail:      document.getElementById("ve-avail").value,
     amenities:  amenities,
-    photos:     _vacancyPhotos,
+    photos:     [],
     status:     "available"
   };
 
@@ -6887,23 +6787,7 @@ document.addEventListener("DOMContentLoaded", function() {
       <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="am-hardwood" value="Hardwood floors"> Hardwood floors</label>
     </div>
 
-    <label class="mo-lbl">Photos</label>
-    <div style="border:1.5px solid rgba(15,30,53,.2);border-radius:9px;padding:16px;margin-bottom:13px;background:rgba(15,30,53,.02)">
-      <input type="file" id="ve-photo-input" accept="image/jpeg,image/png,image/webp" multiple style="display:block;width:100%;margin-bottom:11px;font-size:13px;cursor:pointer">
-      <div style="font-size:11.5px;color:#5a5a5a;margin-bottom:11px">Select JPG/PNG photos above. iPhone users: Settings &rarr; Camera &rarr; Most Compatible first.</div>
-      <button type="button" class="btn btn-n" id="ve-photo-add-btn" style="width:100%;justify-content:center;padding:9px">
-        <i class="ti ti-photo-plus"></i> Add selected photos to listing
-      </button>
-    </div>
-    <div style="margin-bottom:11px">
-      <label class="mo-lbl" style="margin-bottom:5px">Add photo by URL (optional)</label>
-      <div style="display:flex;gap:7px">
-        <input class="mo-inp" type="text" id="ve-photo-url" placeholder="https://i.imgur.com/example.jpg" style="margin:0;flex:1">
-        <button type="button" class="btn btn-n" id="add-photo-url-btn"><i class="ti ti-plus"></i> Add</button>
-      </div>
-    </div>
-    <div id="ve-photo-count" style="font-size:12.5px;font-weight:500;margin-bottom:7px"></div>
-    <div id="ve-photo-preview" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px"></div>
+
 
         <button class="mo-btn" id="save-vacancy-btn">Save listing</button>
     <div class="ok-msg" id="ve-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Listing saved!</div>
