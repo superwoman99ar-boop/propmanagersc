@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v18.3</div>
+<div class="vbadge">PropManager SC v18.4</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4873,7 +4873,7 @@ function openVacancyEdit(isEdit) {
       var list  = Array.prototype.slice.call(files);
       var total = list.length;
       var btn2  = document.getElementById("ve-photo-add-btn");
-      if (btn2) { btn2.textContent = "Reading " + total + " photo(s)..."; btn2.disabled = true; }
+      if (btn2) { btn2.textContent = "Processing " + total + " photo(s)..."; btn2.disabled = true; }
       var done  = 0;
       var added = 0;
 
@@ -4881,76 +4881,60 @@ function openVacancyEdit(isEdit) {
         var reader = new FileReader();
         reader.onload = function(ev) {
           var dataUrl = ev.target && ev.target.result ? ev.target.result : null;
-          if (!dataUrl) { done++; checkDone(); return; }
+          if (!dataUrl) { done++; finish(); return; }
 
-          // If file is small enough store directly
-          if (file.size <= 800000) {
-            _vacancyPhotos.push(dataUrl);
-            added++;
-            done++;
-            checkDone();
-            return;
-          }
-
-          // Larger file — resize with canvas to reduce size
+          // ALWAYS compress via canvas — target <150KB per photo
           var img = new Image();
           img.onload = function() {
             try {
-              var MAX = 1200;
-              var w = img.naturalWidth  || img.width  || 800;
-              var h = img.naturalHeight || img.height || 600;
-              var ratio = Math.min(MAX / w, MAX / h, 1);
-              var cw = Math.round(w * ratio);
-              var ch = Math.round(h * ratio);
+              // Resize to max 900px on longest side
+              var MAX = 900;
+              var sw = img.naturalWidth  || 800;
+              var sh = img.naturalHeight || 600;
+              var scale = Math.min(MAX / sw, MAX / sh, 1);
+              var cw = Math.floor(sw * scale);
+              var ch = Math.floor(sh * scale);
               var cv = document.createElement("canvas");
-              cv.width = cw; cv.height = ch;
-              var ctx = cv.getContext("2d");
-              ctx.drawImage(img, 0, 0, cw, ch);
-              var out = cv.toDataURL("image/jpeg", 0.78);
+              cv.width  = cw;
+              cv.height = ch;
+              cv.getContext("2d").drawImage(img, 0, 0, cw, ch);
+              // Start at quality 0.7, reduce until under 150KB
+              var q = 0.7;
+              var out = cv.toDataURL("image/jpeg", q);
+              if (out.length > 200000) { out = cv.toDataURL("image/jpeg", 0.5); }
+              if (out.length > 200000) { out = cv.toDataURL("image/jpeg", 0.35); }
               _vacancyPhotos.push(out);
-            } catch(e) {
-              // Canvas failed — store original
+              added++;
+            } catch(canvasErr) {
+              // Canvas unavailable — store original but warn
               _vacancyPhotos.push(dataUrl);
+              added++;
             }
-            added++;
-            done++;
-            checkDone();
+            done++; finish();
           };
           img.onerror = function() {
-            // Image load failed — store original
             _vacancyPhotos.push(dataUrl);
-            added++;
-            done++;
-            checkDone();
+            added++; done++; finish();
           };
           img.src = dataUrl;
         };
-        reader.onerror = function() {
-          done++;
-          checkDone();
-        };
+        reader.onerror = function() { done++; finish(); };
         reader.readAsDataURL(file);
       });
 
-      function checkDone() {
+      function finish() {
         if (done < total) return;
         renderEditPhotoPreview();
         updatePhotoCount();
         var b = document.getElementById("ve-photo-add-btn");
         if (b) {
-          b.textContent = added > 0
-            ? added + " photo(s) added!"
-            : "No photos added — try smaller files";
+          b.textContent  = added > 0 ? added + " photo(s) added!" : "No photos added";
           b.style.background  = added > 0 ? "#2d7a4f" : "#c0392b";
           b.style.borderColor = added > 0 ? "#2d7a4f" : "#c0392b";
           b.disabled = false;
           setTimeout(function() {
             var b2 = document.getElementById("ve-photo-add-btn");
-            if (b2) {
-              b2.textContent = "Add selected photos to listing";
-              b2.style.background = "";
-              b2.style.borderColor = "";
-            }
+            if (b2) { b2.textContent = "Add selected photos to listing"; b2.style.background=""; b2.style.borderColor=""; }
           }, 3000);
         }
       }
@@ -5164,14 +5148,28 @@ function saveVacancyListing() {
     status:     "available"
   };
 
-  // Try to save — if photos are too large, save without photos and warn
+  // Save listing — photos are compressed so should fit in localStorage
+  var saveOk = false;
   try {
     localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData));
+    saveOk = true;
   } catch(e) {
-    // localStorage quota exceeded — save without photos
-    var dataNoPhotos = Object.assign({}, _vacancyData, { photos: [] });
-    try { localStorage.setItem("propmanager_vacancy", JSON.stringify(dataNoPhotos)); } catch(e2) {}
-    alert("Photos could not be saved — storage is full. Please use the 'Add by URL' option instead (paste Imgur links).");
+    // Still too large — try saving with photos stripped to URLs only
+    var smallPhotos = _vacancyPhotos.filter(function(p) { return p && p.startsWith("http"); });
+    var dataSmall = Object.assign({}, _vacancyData, { photos: smallPhotos });
+    try {
+      localStorage.setItem("propmanager_vacancy", JSON.stringify(dataSmall));
+      saveOk = true;
+      if (smallPhotos.length < _vacancyPhotos.length) {
+        alert("Some photos were too large to save. Tip: use iPhone Settings > Camera > Most Compatible to take smaller JPG photos, then re-add them.");
+      }
+    } catch(e2) {
+      // Clear old data and try bare save
+      localStorage.removeItem("propmanager_vacancy");
+      var dataBare = Object.assign({}, _vacancyData, { photos: [] });
+      try { localStorage.setItem("propmanager_vacancy", JSON.stringify(dataBare)); saveOk = true; } catch(e3) {}
+      alert("Storage is completely full. Your listing details were saved but photos could not be stored. Please clear your browser cache and try again, or use the URL option to add photos.");
+    }
   }
 
   document.getElementById("ve-ok").classList.add("on");
@@ -5190,14 +5188,28 @@ function saveVacancyListing() {
 function markAsRented() {
   if (_vacancyData) {
     _vacancyData.status = "rented";
-    // Try to save — if photos are too large, save without photos and warn
+    // Save listing — photos are compressed so should fit in localStorage
+  var saveOk = false;
   try {
     localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData));
+    saveOk = true;
   } catch(e) {
-    // localStorage quota exceeded — save without photos
-    var dataNoPhotos = Object.assign({}, _vacancyData, { photos: [] });
-    try { localStorage.setItem("propmanager_vacancy", JSON.stringify(dataNoPhotos)); } catch(e2) {}
-    alert("Photos could not be saved — storage is full. Please use the 'Add by URL' option instead (paste Imgur links).");
+    // Still too large — try saving with photos stripped to URLs only
+    var smallPhotos = _vacancyPhotos.filter(function(p) { return p && p.startsWith("http"); });
+    var dataSmall = Object.assign({}, _vacancyData, { photos: smallPhotos });
+    try {
+      localStorage.setItem("propmanager_vacancy", JSON.stringify(dataSmall));
+      saveOk = true;
+      if (smallPhotos.length < _vacancyPhotos.length) {
+        alert("Some photos were too large to save. Tip: use iPhone Settings > Camera > Most Compatible to take smaller JPG photos, then re-add them.");
+      }
+    } catch(e2) {
+      // Clear old data and try bare save
+      localStorage.removeItem("propmanager_vacancy");
+      var dataBare = Object.assign({}, _vacancyData, { photos: [] });
+      try { localStorage.setItem("propmanager_vacancy", JSON.stringify(dataBare)); saveOk = true; } catch(e3) {}
+      alert("Storage is completely full. Your listing details were saved but photos could not be stored. Please clear your browser cache and try again, or use the URL option to add photos.");
+    }
   }
   }
   closeMo("markrente");
