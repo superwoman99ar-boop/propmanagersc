@@ -4939,9 +4939,7 @@ function handleVacancyPhotosFromArray(arr, triggerBtn) {
             triggerBtn.style.borderColor = "";
           }, 2500);
         }
-        // Reset file input so user can add more
-        var fi = document.getElementById("ve-photo-input");
-        if (fi) { try { fi.value = ""; } catch(er) {} }
+
       }
     };
     reader.onerror = function() {
