@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v18.1</div>
+<div class="vbadge">PropManager SC v18.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4866,67 +4866,93 @@ function openVacancyEdit(isEdit) {
       var inp2  = document.getElementById("ve-photo-input");
       var files = inp2 ? inp2.files : null;
       if (!files || files.length === 0) {
-        alert("Please choose photos first using the Choose Files button above.");
+        alert("Please choose photos first.");
         return;
       }
-      var list = Array.prototype.slice.call(files);
+      var list  = Array.prototype.slice.call(files);
       var total = list.length;
-      var btn2 = document.getElementById("ve-photo-add-btn");
-      if (btn2) { btn2.textContent = "Uploading " + total + " photo(s)..."; btn2.disabled = true; }
+      var btn2  = document.getElementById("ve-photo-add-btn");
+      if (btn2) { btn2.textContent = "Reading " + total + " photo(s)..."; btn2.disabled = true; }
+      var done  = 0;
+      var added = 0;
 
-      var done = 0; var added = 0;
+      list.forEach(function(file) {
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+          var dataUrl = ev.target && ev.target.result ? ev.target.result : null;
+          if (!dataUrl) { done++; checkDone(); return; }
 
-      function oneDone(url) {
-        if (url) { _vacancyPhotos.push(url); added++; }
-        done++;
+          // If file is small enough store directly
+          if (file.size <= 800000) {
+            _vacancyPhotos.push(dataUrl);
+            added++;
+            done++;
+            checkDone();
+            return;
+          }
+
+          // Larger file — resize with canvas to reduce size
+          var img = new Image();
+          img.onload = function() {
+            try {
+              var MAX = 1200;
+              var w = img.naturalWidth  || img.width  || 800;
+              var h = img.naturalHeight || img.height || 600;
+              var ratio = Math.min(MAX / w, MAX / h, 1);
+              var cw = Math.round(w * ratio);
+              var ch = Math.round(h * ratio);
+              var cv = document.createElement("canvas");
+              cv.width = cw; cv.height = ch;
+              var ctx = cv.getContext("2d");
+              ctx.drawImage(img, 0, 0, cw, ch);
+              var out = cv.toDataURL("image/jpeg", 0.78);
+              _vacancyPhotos.push(out);
+            } catch(e) {
+              // Canvas failed — store original
+              _vacancyPhotos.push(dataUrl);
+            }
+            added++;
+            done++;
+            checkDone();
+          };
+          img.onerror = function() {
+            // Image load failed — store original
+            _vacancyPhotos.push(dataUrl);
+            added++;
+            done++;
+            checkDone();
+          };
+          img.src = dataUrl;
+        };
+        reader.onerror = function() {
+          done++;
+          checkDone();
+        };
+        reader.readAsDataURL(file);
+      });
+
+      function checkDone() {
         if (done < total) return;
         renderEditPhotoPreview();
         updatePhotoCount();
         var b = document.getElementById("ve-photo-add-btn");
         if (b) {
-          b.textContent = added > 0 ? added + " photo(s) added!" : "Upload failed — check storage";
+          b.textContent = added > 0
+            ? added + " photo(s) added!"
+            : "No photos added — try smaller files";
           b.style.background  = added > 0 ? "#2d7a4f" : "#c0392b";
           b.style.borderColor = added > 0 ? "#2d7a4f" : "#c0392b";
           b.disabled = false;
           setTimeout(function() {
             var b2 = document.getElementById("ve-photo-add-btn");
-            if (b2) { b2.textContent = "Add selected photos to listing"; b2.style.background=""; b2.style.borderColor=""; }
+            if (b2) {
+              b2.textContent = "Add selected photos to listing";
+              b2.style.background = "";
+              b2.style.borderColor = "";
+            }
           }, 3000);
         }
       }
-
-      list.forEach(function(file) {
-        if (!sb || !sb.storage) {
-          // Fallback: convert to small base64 if no storage
-          var fr = new FileReader();
-          fr.onload = function(ev) { oneDone(ev.target ? ev.target.result : null); };
-          fr.onerror = function() { oneDone(null); };
-          fr.readAsDataURL(file);
-          return;
-        }
-        // Upload to Supabase Storage
-        var ext  = (file.name || "photo.jpg").split(".").pop().toLowerCase() || "jpg";
-        var path = "vacancy/" + Date.now() + "_" + Math.random().toString(36).slice(2) + "." + ext;
-        sb.storage.from("vacancy-photos").upload(path, file, { upsert: true }).then(function(res) {
-          if (res.error) {
-            // Storage bucket may not exist yet — fall back to base64
-            var fr2 = new FileReader();
-            fr2.onload = function(ev) { oneDone(ev.target ? ev.target.result : null); };
-            fr2.onerror = function() { oneDone(null); };
-            fr2.readAsDataURL(file);
-          } else {
-            var urlRes = sb.storage.from("vacancy-photos").getPublicUrl(path);
-            var publicUrl = urlRes.data ? urlRes.data.publicUrl : null;
-            oneDone(publicUrl);
-          }
-        }).catch(function() {
-          // Final fallback
-          var fr3 = new FileReader();
-          fr3.onload = function(ev) { oneDone(ev.target ? ev.target.result : null); };
-          fr3.onerror = function() { oneDone(null); };
-          fr3.readAsDataURL(file);
-        });
-      });
     };
   }
 
