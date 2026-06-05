@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v18.7</div>
+<div class="vbadge">PropManager SC v18.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2227,6 +2227,18 @@ function attachEvents() {
   // Lease document modal
   var closeLDMo = document.getElementById("close-leasedoc-mo");
   if (closeLDMo) closeLDMo.addEventListener("click", function() { closeMo("leasedoc"); });
+
+  // ── DASHBOARD SETTINGS ──────────────────────────────────
+  on("st-save-profile-btn", "click", saveSettingsProfile);
+  on("st-change-pass-btn",  "click", saveSettingsPassword);
+  on("st-save-prefs-btn",   "click", saveSettingsPrefs);
+  on("st-signout-btn",      "click", signOut);
+
+  // ── PORTAL SETTINGS ─────────────────────────────────────
+  on("tst-save-profile-btn", "click", savePortalSettingsProfile);
+  on("tst-change-pass-btn",  "click", savePortalSettingsPassword);
+  on("tst-save-prefs-btn",   "click", savePortalSettingsPrefs);
+  on("tst-signout-btn",      "click", signOut);
 
   // ── MISSING MODAL CLOSE BUTTONS ───────────────────────────────────────────
   // Forgot password modal
@@ -6330,6 +6342,159 @@ document.addEventListener("DOMContentLoaded", function() {
     if (actions[action]) { e.preventDefault(); actions[action](); }
   });
 });
+
+// ════════════════════════════════════════════════════════════
+// SETTINGS — LANDLORD DASHBOARD
+// ════════════════════════════════════════════════════════════
+function loadSettingsPage() {
+  // Populate fields from current user
+  var emailEl = document.getElementById("st-email");
+  var nameEl  = document.getElementById("st-display-name");
+  var curEl   = document.getElementById("st-current-email");
+  if (currentUser) {
+    if (emailEl) emailEl.value = currentUser.email || "";
+    if (curEl)   curEl.textContent = currentUser.email || "";
+    if (nameEl && !nameEl.value) {
+      nameEl.value = (currentUser.user_metadata && currentUser.user_metadata.full_name) || "";
+    }
+  }
+  // Load saved prefs
+  try {
+    var prefs = JSON.parse(localStorage.getItem("propmanager_prefs") || "{}");
+    var lateBannerEl = document.getElementById("pref-late-banner");
+    var paySumEl     = document.getElementById("pref-pay-summary");
+    var emailNotEl   = document.getElementById("pref-email-notif");
+    var browNotEl    = document.getElementById("pref-browser-notif");
+    if (lateBannerEl) lateBannerEl.checked = prefs.lateBanner !== false;
+    if (paySumEl)     paySumEl.checked     = prefs.paySummary !== false;
+    if (emailNotEl)   emailNotEl.checked   = prefs.emailNotif !== false;
+    if (browNotEl)    browNotEl.checked     = prefs.browserNotif === true;
+  } catch(e) {}
+  // Load saved phone/business
+  try {
+    var profile = JSON.parse(localStorage.getItem("propmanager_ll_profile") || "{}");
+    var bizEl   = document.getElementById("st-business");
+    var phoneEl = document.getElementById("st-phone");
+    if (bizEl   && profile.business) bizEl.value   = profile.business;
+    if (phoneEl && profile.phone)    phoneEl.value = profile.phone;
+    if (nameEl  && profile.name && !nameEl.value) nameEl.value = profile.name;
+  } catch(e) {}
+}
+
+function saveSettingsProfile() {
+  var name     = (document.getElementById("st-display-name") || {}).value || "";
+  var business = (document.getElementById("st-business") || {}).value || "";
+  var phone    = (document.getElementById("st-phone") || {}).value || "";
+  // Save to Supabase user metadata
+  if (sb && name) {
+    sb.auth.updateUser({ data: { full_name: name, business_name: business, phone: phone } });
+  }
+  // Save locally
+  try { localStorage.setItem("propmanager_ll_profile", JSON.stringify({ name:name, business:business, phone:phone })); } catch(e) {}
+  showOk("st-profile-ok");
+}
+
+function saveSettingsPassword() {
+  var np  = (document.getElementById("st-new-pass") || {}).value || "";
+  var cp  = (document.getElementById("st-confirm-pass") || {}).value || "";
+  var err = document.getElementById("st-pass-err");
+  if (np.length < 8 || np !== cp) {
+    if (err) err.style.display = "block";
+    return;
+  }
+  if (err) err.style.display = "none";
+  if (!sb) return;
+  sb.auth.updateUser({ password: np }).then(function(res) {
+    if (res.error) {
+      if (err) { err.style.display = "block"; err.textContent = res.error.message; }
+    } else {
+      showOk("st-pass-ok");
+      document.getElementById("st-new-pass").value = "";
+      document.getElementById("st-confirm-pass").value = "";
+    }
+  });
+}
+
+function saveSettingsPrefs() {
+  var prefs = {
+    lateBanner:   document.getElementById("pref-late-banner")   ? document.getElementById("pref-late-banner").checked   : true,
+    paySummary:   document.getElementById("pref-pay-summary")   ? document.getElementById("pref-pay-summary").checked   : true,
+    emailNotif:   document.getElementById("pref-email-notif")   ? document.getElementById("pref-email-notif").checked   : true,
+    browserNotif: document.getElementById("pref-browser-notif") ? document.getElementById("pref-browser-notif").checked : false,
+  };
+  try { localStorage.setItem("propmanager_prefs", JSON.stringify(prefs)); } catch(e) {}
+  if (prefs.browserNotif) requestBrowserNotifications();
+  showOk("st-prefs-ok");
+}
+
+// ════════════════════════════════════════════════════════════
+// SETTINGS — TENANT PORTAL
+// ════════════════════════════════════════════════════════════
+function loadPortalSettings() {
+  if (!currentTenant) return;
+  var nameEl  = document.getElementById("tst-name");
+  var emailEl = document.getElementById("tst-email");
+  var phoneEl = document.getElementById("tst-phone");
+  if (nameEl)  nameEl.value  = currentTenant.full_name || "";
+  if (emailEl) emailEl.value = currentTenant.email || (currentUser ? currentUser.email : "");
+  if (phoneEl) phoneEl.value = currentTenant.phone || "";
+  // Load tenant prefs
+  try {
+    var tp = JSON.parse(localStorage.getItem("propmanager_tenant_prefs") || "{}");
+    var emEl = document.getElementById("tpref-email");
+    var mnEl = document.getElementById("tpref-maint");
+    if (emEl) emEl.checked = tp.email !== false;
+    if (mnEl) mnEl.checked = tp.maint !== false;
+  } catch(e) {}
+}
+
+function savePortalSettingsProfile() {
+  var name  = (document.getElementById("tst-name") || {}).value || "";
+  var phone = (document.getElementById("tst-phone") || {}).value || "";
+  if (!name || !sb || !currentTenant) return;
+  sb.from("tenants").update({ full_name: name, phone: phone }).eq("id", currentTenant.id).then(function(res) {
+    if (!res.error) {
+      currentTenant.full_name = name;
+      currentTenant.phone = phone;
+      var pnEl = document.getElementById("portal-name");
+      if (pnEl) pnEl.textContent = name;
+      showOk("tst-profile-ok");
+    }
+  });
+}
+
+function savePortalSettingsPassword() {
+  var np  = (document.getElementById("tst-new-pass") || {}).value || "";
+  var cp  = (document.getElementById("tst-confirm-pass") || {}).value || "";
+  var err = document.getElementById("tst-pass-err");
+  if (np.length < 8 || np !== cp) {
+    if (err) err.style.display = "block";
+    return;
+  }
+  if (err) err.style.display = "none";
+  if (!sb) return;
+  sb.auth.updateUser({ password: np }).then(function(res) {
+    if (res.error) {
+      if (err) { err.style.display = "block"; err.textContent = res.error.message; }
+    } else {
+      showOk("tst-pass-ok");
+      var tnp = document.getElementById("tst-new-pass");
+      var tcp = document.getElementById("tst-confirm-pass");
+      if (tnp) tnp.value = "";
+      if (tcp) tcp.value = "";
+    }
+  });
+}
+
+function savePortalSettingsPrefs() {
+  var prefs = {
+    email: document.getElementById("tpref-email") ? document.getElementById("tpref-email").checked : true,
+    maint: document.getElementById("tpref-maint") ? document.getElementById("tpref-maint").checked : true,
+  };
+  try { localStorage.setItem("propmanager_tenant_prefs", JSON.stringify(prefs)); } catch(e) {}
+  showOk("tst-prefs-ok");
+}
+
 </script>
 
 <!-- LOG PAYMENT MODAL -->
