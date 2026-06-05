@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v18.5</div>
+<div class="vbadge">PropManager SC v18.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2386,10 +2386,23 @@ function showNavUser(initials, name, role) {
       "<div style='display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.8);font-size:13px'>" +
       "<div style='width:28px;height:28px;border-radius:50%;background:rgba(201,150,42,.3);border:1.5px solid #c9962a;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#f0c96b'>" + initials + "</div>" +
       "<span>" + name + "</span>" +
+      "<button id='nav-chgpass-live' style='padding:4px 10px;border-radius:7px;font-size:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-family:inherit'>Change password</button>" +
       "<button id='nav-signout-live' style='padding:4px 10px;border-radius:7px;font-size:12px;border:1px solid rgba(15,30,53,.15);background:#fff;color:#1a1a1a;cursor:pointer;font-family:inherit'>Sign out</button></div>";
     setTimeout(function() {
       var soBtn = document.getElementById("nav-signout-live");
       if (soBtn) soBtn.onclick = function() { signOut(); };
+      var cpBtn = document.getElementById("nav-chgpass-live");
+      if (cpBtn) cpBtn.onclick = function() {
+        var cpNew = document.getElementById("cp-new");
+        var cpCon = document.getElementById("cp-confirm");
+        var cpErr = document.getElementById("cp-err");
+        var cpOk  = document.getElementById("cp-ok");
+        if (cpNew) cpNew.value = "";
+        if (cpCon) cpCon.value = "";
+        if (cpErr) cpErr.style.display = "none";
+        if (cpOk)  cpOk.classList.remove("on");
+        openMo("changepass");
+      };
     }, 100);
   }
 
@@ -2532,7 +2545,9 @@ async function landlordLogin() {
       return;
     }
     currentRole = "landlord";
-    showNavUser("LL", "Landlord", "landlord");
+    var llDisplay = (uEmail === LANDLORD_EMAIL) ? "Landlord" : "Co-landlord";
+    var llInitials = (uEmail === LANDLORD_EMAIL) ? "LL" : "CL";
+    showNavUser(llInitials, llDisplay, "landlord");
     closeMo("landlord");
     goPage("dashboard");
     loadDashboardData();
