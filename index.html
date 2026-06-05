@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v18.6</div>
+<div class="vbadge">PropManager SC v18.7</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4670,14 +4670,36 @@ var _vacancyPhotoIndex = 0;
 
 // Load vacancy data from localStorage on page load
 function initVacancyPage() {
-  try {
-    var saved = localStorage.getItem("propmanager_vacancy");
-    if (saved) {
-      _vacancyData = JSON.parse(saved);
-      _vacancyPhotos = _vacancyData.photos || [];
-    }
-  } catch(e) {}
-
+  // Load from Supabase so both landlords share the same listing
+  if (sb) {
+    sb.from("vacancy").select("*").limit(1).then(function(res) {
+      if (res.data && res.data.length > 0) {
+        _vacancyData = res.data[0];
+        _vacancyPhotos = [];
+        renderVacancyListing();
+      } else {
+        try {
+          var saved = localStorage.getItem("propmanager_vacancy");
+          if (saved) { _vacancyData = JSON.parse(saved); _vacancyPhotos = []; renderVacancyListing(); }
+        } catch(e) {}
+      }
+      _initVacancyUI();
+    }).catch(function() {
+      try {
+        var saved = localStorage.getItem("propmanager_vacancy");
+        if (saved) { _vacancyData = JSON.parse(saved); _vacancyPhotos = []; renderVacancyListing(); }
+      } catch(e2) {}
+      _initVacancyUI();
+    });
+  } else {
+    try {
+      var saved = localStorage.getItem("propmanager_vacancy");
+      if (saved) { _vacancyData = JSON.parse(saved); _vacancyPhotos = []; renderVacancyListing(); }
+    } catch(e) {}
+    _initVacancyUI();
+  }
+}
+function _initVacancyUI() {
   // Show landlord tools ONLY for landlord role — never for tenants or public
   var tools = document.getElementById("vac-landlord-tools");
   if (tools) {
@@ -5062,28 +5084,21 @@ function saveVacancyListing() {
   };
 
   // Save listing — photos are compressed so should fit in localStorage
-  var saveOk = false;
-  try {
-    localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData));
-    saveOk = true;
-  } catch(e) {
-    // Still too large — try saving with photos stripped to URLs only
-    var smallPhotos = _vacancyPhotos.filter(function(p) { return p && p.startsWith("http"); });
-    var dataSmall = Object.assign({}, _vacancyData, { photos: smallPhotos });
-    try {
-      localStorage.setItem("propmanager_vacancy", JSON.stringify(dataSmall));
-      saveOk = true;
-      if (smallPhotos.length < _vacancyPhotos.length) {
-        alert("Some photos were too large to save. Tip: use iPhone Settings > Camera > Most Compatible to take smaller JPG photos, then re-add them.");
+  // Save to Supabase — shared across ALL landlords and devices
+  if (sb) {
+    var savePayload = Object.assign({}, _vacancyData);
+    delete savePayload.id; // remove id so upsert works cleanly
+    sb.from("vacancy").select("id").limit(1).then(function(res) {
+      var existId = res.data && res.data.length > 0 ? res.data[0].id : null;
+      if (existId) {
+        sb.from("vacancy").update(savePayload).eq("id", existId);
+      } else {
+        sb.from("vacancy").insert(savePayload);
       }
-    } catch(e2) {
-      // Clear old data and try bare save
-      localStorage.removeItem("propmanager_vacancy");
-      var dataBare = Object.assign({}, _vacancyData, { photos: [] });
-      try { localStorage.setItem("propmanager_vacancy", JSON.stringify(dataBare)); saveOk = true; } catch(e3) {}
-      alert("Storage is completely full. Your listing details were saved but photos could not be stored. Please clear your browser cache and try again, or use the URL option to add photos.");
-    }
+    });
   }
+  // Local backup
+  try { localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData)); } catch(e) {}
 
   document.getElementById("ve-ok").classList.add("on");
   _vacancyPhotoIndex = 0;
@@ -5102,28 +5117,21 @@ function markAsRented() {
   if (_vacancyData) {
     _vacancyData.status = "rented";
     // Save listing — photos are compressed so should fit in localStorage
-  var saveOk = false;
-  try {
-    localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData));
-    saveOk = true;
-  } catch(e) {
-    // Still too large — try saving with photos stripped to URLs only
-    var smallPhotos = _vacancyPhotos.filter(function(p) { return p && p.startsWith("http"); });
-    var dataSmall = Object.assign({}, _vacancyData, { photos: smallPhotos });
-    try {
-      localStorage.setItem("propmanager_vacancy", JSON.stringify(dataSmall));
-      saveOk = true;
-      if (smallPhotos.length < _vacancyPhotos.length) {
-        alert("Some photos were too large to save. Tip: use iPhone Settings > Camera > Most Compatible to take smaller JPG photos, then re-add them.");
+  // Save to Supabase — shared across ALL landlords and devices
+  if (sb) {
+    var savePayload = Object.assign({}, _vacancyData);
+    delete savePayload.id; // remove id so upsert works cleanly
+    sb.from("vacancy").select("id").limit(1).then(function(res) {
+      var existId = res.data && res.data.length > 0 ? res.data[0].id : null;
+      if (existId) {
+        sb.from("vacancy").update(savePayload).eq("id", existId);
+      } else {
+        sb.from("vacancy").insert(savePayload);
       }
-    } catch(e2) {
-      // Clear old data and try bare save
-      localStorage.removeItem("propmanager_vacancy");
-      var dataBare = Object.assign({}, _vacancyData, { photos: [] });
-      try { localStorage.setItem("propmanager_vacancy", JSON.stringify(dataBare)); saveOk = true; } catch(e3) {}
-      alert("Storage is completely full. Your listing details were saved but photos could not be stored. Please clear your browser cache and try again, or use the URL option to add photos.");
-    }
+    });
   }
+  // Local backup
+  try { localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData)); } catch(e) {}
   }
   closeMo("markrente");
   document.getElementById("vac-listing").style.display = "none";
