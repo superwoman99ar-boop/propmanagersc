@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v19.0</div>
+<div class="vbadge">PropManager SC v19.1</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -727,7 +727,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
         </div>
       </div>
 
-      <div class="dsec" id="ds-settings" style="display:none">
+      <div class="dsec" id="ds-settings">
   <div class="card" style="max-width:660px">
     <div class="card-head" style="margin-bottom:18px"><div class="card-title"><i class="ti ti-settings" style="margin-right:7px;color:#1a5fa8"></i>Settings</div></div>
 
@@ -1198,7 +1198,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
         </div>
       </div>
 
-      <div class="psec" id="ps-st" style="display:none;padding:18px">
+      <div class="psec" id="ps-st" style="padding:18px">
   <div style="font-size:15px;font-weight:600;color:#0f1e35;margin-bottom:16px"><i class="ti ti-settings" style="color:#1a5fa8;margin-right:7px"></i>Settings</div>
   <div style="background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:11px;padding:18px;margin-bottom:13px">
     <div style="font-size:13px;font-weight:600;color:#0f1e35;margin-bottom:12px"><i class="ti ti-user-circle" style="color:#1a5fa8;margin-right:6px"></i>My Profile</div>
@@ -1722,10 +1722,12 @@ var LANDLORD_EMAILS = ["superwoman99.ar@gmail.com", "j.rush45@yahoo.com"];
 var LANDLORD_EMAIL = "superwoman99.ar@gmail.com"; // primary
 
 var PAGES = ["home","dashboard","portal","vacancy","pricing","contact"];
-var DASH_SECS = ["ov","pr","tn","rn","mn","ls","gl","nt","tx","sc","docs","app","syn","sms"];
-var DASH_NAMES = {ov:"Dashboard",pr:"Properties",tn:"Tenants",rn:"Rent Payments",mn:"Maintenance",ls:"Leases",gl:"General Ledger",nt:"5-Day Notices",tx:"Tax Summary",sc:"Screening",docs:"Documents",app:"Applications",syn:"Listing Syndication",sms:"SMS Notifications"};
-var PORTAL_SECS = ["hm","py","ph","mn","ms","ls"];
-var PORTAL_NAMES = {hm:"My Home",py:"Pay Rent",ph:"Payment History",mn:"Maintenance",ms:"Messages",ls:"My Lease"};
+var DASH_SECS = ["ov","pr","tn","rn","mn","ls","gl","nt","tx","sc","docs","app","syn","sms","settings"];
+var DASH_NAMES = {ov:"Dashboard",pr:"Properties",tn:"Tenants",rn:"Rent Payments",mn:"Maintenance",ls:"Leases",gl:"General Ledger",nt:"5-Day Notices",tx:"Tax Summary",sc:"Screening",docs:"Documents",app:"Applications",syn:"Listing Syndication",sms:"SMS Notifications"  "settings": "Settings"
+};
+var PORTAL_SECS = ["hm","py","ph","mn","ms","ls","st"];
+var PORTAL_NAMES = {hm:"My Home",py:"Pay Rent",ph:"Payment History",mn:"Maintenance",ms:"Messages",ls:"My Lease"  "st": "Settings"
+};
 
 // ---- PAGE NAVIGATION ----
 function goPage(id) {
@@ -4768,9 +4770,21 @@ function initVacancyPage() {
         _vacancyPhotos = [];
         renderVacancyListing();
       } else {
+        // Supabase has no vacancy — try to migrate from localStorage
         try {
           var saved = localStorage.getItem("propmanager_vacancy");
-          if (saved) { _vacancyData = JSON.parse(saved); _vacancyPhotos = []; renderVacancyListing(); }
+          if (saved) {
+            _vacancyData = JSON.parse(saved);
+            _vacancyPhotos = [];
+            renderVacancyListing();
+            // Push to Supabase so co-landlord can see it too
+            var migrateData = Object.assign({}, _vacancyData);
+            delete migrateData.id;
+            delete migrateData.photos; // don't push photos to DB
+            sb.from("vacancy").insert(migrateData).then(function(mr) {
+              if (!mr.error) console.log("Vacancy migrated to Supabase");
+            });
+          }
         } catch(e) {}
       }
       _initVacancyUI();
@@ -6056,47 +6070,81 @@ function openDocUpload() {
 }
 
 function saveDocument() {
-  var name     = document.getElementById("doc-name").value.trim();
-  var cat      = document.getElementById("doc-category").value;
+  var name      = document.getElementById("doc-name").value.trim();
+  var cat       = document.getElementById("doc-category").value;
   var fileInput = document.getElementById("doc-file-input");
   if (!name) { alert("Please enter a document name."); return; }
-  try { _docs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]"); } catch(e) { _docs = []; }
+  var today = new Date().toISOString().split("T")[0];
+
+  function pushDocToSupabase(doc) {
+    if (!sb) return;
+    // Store in Supabase documents table — shared across all landlords
+    var dbDoc = { name: doc.name, category: doc.category, date: doc.date,
+                  file_name: doc.fileName || null, data_url: doc.dataUrl || null };
+    sb.from("documents").insert(dbDoc).then(function(res) {
+      if (!res.error) {
+        renderDocList();
+        showOk("doc-ok");
+        setTimeout(function() { closeMo("docupload"); }, 1500);
+      } else {
+        // Supabase failed — save locally
+        try { _docs.push(doc); localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(e) {}
+        renderDocList();
+        showOk("doc-ok");
+        setTimeout(function() { closeMo("docupload"); }, 1500);
+      }
+    });
+  }
 
   if (fileInput && fileInput.files && fileInput.files[0]) {
     var file = fileInput.files[0];
-    // Check size — localStorage limit is ~5MB total
-    if (file.size > 3 * 1024 * 1024) {
-      alert("File is too large (" + Math.round(file.size/1024/1024) + "MB). Maximum 3MB. For large files, use the URL option instead.");
+    if (file.size > 4 * 1024 * 1024) {
+      alert("File too large (" + Math.round(file.size/1024/1024) + "MB). Maximum 4MB.");
       return;
     }
     var fr = new FileReader();
     fr.onload = function(ev) {
-      _docs.push({ id: Date.now(), name:name, category:cat, date: new Date().toISOString().split("T")[0], dataUrl: ev.target.result, fileName: file.name });
-      try { localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(storErr) {
-        // If localStorage full, save without file data
-        _docs[_docs.length-1].dataUrl = null;
-        _docs[_docs.length-1].note = "File too large to store — name recorded only";
-        try { localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(e2) {}
-      }
-      showOk("doc-ok");
-      renderDocList();
-      setTimeout(function() { closeMo("docupload"); }, 1500);
+      var doc = { id: Date.now(), name:name, category:cat, date:today,
+                  fileName: file.name, dataUrl: ev.target.result };
+      pushDocToSupabase(doc);
     };
+    fr.onerror = function() { alert("Could not read file. Please try again."); };
     fr.readAsDataURL(file);
   } else {
-    // No file — save name/category only (URL-based or name-only)
-    _docs.push({ id: Date.now(), name:name, category:cat, date: new Date().toISOString().split("T")[0] });
-    try { localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(e) {}
-    showOk("doc-ok");
-    renderDocList();
-    setTimeout(function() { closeMo("docupload"); }, 1500);
+    var doc = { id: Date.now(), name:name, category:cat, date:today };
+    pushDocToSupabase(doc);
   }
 }
 
 function renderDocList(filterCat) {
   var el = document.getElementById("doc-list");
   if (!el) return;
+  // Load from Supabase (shared across all landlords)
+  if (sb) {
+    sb.from("documents").select("*").order("date", { ascending: false }).then(function(res) {
+      if (res.data && res.data.length > 0) {
+        // Map Supabase columns to _docs format
+        _docs = res.data.map(function(r) {
+          return { id: r.id, name: r.name, category: r.category, date: r.date,
+                   fileName: r.file_name, dataUrl: r.data_url };
+        });
+      } else {
+        // Fall back to localStorage
+        try { _docs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]"); } catch(e2) { _docs = []; }
+      }
+      _renderDocListUI(filterCat);
+    }).catch(function() {
+      try { _docs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]"); } catch(e) { _docs = []; }
+      _renderDocListUI(filterCat);
+    });
+    return; // async — _renderDocListUI called in callbacks
+  }
   try { _docs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]"); } catch(e) { _docs = []; }
+  _renderDocListUI(filterCat);
+}
+function _renderDocListUI(filterCat) {
+  var el = document.getElementById("doc-list");
+  if (!el) return;
   var filtered = filterCat ? _docs.filter(function(d){ return (d.category||"").toLowerCase() === filterCat.toLowerCase(); }) : _docs;
   // Update filter badge styles
   ["all","lease","inspection","receipt","notice"].forEach(function(cat) {
@@ -6134,9 +6182,14 @@ function renderDocList(filterCat) {
   });
   el.querySelectorAll("[data-del-doc]").forEach(function(btn) {
     btn.onclick = function() {
-      _docs = _docs.filter(function(d) { return d.id !== parseInt(btn.getAttribute("data-del-doc")); });
-      try { localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(e) {}
-      renderDocList(filterCat);
+      var delId = parseInt(btn.getAttribute("data-del-doc"));
+      if (sb) {
+        sb.from("documents").delete().eq("id", delId).then(function() { renderDocList(filterCat); });
+      } else {
+        _docs = _docs.filter(function(d) { return d.id !== delId; });
+        try { localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(e) {}
+        renderDocList(filterCat);
+      }
     };
   });
 }
