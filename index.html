@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v18.9</div>
+<div class="vbadge">PropManager SC v19.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1198,7 +1198,41 @@ footer{background:#0f1e35;padding:44px 20px 26px}
         </div>
       </div>
 
-      <div class="psec" id="ps-ls">
+      <div class="psec" id="ps-st" style="display:none;padding:18px">
+  <div style="font-size:15px;font-weight:600;color:#0f1e35;margin-bottom:16px"><i class="ti ti-settings" style="color:#1a5fa8;margin-right:7px"></i>Settings</div>
+  <div style="background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:11px;padding:18px;margin-bottom:13px">
+    <div style="font-size:13px;font-weight:600;color:#0f1e35;margin-bottom:12px"><i class="ti ti-user-circle" style="color:#1a5fa8;margin-right:6px"></i>My Profile</div>
+    <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:12px">
+      <div><label class="mo-lbl">Full name</label><input class="mo-inp" id="tst-name" placeholder="Your full name" style="margin:0"></div>
+      <div><label class="mo-lbl">Email</label><input class="mo-inp" id="tst-email" placeholder="your@email.com" style="margin:0" readonly></div>
+      <div><label class="mo-lbl">Phone</label><input class="mo-inp" id="tst-phone" type="tel" placeholder="(864) 555-0100" style="margin:0"></div>
+    </div>
+    <button class="btn btn-n" id="tst-save-profile-btn" style="width:100%;justify-content:center"><i class="ti ti-check"></i> Save profile</button>
+    <div class="ok-msg" id="tst-profile-ok" style="margin-top:9px"><i class="ti ti-circle-check"></i> Profile updated.</div>
+  </div>
+  <div style="background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:11px;padding:18px;margin-bottom:13px">
+    <div style="font-size:13px;font-weight:600;color:#0f1e35;margin-bottom:12px"><i class="ti ti-lock" style="color:#1a5fa8;margin-right:6px"></i>Change Password</div>
+    <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:12px">
+      <div><label class="mo-lbl">New password</label><input class="mo-inp" id="tst-new-pass" type="password" placeholder="Min 8 characters" style="margin:0"></div>
+      <div><label class="mo-lbl">Confirm password</label><input class="mo-inp" id="tst-confirm-pass" type="password" placeholder="Repeat new password" style="margin:0"></div>
+    </div>
+    <div class="mo-err" id="tst-pass-err" style="margin-bottom:9px">Passwords do not match or too short.</div>
+    <button class="btn btn-n" id="tst-change-pass-btn" style="width:100%;justify-content:center"><i class="ti ti-key"></i> Update password</button>
+    <div class="ok-msg" id="tst-pass-ok" style="margin-top:9px"><i class="ti ti-circle-check"></i> Password updated.</div>
+  </div>
+  <div style="background:#fff;border:1px solid rgba(15,30,53,.1);border-radius:11px;padding:18px;margin-bottom:13px">
+    <div style="font-size:13px;font-weight:600;color:#0f1e35;margin-bottom:12px"><i class="ti ti-bell" style="color:#1a5fa8;margin-right:6px"></i>Notification Preferences</div>
+    <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:12px">
+      <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(15,30,53,.03);border-radius:8px;cursor:pointer"><div><div style="font-size:13px;font-weight:500">Email notifications</div><div style="font-size:11px;color:#5a5a5a">Rent reminders and updates</div></div><input type="checkbox" id="tpref-email" checked style="width:16px;height:16px"></label>
+      <label style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(15,30,53,.03);border-radius:8px;cursor:pointer"><div><div style="font-size:13px;font-weight:500">Maintenance updates</div><div style="font-size:11px;color:#5a5a5a">Status changes on my requests</div></div><input type="checkbox" id="tpref-maint" checked style="width:16px;height:16px"></label>
+    </div>
+    <button class="btn btn-n" id="tst-save-prefs-btn" style="width:100%;justify-content:center"><i class="ti ti-check"></i> Save preferences</button>
+    <div class="ok-msg" id="tst-prefs-ok" style="margin-top:9px"><i class="ti ti-circle-check"></i> Preferences saved.</div>
+  </div>
+  <button class="btn btn-r" id="tst-signout-btn" style="width:100%;justify-content:center"><i class="ti ti-logout"></i> Sign out of portal</button>
+</div>
+
+<div class="psec" id="ps-ls">
         <div class="card" id="lease-card">
           <div class="spin-wrap"><div class="spinner"></div> Loading lease...</div>
         </div>
@@ -1915,7 +1949,8 @@ function attachEvents() {
       "di-docs": function() { goDash("docs"); renderDocList(null); },
       "di-app":  function() { goDash("app");  renderApplications(); },
       "di-syn":  function() { goDash("syn");  populateSynDetails(); },
-      "di-sms":  function() { goDash("sms");  initSmsSection(); }
+      "di-sms":  function() { goDash("sms");  initSmsSection(); },
+      "di-settings": function() { goDash("settings"); loadSettingsPage(); }
     };
     Object.keys(navMap).forEach(function(id) {
       var btn = document.getElementById(id);
@@ -2106,7 +2141,8 @@ function attachEvents() {
   on("pi-ph", "click", function() { goPortal("ph"); });
   on("pi-mn", "click", function() { goPortal("mn"); });
   on("pi-ms", "click", function() { goPortal("ms"); });
-  on("pi-ls", "click", function() { goPortal("ls"); });
+  on("pi-ls", "click", function() { goPortal("ls"); loadPortalLease(); });
+  on("pi-st", "click", function() { goPortal("st"); loadPortalSettings(); });
   on("portal-signout-btn", "click", signOut);
   var pcpBtn = document.getElementById("portal-change-pass-btn");
   if (pcpBtn) pcpBtn.addEventListener("click", function() {
