@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v18.8</div>
+<div class="vbadge">PropManager SC v18.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -355,6 +355,8 @@ footer{background:#0f1e35;padding:44px 20px 26px}
       <div class="dsb-lbl">Marketing</div>
       <button class="dsi" id="di-syn"><i class="ti ti-broadcast"></i> Listing Syndication</button>
       <button class="dsi" id="di-sms"><i class="ti ti-message-circle"></i> SMS Notifications</button>
+      <div class="dsb-lbl" style="margin-top:4px">Account</div>
+      <button class="dsi" id="di-settings"><i class="ti ti-settings"></i> Settings</button>
     </div>
   </div>
   <div class="dash-main">
@@ -725,7 +727,46 @@ footer{background:#0f1e35;padding:44px 20px 26px}
         </div>
       </div>
 
-      <div class="dsec" id="ds-tx">
+      <div class="dsec" id="ds-settings" style="display:none">
+  <div class="card" style="max-width:660px">
+    <div class="card-head" style="margin-bottom:18px"><div class="card-title"><i class="ti ti-settings" style="margin-right:7px;color:#1a5fa8"></i>Settings</div></div>
+
+    <div style="font-size:13px;font-weight:600;color:#0f1e35;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(15,30,53,.08)"><i class="ti ti-user-circle" style="color:#1a5fa8;margin-right:6px"></i>Profile</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+      <div><label class="mo-lbl">Display name</label><input class="mo-inp" id="st-display-name" placeholder="Your name" style="margin:0"></div>
+      <div><label class="mo-lbl">Email</label><input class="mo-inp" id="st-email" placeholder="your@email.com" style="margin:0" readonly></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:14px">
+      <div><label class="mo-lbl">Business name</label><input class="mo-inp" id="st-business" placeholder="e.g. A&amp;J Rush Properties" style="margin:0"></div>
+      <div><label class="mo-lbl">Phone</label><input class="mo-inp" id="st-phone" type="tel" placeholder="(864) 555-0100" style="margin:0"></div>
+    </div>
+    <button class="btn btn-n" id="st-save-profile-btn" style="margin-bottom:7px"><i class="ti ti-check"></i> Save profile</button>
+    <div class="ok-msg" id="st-profile-ok" style="margin-bottom:18px"><i class="ti ti-circle-check"></i> Profile saved.</div>
+
+    <div style="font-size:13px;font-weight:600;color:#0f1e35;margin:20px 0 12px;padding-top:16px;border-top:1px solid rgba(15,30,53,.08)"><i class="ti ti-lock" style="color:#1a5fa8;margin-right:6px"></i>Change Password</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:11px">
+      <div><label class="mo-lbl">New password</label><input class="mo-inp" id="st-new-pass" type="password" placeholder="Min 8 characters" style="margin:0"></div>
+      <div><label class="mo-lbl">Confirm password</label><input class="mo-inp" id="st-confirm-pass" type="password" placeholder="Repeat password" style="margin:0"></div>
+    </div>
+    <div class="mo-err" id="st-pass-err" style="margin-bottom:9px">Passwords do not match or are too short.</div>
+    <button class="btn btn-n" id="st-change-pass-btn"><i class="ti ti-key"></i> Update password</button>
+    <div class="ok-msg" id="st-pass-ok" style="margin-top:9px;margin-bottom:18px"><i class="ti ti-circle-check"></i> Password updated.</div>
+
+    <div style="font-size:13px;font-weight:600;color:#0f1e35;margin:20px 0 12px;padding-top:16px;border-top:1px solid rgba(15,30,53,.08)"><i class="ti ti-sliders" style="color:#1a5fa8;margin-right:6px"></i>Dashboard Preferences</div>
+    <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:14px">
+      <label style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:rgba(15,30,53,.03);border-radius:9px;cursor:pointer"><div><div style="font-size:13px;font-weight:500">Show late rent banner</div><div style="font-size:11.5px;color:#5a5a5a">Overdue rent alert at top of dashboard</div></div><input type="checkbox" id="pref-late-banner" checked style="width:16px;height:16px"></label>
+      <label style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:rgba(15,30,53,.03);border-radius:9px;cursor:pointer"><div><div style="font-size:13px;font-weight:500">Show payment summary cards</div><div style="font-size:11.5px;color:#5a5a5a">Paid / Unpaid / Collection rate cards</div></div><input type="checkbox" id="pref-pay-summary" checked style="width:16px;height:16px"></label>
+      <label style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:rgba(15,30,53,.03);border-radius:9px;cursor:pointer"><div><div style="font-size:13px;font-weight:500">Email notifications</div><div style="font-size:11.5px;color:#5a5a5a">Messages and maintenance alerts</div></div><input type="checkbox" id="pref-email-notif" checked style="width:16px;height:16px"></label>
+      <label style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:rgba(15,30,53,.03);border-radius:9px;cursor:pointer"><div><div style="font-size:13px;font-weight:500">Browser notifications</div><div style="font-size:11.5px;color:#5a5a5a">Desktop push alerts</div></div><input type="checkbox" id="pref-browser-notif" style="width:16px;height:16px"></label>
+    </div>
+    <button class="btn btn-n" id="st-save-prefs-btn"><i class="ti ti-check"></i> Save preferences</button>
+    <div class="ok-msg" id="st-prefs-ok" style="margin-top:9px;margin-bottom:18px"><i class="ti ti-circle-check"></i> Preferences saved.</div>
+
+    <div style="padding-top:16px;border-top:1px solid rgba(192,57,43,.15)"><div style="font-size:12.5px;color:#5a5a5a;margin-bottom:9px">Signed in as <strong id="st-current-email"></strong></div><button class="btn btn-r" id="st-signout-btn"><i class="ti ti-logout"></i> Sign out</button></div>
+  </div>
+</div>
+
+<div class="dsec" id="ds-tx">
         <div class="g4">
           <div class="mc"><div class="mc-l">Gross income (ann.)</div><div class="mc-v mc-g" id="tx-gross">--</div></div>
           <div class="mc"><div class="mc-l">Total expenses YTD</div><div class="mc-v mc-r" id="tx-exp">--</div></div>
@@ -822,6 +863,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
       <button class="pni" id="pi-mn"><i class="ti ti-tool"></i> Maintenance</button>
       <button class="pni" id="pi-ms"><i class="ti ti-message"></i> Messages <span class="p-badge" id="msg-badge" style="display:none">!</span></button>
       <button class="pni" id="pi-ls"><i class="ti ti-file-text"></i> My Lease</button>
+      <button class="pni" id="pi-st"><i class="ti ti-settings"></i> Settings</button>
     </div>
     <div style="padding:11px 14px;border-top:1px solid rgba(15,30,53,.1);display:flex;flex-direction:column;gap:6px">
       <button id="portal-change-pass-btn" style="display:flex;align-items:center;gap:7px;font-size:12px;color:#5a5a5a;cursor:pointer;background:none;border:none;font-family:inherit"><i class="ti ti-lock"></i> Change password</button>
