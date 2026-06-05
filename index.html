@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v19.2</div>
+<div class="vbadge">PropManager SC v19.3</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4763,46 +4763,41 @@ var _vacancyPhotoIndex = 0;
 
 // Load vacancy data from localStorage on page load
 function initVacancyPage() {
-  // Load from Supabase so both landlords share the same listing
-  if (sb) {
-    sb.from("vacancy").select("*").limit(1).then(function(res) {
-      if (res.data && res.data.length > 0) {
-        _vacancyData = res.data[0];
-        _vacancyPhotos = [];
-        renderVacancyListing();
-      } else {
-        // Supabase has no vacancy — try to migrate from localStorage
-        try {
-          var saved = localStorage.getItem("propmanager_vacancy");
-          if (saved) {
-            _vacancyData = JSON.parse(saved);
-            _vacancyPhotos = [];
-            renderVacancyListing();
-            // Push to Supabase so co-landlord can see it too
-            var migrateData = Object.assign({}, _vacancyData);
-            delete migrateData.id;
-            delete migrateData.photos; // don't push photos to DB
-            sb.from("vacancy").insert(migrateData).then(function(mr) {
-              if (!mr.error) console.log("Vacancy migrated to Supabase");
-            });
-          }
-        } catch(e) {}
+  if (!sb) { _loadVacancyLocal(); return; }
+  sb.from("vacancy").select("*").order("id", { ascending: false }).limit(1).then(function(res) {
+    if (res.error) {
+      // Table missing or 403 — fall back to localStorage
+      console.warn("vacancy table error:", res.error.message);
+      _loadVacancyLocal(); return;
+    }
+    if (res.data && res.data.length > 0) {
+      _vacancyData = res.data[0];
+      _vacancyPhotos = [];
+      renderVacancyListing();
+      _initVacancyUI();
+    } else {
+      // Empty — try to migrate from localStorage and push up
+      _loadVacancyLocal();
+      if (_vacancyData) {
+        var mig = {}; 
+        var keys = ["address","rent","deposit","beds","baths","sqft","type","desc","avail","amenities","status"];
+        keys.forEach(function(k){ if(_vacancyData[k] !== undefined) mig[k] = _vacancyData[k]; });
+        sb.from("vacancy").insert(mig).then(function(r2){
+          if (!r2.error) console.log("Vacancy pushed to Supabase");
+        });
       }
-      _initVacancyUI();
-    }).catch(function() {
-      try {
-        var saved = localStorage.getItem("propmanager_vacancy");
-        if (saved) { _vacancyData = JSON.parse(saved); _vacancyPhotos = []; renderVacancyListing(); }
-      } catch(e2) {}
-      _initVacancyUI();
-    });
-  } else {
-    try {
-      var saved = localStorage.getItem("propmanager_vacancy");
-      if (saved) { _vacancyData = JSON.parse(saved); _vacancyPhotos = []; renderVacancyListing(); }
-    } catch(e) {}
-    _initVacancyUI();
-  }
+    }
+  }).catch(function(err) {
+    console.warn("initVacancyPage catch:", err);
+    _loadVacancyLocal();
+  });
+}
+function _loadVacancyLocal() {
+  try {
+    var saved = localStorage.getItem("propmanager_vacancy");
+    if (saved) { _vacancyData = JSON.parse(saved); _vacancyPhotos = []; renderVacancyListing(); }
+  } catch(e) {}
+  _initVacancyUI();
 }
 function _initVacancyUI() {
   // Show landlord tools ONLY for landlord role — never for tenants or public
@@ -5189,21 +5184,30 @@ function saveVacancyListing() {
   };
 
   // Save listing — photos are compressed so should fit in localStorage
-  // Save to Supabase — shared across ALL landlords and devices
+  // Always save locally first
+  try { localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData)); } catch(e) {}
+  // Then push to Supabase for sharing
   if (sb) {
-    var savePayload = Object.assign({}, _vacancyData);
-    delete savePayload.id; // remove id so upsert works cleanly
+    var vPayload = {};
+    ["address","rent","deposit","beds","baths","sqft","type","desc","avail","amenities","status"].forEach(function(k){
+      if (_vacancyData[k] !== undefined) vPayload[k] = _vacancyData[k];
+    });
     sb.from("vacancy").select("id").limit(1).then(function(res) {
+      if (res.error) { console.warn("vacancy select error:", res.error.message); return; }
       var existId = res.data && res.data.length > 0 ? res.data[0].id : null;
       if (existId) {
-        sb.from("vacancy").update(savePayload).eq("id", existId);
+        sb.from("vacancy").update(vPayload).eq("id", existId).then(function(r2){
+          if (r2.error) console.warn("vacancy update error:", r2.error.message);
+          else console.log("Vacancy saved to Supabase");
+        });
       } else {
-        sb.from("vacancy").insert(savePayload);
+        sb.from("vacancy").insert(vPayload).then(function(r2){
+          if (r2.error) console.warn("vacancy insert error:", r2.error.message);
+          else console.log("Vacancy created in Supabase");
+        });
       }
-    });
+    }).catch(function(e){ console.warn("vacancy save catch:", e); });
   }
-  // Local backup
-  try { localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData)); } catch(e) {}
 
   document.getElementById("ve-ok").classList.add("on");
   _vacancyPhotoIndex = 0;
@@ -5222,21 +5226,30 @@ function markAsRented() {
   if (_vacancyData) {
     _vacancyData.status = "rented";
     // Save listing — photos are compressed so should fit in localStorage
-  // Save to Supabase — shared across ALL landlords and devices
+  // Always save locally first
+  try { localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData)); } catch(e) {}
+  // Then push to Supabase for sharing
   if (sb) {
-    var savePayload = Object.assign({}, _vacancyData);
-    delete savePayload.id; // remove id so upsert works cleanly
+    var vPayload = {};
+    ["address","rent","deposit","beds","baths","sqft","type","desc","avail","amenities","status"].forEach(function(k){
+      if (_vacancyData[k] !== undefined) vPayload[k] = _vacancyData[k];
+    });
     sb.from("vacancy").select("id").limit(1).then(function(res) {
+      if (res.error) { console.warn("vacancy select error:", res.error.message); return; }
       var existId = res.data && res.data.length > 0 ? res.data[0].id : null;
       if (existId) {
-        sb.from("vacancy").update(savePayload).eq("id", existId);
+        sb.from("vacancy").update(vPayload).eq("id", existId).then(function(r2){
+          if (r2.error) console.warn("vacancy update error:", r2.error.message);
+          else console.log("Vacancy saved to Supabase");
+        });
       } else {
-        sb.from("vacancy").insert(savePayload);
+        sb.from("vacancy").insert(vPayload).then(function(r2){
+          if (r2.error) console.warn("vacancy insert error:", r2.error.message);
+          else console.log("Vacancy created in Supabase");
+        });
       }
-    });
+    }).catch(function(e){ console.warn("vacancy save catch:", e); });
   }
-  // Local backup
-  try { localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData)); } catch(e) {}
   }
   closeMo("markrente");
   document.getElementById("vac-listing").style.display = "none";
@@ -6093,23 +6106,33 @@ function saveDocument() {
   var today = new Date().toISOString().split("T")[0];
 
   function pushDocToSupabase(doc) {
-    if (!sb) return;
-    // Store in Supabase documents table — shared across all landlords
-    var dbDoc = { name: doc.name, category: doc.category, date: doc.date,
-                  file_name: doc.fileName || null, data_url: doc.dataUrl || null };
-    sb.from("documents").insert(dbDoc).then(function(res) {
-      if (!res.error) {
+    // Always save locally first
+    try {
+      var lsDocs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]");
+      lsDocs.push(doc);
+      localStorage.setItem("propmanager_docs", JSON.stringify(lsDocs));
+    } catch(e) {}
+    // Then push to Supabase
+    if (sb) {
+      var dbDoc = { name: doc.name, category: doc.category || "Other", date: doc.date,
+                    file_name: doc.fileName || null, data_url: doc.dataUrl || null };
+      sb.from("documents").insert(dbDoc).then(function(res) {
+        if (res.error) console.warn("doc insert error:", res.error.message);
+        else console.log("Document saved to Supabase");
         renderDocList();
         showOk("doc-ok");
         setTimeout(function() { closeMo("docupload"); }, 1500);
-      } else {
-        // Supabase failed — save locally
-        try { _docs.push(doc); localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(e) {}
+      }).catch(function(e) {
+        console.warn("doc insert catch:", e);
         renderDocList();
         showOk("doc-ok");
         setTimeout(function() { closeMo("docupload"); }, 1500);
-      }
-    });
+      });
+    } else {
+      renderDocList();
+      showOk("doc-ok");
+      setTimeout(function() { closeMo("docupload"); }, 1500);
+    }
   }
 
   if (fileInput && fileInput.files && fileInput.files[0]) {
@@ -6137,23 +6160,41 @@ function renderDocList(filterCat) {
   if (!el) return;
   // Load from Supabase (shared across all landlords)
   if (sb) {
-    sb.from("documents").select("*").order("date", { ascending: false }).then(function(res) {
+    sb.from("documents").select("*").order("created_at", { ascending: false }).then(function(res) {
+      if (res.error) {
+        console.warn("documents table error:", res.error.message);
+        try { _docs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]"); } catch(e) { _docs = []; }
+        _renderDocListUI(filterCat);
+        return;
+      }
       if (res.data && res.data.length > 0) {
-        // Map Supabase columns to _docs format
         _docs = res.data.map(function(r) {
-          return { id: r.id, name: r.name, category: r.category, date: r.date,
+          return { id: r.id, name: r.name, category: r.category || "Other", date: r.date,
                    fileName: r.file_name, dataUrl: r.data_url };
         });
       } else {
-        // Fall back to localStorage
-        try { _docs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]"); } catch(e2) { _docs = []; }
+        // No docs in Supabase — check localStorage and migrate up
+        try {
+          var lsDocs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]");
+          if (lsDocs.length > 0) {
+            _docs = lsDocs;
+            // Migrate each doc to Supabase
+            lsDocs.forEach(function(d) {
+              sb.from("documents").insert({
+                name: d.name, category: d.category || "Other", date: d.date,
+                file_name: d.fileName || null, data_url: d.dataUrl || null
+              });
+            });
+          } else { _docs = []; }
+        } catch(e2) { _docs = []; }
       }
       _renderDocListUI(filterCat);
-    }).catch(function() {
+    }).catch(function(err) {
+      console.warn("renderDocList catch:", err);
       try { _docs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]"); } catch(e) { _docs = []; }
       _renderDocListUI(filterCat);
     });
-    return; // async — _renderDocListUI called in callbacks
+    return;
   }
   try { _docs = JSON.parse(localStorage.getItem("propmanager_docs") || "[]"); } catch(e) { _docs = []; }
   _renderDocListUI(filterCat);
