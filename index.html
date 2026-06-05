@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v19.1</div>
+<div class="vbadge">PropManager SC v19.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4272,6 +4272,7 @@ function addFeeTier() {
 function saveLateFeeSchedule() {
   // Save to localStorage for persistence
   try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(_feeSchedule)); } catch(e) {}
+  if (sb) { sb.from("settings").upsert({ key: "fee_schedule", value: JSON.stringify(_feeSchedule) }).then(function(){}); }
   // Show summary
   var summary = _feeSchedule.map(function(t) {
     var typeLabel = t.type === "flat" ? "$" + t.amount + " flat" : t.type === "percent" ? t.amount + "% of rent" : "$" + t.amount + "/day";
@@ -6011,30 +6012,45 @@ async function sendScreeningInvite() {
     return;
   }
   errEl.style.display = "none";
-  // Store screening request in localStorage
-  var requests = [];
-  try { requests = JSON.parse(localStorage.getItem("propmanager_screenings") || "[]"); } catch(e) {}
-  requests.push({
-    id: Date.now(), name: first + " " + last, email: email,
-    status: "invited", date: new Date().toISOString().split("T")[0],
-    property: document.getElementById("scr-prop").options[document.getElementById("scr-prop").selectedIndex].text
-  });
-  try { localStorage.setItem("propmanager_screenings", JSON.stringify(requests)); } catch(e) {}
-  showOk("scr-ok");
-  renderScreeningList();
+  var propName = document.getElementById("scr-prop").options[document.getElementById("scr-prop").selectedIndex] ?
+    document.getElementById("scr-prop").options[document.getElementById("scr-prop").selectedIndex].text : "";
+  var scrRow = { full_name: first + " " + last, email: email,
+    status: "Invited", invited_date: new Date().toISOString().split("T")[0], property: propName };
+  if (sb) {
+    sb.from("screenings").insert(scrRow).then(function() { showOk("scr-ok"); renderScreeningList(); });
+  } else {
+    try { var reqs=[]; try{reqs=JSON.parse(localStorage.getItem("propmanager_screenings")||"[]");}catch(e){} reqs.push(scrRow); localStorage.setItem("propmanager_screenings",JSON.stringify(reqs)); }catch(e2){}
+    showOk("scr-ok"); renderScreeningList();
+  }
   setTimeout(function() { closeMo("screening"); }, 2000);
 }
 
 function renderScreeningList() {
   var el = document.getElementById("screening-list");
   if (!el) return;
-  var requests = [];
-  try { requests = JSON.parse(localStorage.getItem("propmanager_screenings") || "[]"); } catch(e) {}
-  if (!requests.length) { el.innerHTML = "<div class='empty'>No screening requests yet.</div>"; return; }
-  el.innerHTML = requests.slice().reverse().map(function(r) {
-    var badge = r.status === "complete" ? "<span class='badge b-g'>Complete</span>" : "<span class='badge b-a'>Invited</span>";
-    return "<div class='lr'><div class='l-ico' style='background:#e6f0fb;color:#1a5fa8'><i class='ti ti-user-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + r.name + " — " + r.property + "</div><div class='l-sub'>" + r.date + " · " + r.email + "</div></div>" + badge + "</div>";
-  }).join("");
+  if (sb) {
+    sb.from("screenings").select("*").order("invited_date", { ascending: false }).then(function(res) {
+      var reqs = res.data || [];
+      if (!reqs.length) { el.innerHTML = "<div class='empty'>No screening requests yet.</div>"; return; }
+      el.innerHTML = reqs.map(function(r) {
+        var name = r.full_name || r.name || "";
+        var date = r.invited_date || r.date || "";
+        var badge = r.status === "Complete" ? "<span class='badge b-g'>Complete</span>" : "<span class='badge b-a'>Invited</span>";
+        return "<div class='lr'><div class='l-ico' style='background:#e6f0fb;color:#1a5fa8'><i class='ti ti-user-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + name + (r.property ? " — " + r.property : "") + "</div><div class='l-sub'>" + date + " · " + (r.email||"") + "</div></div>" + badge + "</div>";
+      }).join("");
+    }).catch(function() {
+      var reqs = [];
+      try { reqs = JSON.parse(localStorage.getItem("propmanager_screenings") || "[]"); } catch(e) {}
+      el.innerHTML = reqs.length ? reqs.map(function(r){ return "<div class='lr'><div class='l-name'>" + (r.name||"") + "</div></div>"; }).join("") : "<div class='empty'>No screening requests yet.</div>";
+    });
+  } else {
+    var reqs = [];
+    try { reqs = JSON.parse(localStorage.getItem("propmanager_screenings") || "[]"); } catch(e) {}
+    el.innerHTML = reqs.length ? reqs.slice().reverse().map(function(r) {
+      var badge = r.status === "complete" ? "<span class='badge b-g'>Complete</span>" : "<span class='badge b-a'>Invited</span>";
+      return "<div class='lr'><div class='l-ico' style='background:#e6f0fb;color:#1a5fa8'><i class='ti ti-user-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + (r.full_name||r.name||"") + (r.property ? " — " + r.property : "") + "</div><div class='l-sub'>" + (r.invited_date||r.date||"") + " · " + (r.email||"") + "</div></div>" + badge + "</div>";
+    }).join("") : "<div class='empty'>No screening requests yet.</div>";
+  }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -6279,6 +6295,7 @@ function saveSmsSettings() {
     from:  document.getElementById("sms-from").value.trim()
   };
   try { localStorage.setItem("propmanager_sms", JSON.stringify(_smsSettings)); } catch(e) {}
+  if (sb) { sb.from("settings").upsert({ key: "sms_settings", value: JSON.stringify(_smsSettings) }).then(function(){}); }
   showOk("sms-save-ok");
 }
 
@@ -6352,12 +6369,32 @@ async function sendSmsMessage() {
 function renderApplications() {
   var el = document.getElementById("application-list");
   if (!el) return;
-  var apps = [];
-  try { apps = JSON.parse(localStorage.getItem("propmanager_applications") || "[]"); } catch(e) {}
-  if (!apps.length) { el.innerHTML = "<div class='empty'>No applications yet. Share your application link to start receiving them.</div>"; return; }
-  el.innerHTML = apps.map(function(a) {
-    return "<div class='lr'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-file-plus' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + a.name + " — $" + a.income + "/mo income</div><div class='l-sub'>" + a.date + " · " + a.email + "</div></div><span class='badge b-a'>New</span></div>";
-  }).join("");
+  el.innerHTML = "<div style='color:#999;font-size:13px;padding:12px 0'>Loading...</div>";
+  if (sb) {
+    sb.from("applications").select("*").order("submitted_date", { ascending: false }).then(function(res) {
+      var apps = res.data || [];
+      if (!apps.length) { el.innerHTML = "<div class='empty'>No applications yet. Share your application link to start receiving them.</div>"; return; }
+      el.innerHTML = apps.map(function(a) {
+        var name = a.full_name || a.name || "Unknown";
+        var date = a.submitted_date || a.date || "";
+        var status = a.status || "New";
+        var badgeCls = status === "Approved" ? "b-g" : status === "Declined" ? "b-r" : "b-a";
+        return "<div class='lr'>" +
+          "<div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-file-plus' style='font-size:11px'></i></div>" +
+          "<div style='flex:1'><div class='l-name'>" + name + (a.income ? " — $" + a.income + "/mo" : "") + "</div>" +
+          "<div class='l-sub'>" + date + " · " + (a.email||"") + (a.phone ? " · " + a.phone : "") + "</div></div>" +
+          "<span class='badge " + badgeCls + "'>" + status + "</span></div>";
+      }).join("");
+    }).catch(function() {
+      var apps = [];
+      try { apps = JSON.parse(localStorage.getItem("propmanager_applications") || "[]"); } catch(e) {}
+      el.innerHTML = apps.length ? apps.map(function(a){ return "<div class='lr'><div class='l-name'>" + (a.full_name||a.name||"") + "</div></div>"; }).join("") : "<div class='empty'>No applications yet.</div>";
+    });
+  } else {
+    var apps = [];
+    try { apps = JSON.parse(localStorage.getItem("propmanager_applications") || "[]"); } catch(e) {}
+    el.innerHTML = apps.length ? apps.map(function(a){ return "<div class='lr'><div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-file-plus' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + (a.full_name||a.name||"") + " — $" + (a.income||"") + "/mo</div><div class='l-sub'>" + (a.submitted_date||a.date||"") + " · " + (a.email||"") + "</div></div><span class='badge b-a'>New</span></div>"; }).join("") : "<div class='empty'>No applications yet.</div>";
+  }
 }
 
 // Check if URL has ?apply=1 and show application form
@@ -6405,23 +6442,19 @@ function submitApply() {
     return;
   }
   if (errEl) errEl.style.display = "none";
-  // Save to localStorage for landlord Applications tab
-  var apps = [];
-  try { apps = JSON.parse(localStorage.getItem("propmanager_applications")||"[]"); } catch(e){}
-  apps.push({
-    id: Date.now(),
-    date: new Date().toISOString().split("T")[0],
-    name: first + " " + last,
-    email: email, phone: phone, income: income,
-    emg: emgN + " — " + emgP,
+  var appRow = {
+    full_name: first + " " + last, email: email, phone: phone,
+    income: income, emergency_contact: emgN + " — " + emgP,
     occupants: (document.getElementById("app-occupants")||{}).value||"",
     pets: (document.getElementById("app-pets")||{}).value||"No",
     vehicle: (document.getElementById("app-vehicle")||{}).value||"",
     ssn_last4: ((document.getElementById("app-ssn")||{}).value||"").slice(-4),
     employer: (document.getElementById("app-employer")||{}).value||"",
-    status: "New"
-  });
-  try { localStorage.setItem("propmanager_applications", JSON.stringify(apps)); } catch(e2){}
+    address: (document.getElementById("app-addr")||{}).value||"",
+    submitted_date: new Date().toISOString().split("T")[0], status: "New"
+  };
+  if (sb) { sb.from("applications").insert(appRow); }
+  else { try { var a2=[]; try{a2=JSON.parse(localStorage.getItem("propmanager_applications")||"[]");}catch(e){} a2.push(appRow); localStorage.setItem("propmanager_applications",JSON.stringify(a2)); }catch(e2){} }
   document.getElementById("apply-form").style.display = "none";
   var okEl = document.getElementById("apply-ok");
   if (okEl) { okEl.style.display = "block"; okEl.classList.add("on"); }
@@ -6435,6 +6468,8 @@ document.addEventListener("DOMContentLoaded", function() {
   checkApplicationFlow();
   // Load saved notification settings
   loadNotificationSettings();
+  // Load shared settings from Supabase (SMS, fee schedule)
+  if (typeof loadSharedSettings === "function") loadSharedSettings();
 
   // Check for Stripe Connect OAuth callback
   var urlParams = new URLSearchParams(window.location.search);
@@ -6626,6 +6661,24 @@ function savePortalSettingsPrefs() {
   showOk("tst-prefs-ok");
 }
 
+
+function loadSharedSettings() {
+  if (!sb) return;
+  sb.from("settings").select("key,value").in("key", ["sms_settings","fee_schedule"]).then(function(res) {
+    if (!res.data) return;
+    res.data.forEach(function(row) {
+      try {
+        var val = JSON.parse(row.value);
+        if (row.key === "sms_settings" && typeof _smsSettings !== "undefined") {
+          Object.assign(_smsSettings, val);
+        }
+        if (row.key === "fee_schedule" && typeof _feeSchedule !== "undefined") {
+          Object.assign(_feeSchedule, val);
+        }
+      } catch(e) {}
+    });
+  });
+}
 </script>
 
 <!-- LOG PAYMENT MODAL -->
