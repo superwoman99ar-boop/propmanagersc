@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v19.4</div>
+<div class="vbadge">PropManager SC v19.5</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -6222,26 +6222,19 @@ function _renderDocListUI(filterCat) {
   });
   el.querySelectorAll("[data-del-doc]").forEach(function(btn) {
     btn.addEventListener("click", function() {
-      var delId = btn.getAttribute("data-del-doc");
-      var delIdNum = parseInt(delId);
-      if (sb) {
+      var delId = String(btn.getAttribute("data-del-doc"));
+      var delIdNum = parseInt(delId, 10);
+      // 1. Remove from in-memory cache immediately
+      _docs = _docs.filter(function(d) { return String(d.id) !== delId; });
+      // 2. Remove from localStorage immediately
+      try { localStorage.removeItem("propmanager_docs"); } catch(e) {}
+      // 3. Re-render right away — user sees it gone instantly
+      _renderDocListUI(filterCat);
+      // 4. Delete from Supabase in background (fire and forget)
+      if (sb && !isNaN(delIdNum)) {
         sb.from("documents").delete().eq("id", delIdNum).then(function(res) {
-          if (res.error) {
-            console.warn("Delete error:", res.error.message);
-            // Remove from local cache and re-render
-            _docs = _docs.filter(function(d) { return String(d.id) !== String(delId); });
-            _renderDocListUI(filterCat);
-          } else {
-            renderDocList(filterCat);
-          }
-        }).catch(function() {
-          _docs = _docs.filter(function(d) { return String(d.id) !== String(delId); });
-          _renderDocListUI(filterCat);
-        });
-      } else {
-        _docs = _docs.filter(function(d) { return String(d.id) !== String(delId); });
-        try { localStorage.setItem("propmanager_docs", JSON.stringify(_docs)); } catch(e) {}
-        _renderDocListUI(filterCat);
+          if (res.error) console.warn("Doc delete (Supabase):", res.error.message);
+        }).catch(function(e) { console.warn("Doc delete catch:", e); });
       }
     });
   });
