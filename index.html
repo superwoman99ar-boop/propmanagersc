@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v19.6</div>
+<div class="vbadge">PropManager SC v19.7</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -751,6 +751,17 @@ footer{background:#0f1e35;padding:44px 20px 26px}
     <div class="mo-err" id="st-pass-err" style="margin-bottom:9px">Passwords do not match or are too short.</div>
     <button class="btn btn-n" id="st-change-pass-btn"><i class="ti ti-key"></i> Update password</button>
     <div class="ok-msg" id="st-pass-ok" style="margin-top:9px;margin-bottom:18px"><i class="ti ti-circle-check"></i> Password updated.</div>
+
+    <div style="font-size:13px;font-weight:600;color:#0f1e35;margin:20px 0 12px;padding-top:16px;border-top:1px solid rgba(15,30,53,.08)"><i class="ti ti-mail" style="color:#1a5fa8;margin-right:6px"></i>Email Notifications (Resend)</div>
+    <div style="background:#f0f7ff;border:1px solid rgba(26,95,168,.2);border-radius:8px;padding:12px 14px;font-size:12.5px;color:#1a5fa8;margin-bottom:11px">
+      <strong>Setup:</strong> Create a free account at <a href="https://resend.com" target="_blank" style="color:#1a5fa8">resend.com</a>, add your domain, and paste your API key below. Tenants will then receive email alerts when maintenance is scheduled.
+    </div>
+    <label class="mo-lbl">Resend API key</label>
+    <input class="mo-inp" id="st-resend-key" type="password" placeholder="re_xxxxxxxxxxxxxxxxxxxx" style="margin-bottom:9px">
+    <label class="mo-lbl">From email (must be verified in Resend)</label>
+    <input class="mo-inp" id="st-resend-from" placeholder="notifications@propmanagersc.com" style="margin-bottom:11px">
+    <button class="btn btn-n" id="st-save-resend-btn" style="margin-bottom:18px"><i class="ti ti-check"></i> Save email settings</button>
+    <div class="ok-msg" id="st-resend-ok" style="margin-bottom:16px"><i class="ti ti-circle-check"></i> Email settings saved.</div>
 
     <div style="font-size:13px;font-weight:600;color:#0f1e35;margin:20px 0 12px;padding-top:16px;border-top:1px solid rgba(15,30,53,.08)"><i class="ti ti-sliders" style="color:#1a5fa8;margin-right:6px"></i>Dashboard Preferences</div>
     <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:14px">
@@ -2253,7 +2264,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","quickmaint","quickmsg","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial","leasedoc","screening","docupload","checklist"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","quickmaint","quickmsg","schedmaint","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial","leasedoc","screening","docupload","checklist"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -2307,12 +2318,22 @@ function attachEvents() {
   // Lease document modal
   var closeLDMo = document.getElementById("close-leasedoc-mo");
   if (closeLDMo) closeLDMo.addEventListener("click", function() { closeMo("leasedoc"); });
+  on("close-schedmaint-mo", "click", function() { closeMo("schedmaint"); });
+  on("sched-confirm-btn",   "click", confirmSchedule);
 
   // ── DASHBOARD SETTINGS ──────────────────────────────────
   on("st-save-profile-btn", "click", saveSettingsProfile);
   on("st-change-pass-btn",  "click", saveSettingsPassword);
   on("st-save-prefs-btn",   "click", saveSettingsPrefs);
   on("st-signout-btn",      "click", signOut);
+  on("st-save-resend-btn",  "click", function() {
+    var key  = (document.getElementById("st-resend-key")||{}).value||"";
+    var from = (document.getElementById("st-resend-from")||{}).value||"";
+    if (key) RESEND_API_KEY = key;
+    try { localStorage.setItem("propmanager_resend", JSON.stringify({ api_key:key, from_email:from })); } catch(e) {}
+    if (sb && key) { sb.from("settings").upsert({ key:"resend", value:JSON.stringify({api_key:key,from_email:from}) }); }
+    showOk("st-resend-ok");
+  });
 
   // ── PORTAL SETTINGS ─────────────────────────────────────
   on("tst-save-profile-btn", "click", savePortalSettingsProfile);
@@ -4863,8 +4884,15 @@ function initVacancyPage() {
 function _loadVacancyLocal() {
   try {
     var saved = localStorage.getItem("propmanager_vacancy");
-    if (saved) { _vacancyData = JSON.parse(saved); _vacancyPhotos = []; renderVacancyListing(); }
+    if (saved) {
+      _vacancyData = JSON.parse(saved);
+      _vacancyPhotos = [];
+      renderVacancyListing();
+      _initVacancyUI();
+      return;
+    }
   } catch(e) {}
+  // No local data either — show default/empty listing
   _initVacancyUI();
 }
 function _initVacancyUI() {
@@ -6629,6 +6657,15 @@ function loadSettingsPage() {
       nameEl.value = (currentUser.user_metadata && currentUser.user_metadata.full_name) || "";
     }
   }
+  // Load Resend settings
+  try {
+    var resendCfg = JSON.parse(localStorage.getItem("propmanager_resend") || "{}");
+    var rkEl = document.getElementById("st-resend-key");
+    var rfEl = document.getElementById("st-resend-from");
+    if (rkEl && resendCfg.api_key)    rkEl.value = resendCfg.api_key;
+    if (rfEl && resendCfg.from_email) rfEl.value = resendCfg.from_email;
+    if (resendCfg.api_key) RESEND_API_KEY = resendCfg.api_key;
+  } catch(e) {}
   // Load saved prefs
   try {
     var prefs = JSON.parse(localStorage.getItem("propmanager_prefs") || "{}");
@@ -6784,6 +6821,134 @@ function loadSharedSettings() {
     });
   });
 }
+
+// ════════════════════════════════════════════════════════════
+// RESEND EMAIL — send transactional emails via Resend API
+// Set your Resend API key in the settings tab
+// ════════════════════════════════════════════════════════════
+var RESEND_API_KEY = "";  // Set via Settings > Notifications
+
+async function sendResendEmail(to, subject, htmlBody) {
+  var apiKey = RESEND_API_KEY ||
+    (function(){ try { return JSON.parse(localStorage.getItem("propmanager_resend")||"{}").api_key||""; }catch(e){return "";} })();
+  if (!apiKey) {
+    console.warn("Resend API key not set. Go to Settings > Notifications to add it.");
+    return { error: "No API key" };
+  }
+  try {
+    var res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + apiKey },
+      body: JSON.stringify({
+        from: "PropManager SC <notifications@propmanagersc.com>",
+        to: [to],
+        subject: subject,
+        html: htmlBody
+      })
+    });
+    var data = await res.json();
+    if (!res.ok) console.warn("Resend error:", data);
+    return data;
+  } catch(e) {
+    console.warn("Resend fetch error:", e);
+    return { error: e.message };
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// MAINTENANCE SCHEDULE MODAL
+// ════════════════════════════════════════════════════════════
+function openScheduleModal(maintId, tenantId, tenantEmail, issue) {
+  var idEl    = document.getElementById("sched-maint-id");
+  var tidEl   = document.getElementById("sched-tenant-id");
+  var temEl   = document.getElementById("sched-tenant-email");
+  var issEl   = document.getElementById("sched-issue-display");
+  var dateEl  = document.getElementById("sched-date");
+  var okEl    = document.getElementById("sched-ok");
+  var errEl   = document.getElementById("sched-err");
+  var notesEl = document.getElementById("sched-notes");
+  var contrEl = document.getElementById("sched-contractor");
+  if (idEl)    idEl.value    = maintId;
+  if (tidEl)   tidEl.value   = tenantId;
+  if (temEl)   temEl.value   = tenantEmail;
+  if (issEl)   issEl.value   = issue;
+  if (dateEl)  dateEl.value  = "";
+  if (okEl)    okEl.style.display  = "none";
+  if (errEl)   errEl.style.display = "none";
+  if (notesEl) notesEl.value = "";
+  if (contrEl) contrEl.value = "";
+  openMo("schedmaint");
+}
+
+function confirmSchedule() {
+  var maintId     = (document.getElementById("sched-maint-id")||{}).value||"";
+  var tenantEmail = (document.getElementById("sched-tenant-email")||{}).value||"";
+  var date        = (document.getElementById("sched-date")||{}).value||"";
+  var time        = (document.getElementById("sched-time")||{}).value||"10:00";
+  var contractor  = (document.getElementById("sched-contractor")||{}).value||"";
+  var notes       = (document.getElementById("sched-notes")||{}).value||"";
+  var issue       = (document.getElementById("sched-issue-display")||{}).value||"Maintenance";
+  var notify      = document.getElementById("sched-notify-tenant") && document.getElementById("sched-notify-tenant").checked;
+  var errEl       = document.getElementById("sched-err");
+  var okEl        = document.getElementById("sched-ok");
+
+  if (!date) {
+    if (errEl) errEl.style.display = "block";
+    return;
+  }
+  if (errEl) errEl.style.display = "none";
+
+  var schedDate = new Date(date + "T" + time).toLocaleDateString("en-US", {
+    weekday:"long", month:"long", day:"numeric", year:"numeric"
+  });
+
+  // 1. Update maintenance record status to Scheduled
+  if (sb && maintId) {
+    sb.from("maintenance").update({
+      status: "Scheduled",
+      scheduled_date: date,
+      scheduled_time: time,
+      contractor: contractor,
+      schedule_notes: notes
+    }).eq("id", maintId).then(function(res) {
+      if (res.error) console.warn("Schedule update error:", res.error.message);
+    });
+  }
+
+  // 2. Send email notification via Resend
+  if (notify && tenantEmail) {
+    var html =
+      "<div style='font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px'>" +
+      "<div style='background:#0f1e35;padding:16px 20px;border-radius:10px 10px 0 0;margin-bottom:0'>" +
+        "<span style='color:#f0c96b;font-size:17px;font-weight:700'>PropManager SC</span>" +
+        "<span style='color:rgba(255,255,255,.5);font-size:13px;margin-left:10px'>A&J Rush Properties</span>" +
+      "</div>" +
+      "<div style='border:1px solid #e5e7eb;border-top:none;border-radius:0 0 10px 10px;padding:24px'>" +
+        "<h2 style='margin:0 0 14px;font-size:18px;color:#0f1e35'>Maintenance Scheduled</h2>" +
+        "<p style='margin:0 0 18px;color:#374151;font-size:14px;line-height:1.6'>Your maintenance request has been scheduled. Please see the details below.</p>" +
+        "<div style='background:#f9fafb;border-radius:8px;padding:16px;margin-bottom:18px'>" +
+          "<div style='display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #e5e7eb;font-size:14px'><span style='color:#6b7280'>Issue</span><span style='font-weight:600;color:#0f1e35'>" + issue + "</span></div>" +
+          "<div style='display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #e5e7eb;font-size:14px'><span style='color:#6b7280'>Scheduled</span><span style='font-weight:600;color:#0f1e35'>" + schedDate + "</span></div>" +
+          "<div style='display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #e5e7eb;font-size:14px'><span style='color:#6b7280'>Time</span><span style='font-weight:600;color:#0f1e35'>" + time + "</span></div>" +
+          (contractor ? "<div style='display:flex;justify-content:space-between;padding:7px 0;font-size:14px'><span style='color:#6b7280'>Contractor</span><span style='font-weight:600;color:#0f1e35'>" + contractor + "</span></div>" : "") +
+        "</div>" +
+        (notes ? "<p style='margin:0 0 18px;color:#374151;font-size:14px;line-height:1.6'><strong>Notes:</strong> " + notes + "</p>" : "") +
+        "<p style='margin:0;color:#6b7280;font-size:13px'>Please ensure access to your unit at the scheduled time. If you need to reschedule, contact us at <a href='mailto:superwoman99.ar@gmail.com' style='color:#1a5fa8'>superwoman99.ar@gmail.com</a></p>" +
+      "</div>" +
+      "</div>";
+    sendResendEmail(tenantEmail, "Maintenance Scheduled — " + issue, html).then(function(r) {
+      console.log("Resend result:", r);
+    });
+  }
+
+  // 3. Show success
+  if (okEl) okEl.style.display = "block";
+  setTimeout(function() {
+    closeMo("schedmaint");
+    renderMaintList();
+  }, 2000);
+}
+
 </script>
 
 <!-- LOG PAYMENT MODAL -->
@@ -7758,5 +7923,34 @@ function loadSharedSettings() {
   </div>
 </div>
 
+
+<!-- MAINTENANCE SCHEDULE MODAL -->
+<div class="mo-overlay" id="mo-schedmaint">
+  <div class="mo-box" style="max-width:460px">
+    <button class="mo-close" id="close-schedmaint-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title"><i class="ti ti-calendar-event" style="color:#1a5fa8;margin-right:7px"></i>Schedule Maintenance</div>
+    <div class="mo-sub">Set a date and notify the tenant automatically.</div>
+    <input type="hidden" id="sched-maint-id">
+    <input type="hidden" id="sched-tenant-id">
+    <input type="hidden" id="sched-tenant-email">
+    <label class="mo-lbl">Issue</label>
+    <input class="mo-inp" id="sched-issue-display" readonly style="background:rgba(15,30,53,.04);color:#5a5a5a">
+    <label class="mo-lbl">Scheduled date *</label>
+    <input class="mo-inp" type="date" id="sched-date">
+    <label class="mo-lbl">Scheduled time</label>
+    <input class="mo-inp" type="time" id="sched-time" value="10:00">
+    <label class="mo-lbl">Contractor / technician (optional)</label>
+    <input class="mo-inp" id="sched-contractor" placeholder="e.g. ABC Plumbing, (864) 555-0100">
+    <label class="mo-lbl">Notes for tenant (optional)</label>
+    <textarea class="mo-inp" id="sched-notes" placeholder="e.g. Please ensure access to the kitchen area. Work should take about 1 hour." style="height:70px;resize:vertical"></textarea>
+    <label style="display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;margin-bottom:14px">
+      <input type="checkbox" id="sched-notify-tenant" checked style="width:15px;height:15px">
+      Send notification email to tenant
+    </label>
+    <button class="mo-btn" id="sched-confirm-btn"><i class="ti ti-calendar-check"></i> Confirm schedule &amp; notify tenant</button>
+    <div class="ok-msg" id="sched-ok" style="margin-top:9px"><i class="ti ti-circle-check"></i> Scheduled and tenant notified!</div>
+    <div class="mo-err" id="sched-err" style="margin-top:9px">Please select a date.</div>
+  </div>
+</div>
 </body>
 </html>
