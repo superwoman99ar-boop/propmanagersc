@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v20.3</div>
+<div class="vbadge">PropManager SC v20.4</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1982,6 +1982,7 @@ function attachEvents() {
   on("di-tn", "click", function() { goDash("tn"); });
   on("di-rn", "click", function() { goDash("rn"); });
   on("di-mn", "click", function() { goDash("mn"); });
+  on("di-ms", "click", function() { goDash("ms"); loadLandlordMessages(); });
   on("di-ls", "click", function() {
     goDash("ls");
     if (window._tenantCache) {
