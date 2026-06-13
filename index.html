@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v20.1</div>
+<div class="vbadge">PropManager SC v20.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -343,6 +343,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
       <button class="dsi" id="di-tn"><i class="ti ti-users"></i> Tenants</button>
       <button class="dsi" id="di-rn"><i class="ti ti-credit-card"></i> Rent Payments</button>
       <button class="dsi" id="di-mn"><i class="ti ti-tool"></i> Maintenance <span class="d-badge" id="maint-count">0</span></button>
+      <button class="dsi" id="di-ms"><i class="ti ti-message-circle"></i> Messages <span id="di-ms-badge" style="display:none;background:#c0392b;color:#fff;border-radius:10px;font-size:10px;padding:1px 6px;margin-left:4px">0</span></button>
       <button class="dsi" id="di-ls"><i class="ti ti-file-text"></i> Leases</button>
       <div class="dsb-lbl">Financials</div>
       <button class="dsi" id="di-gl"><i class="ti ti-book"></i> Ledger</button>
@@ -7286,7 +7287,7 @@ async function sendLandlordEmailToTenant() {
     "<div style='background:#0f1e35;padding:14px 18px;border-radius:9px 9px 0 0'><span style='color:#f0c96b;font-weight:700'>PropManager SC</span></div>" +
     "<div style='border:1px solid #e5e7eb;border-top:none;border-radius:0 0 9px 9px;padding:20px'>" +
     "<p style='font-size:14px;color:#0f1e35;line-height:1.7'>" + body + "</p>" +
-    "<p style='font-size:12px;color:#999;margin-top:18px'>A&amp;J Rush Properties &bull; propmanagersc.com</p>" +
+    "<p style='font-size:12px;color:#999;margin-top:18px'>A&J Rush Properties • propmanagersc.com</p>" +
     "</div></div>"
   );
   alert("Email sent to " + _msgActiveTenantEmail);
