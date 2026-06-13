@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v19.9</div>
+<div class="vbadge">PropManager SC v20.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3244,14 +3244,59 @@ function renderMaintList(maints) {
   if (!maints.length) { el.innerHTML = "<div class='empty' style='margin-bottom:13px'>No maintenance requests yet.</div>"; return; }
   el.innerHTML = maints.map(function(m) {
     var border = m.priority === "High" ? "#c0392b" : m.priority === "Medium" ? "#c9962a" : "#2d7a4f";
-    var badge = m.status === "Open" ? "<span class='badge b-b'>Open</span>" : m.status === "In Progress" ? "<span class='badge b-a'>In Progress</span>" : "<span class='badge b-g'>Resolved</span>";
-    var tname = m.tenants ? m.tenants.full_name : "";
-    var addr = m.properties ? m.properties.address : "";
-    return "<div style='border:1px solid rgba(15,30,53,.1);border-radius:7px;padding:12px 14px;margin-bottom:9px;border-left:3px solid " + border + "'><div style='display:flex;align-items:flex-start;justify-content:space-between;gap:7px;margin-bottom:4px'><div style='font-size:13.5px;font-weight:500'>" + m.issue + "</div>" + badge + "</div><div style='font-size:12px;color:#5a5a5a;margin-bottom:7px'>" + addr + (tname ? " · " + tname : "") + " · " + m.created_at.split("T")[0] + "</div><div style='display:flex;gap:6px'><button class='btn' style='font-size:11px;padding:3px 7px' data-maint-id='" + m.id + "' data-maint-status='In Progress'>In Progress</button><button class='btn btn-g' style='font-size:11px;padding:3px 7px' data-maint-id='" + m.id + "' data-maint-status='Resolved'>Resolved</button></div></div>";
+    var badge = m.status === "Open"
+      ? "<span class='badge b-b'>Open</span>"
+      : m.status === "In Progress"
+      ? "<span class='badge b-a'>In Progress</span>"
+      : m.status === "Scheduled"
+      ? "<span class='badge' style='background:#e6f0fb;color:#1a5fa8'>Scheduled</span>"
+      : "<span class='badge b-g'>Resolved</span>";
+    var tname  = m.tenants    ? m.tenants.full_name    : "";
+    var addr   = m.properties ? m.properties.address   : "";
+    var tEmail = "";
+    if (window._tenantCache) {
+      var tObj = window._tenantCache.find(function(t){ return t.id === m.tenant_id; });
+      if (tObj) tEmail = tObj.email || "";
+    }
+    var schedInfo = (m.status === "Scheduled" && m.scheduled_date)
+      ? "<div style='font-size:11.5px;color:#1a5fa8;margin-top:3px'><i class='ti ti-calendar-event'></i> Scheduled: " + m.scheduled_date + (m.scheduled_time ? " at " + m.scheduled_time : "") + (m.contractor ? " · " + m.contractor : "") + "</div>"
+      : "";
+    return "<div style='border:1px solid rgba(15,30,53,.1);border-radius:7px;padding:12px 14px;margin-bottom:9px;border-left:3px solid " + border + "'>" +
+      "<div style='display:flex;align-items:flex-start;justify-content:space-between;gap:7px;margin-bottom:4px'>" +
+        "<div style='font-size:13.5px;font-weight:500'>" + (m.issue||m.description||"Request") + "</div>" +
+        badge +
+      "</div>" +
+      "<div style='font-size:12px;color:#5a5a5a;margin-bottom:4px'>" + addr + (tname ? " · " + tname : "") + " · " + (m.created_at||"").split("T")[0] + "</div>" +
+      schedInfo +
+      "<div style='display:flex;gap:6px;margin-top:8px;flex-wrap:wrap'>" +
+        "<button class='btn' style='font-size:11px;padding:3px 7px' data-maint-id='" + m.id + "' data-maint-status='In Progress'>In Progress</button>" +
+        (m.status !== "Resolved"
+          ? "<button class='btn btn-n' style='font-size:11px;padding:3px 7px' " +
+              "data-sched-maint='" + m.id + "' " +
+              "data-tenant-id='" + (m.tenant_id||"") + "' " +
+              "data-tenant-email='" + tEmail + "' " +
+              "data-issue='" + (m.issue||"Maintenance").replace(/'/g,"") + "'>" +
+              "<i class='ti ti-calendar-event'></i> Schedule</button>"
+          : "") +
+        "<button class='btn btn-g' style='font-size:11px;padding:3px 7px' data-maint-id='" + m.id + "' data-maint-status='Resolved'>Resolved</button>" +
+      "</div>" +
+    "</div>";
   }).join("");
-  document.querySelectorAll("[data-maint-id]").forEach(function(btn) {
+  // Wire status buttons
+  el.querySelectorAll("[data-maint-id]").forEach(function(btn) {
     btn.addEventListener("click", function() {
       updateMaint(btn.getAttribute("data-maint-id"), btn.getAttribute("data-maint-status"));
+    });
+  });
+  // Wire schedule buttons
+  el.querySelectorAll("[data-sched-maint]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      openScheduleModal(
+        btn.getAttribute("data-sched-maint"),
+        btn.getAttribute("data-tenant-id"),
+        btn.getAttribute("data-tenant-email"),
+        btn.getAttribute("data-issue")
+      );
     });
   });
 }
