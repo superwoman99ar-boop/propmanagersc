@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v19.8</div>
+<div class="vbadge">PropManager SC v19.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4952,7 +4952,7 @@ function renderVacancyListing() {
   var setTxt = function(id, val) { var el = document.getElementById(id); if (el) el.textContent = val || ""; };
   setTxt("vac-title", d.address || "608 11th Street");
   setTxt("vac-subtitle", (d.city || "Gaffney, SC 29340") + " — " + (d.type || "Single-family home"));
-  setTxt("vac-desc", d.desc || "");
+  setTxt("vac-desc", d.description || d.desc || "");
   setTxt("vac-beds", d.beds || "--");
   setTxt("vac-baths", d.baths || "--");
   setTxt("vac-sqft", d.sqft ? Number(d.sqft).toLocaleString() : "--");
@@ -5313,7 +5313,7 @@ function saveVacancyListing() {
   // Then push to Supabase for sharing
   if (sb) {
     var vPayload = {};
-    ["address","rent","deposit","beds","baths","sqft","type","desc","avail","amenities","status"].forEach(function(k){
+    ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status"].forEach(function(k){
       if (_vacancyData[k] !== undefined) vPayload[k] = _vacancyData[k];
     });
     sb.from("vacancy").select("id").limit(1).then(function(res) {
@@ -5355,7 +5355,7 @@ function markAsRented() {
   // Then push to Supabase for sharing
   if (sb) {
     var vPayload = {};
-    ["address","rent","deposit","beds","baths","sqft","type","desc","avail","amenities","status"].forEach(function(k){
+    ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status"].forEach(function(k){
       if (_vacancyData[k] !== undefined) vPayload[k] = _vacancyData[k];
     });
     sb.from("vacancy").select("id").limit(1).then(function(res) {
