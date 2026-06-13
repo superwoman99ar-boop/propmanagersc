@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v20.4</div>
+<div class="vbadge">PropManager SC v20.5</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -429,8 +429,9 @@ footer{background:#0f1e35;padding:44px 20px 26px}
         <input id="msg-search" type="text" placeholder="Search tenants..." style="width:100%;padding:7px 10px;border:1.5px solid rgba(15,30,53,.15);border-radius:7px;font-size:12.5px;font-family:inherit;box-sizing:border-box">
       </div>
       <div id="msg-tenant-list" style="flex:1;overflow-y:auto"></div>
-      <div style="padding:10px 14px;border-top:1px solid rgba(15,30,53,.08)">
+      <div style="padding:10px 14px;border-top:1px solid rgba(15,30,53,.08);display:flex;flex-direction:column;gap:7px">
         <button class="btn btn-n" id="msg-new-btn" style="width:100%;justify-content:center;font-size:12.5px"><i class="ti ti-edit"></i> New message</button>
+        <button class="btn" id="msg-broadcast-btn" style="width:100%;justify-content:center;font-size:12.5px;background:#0f1e35;border-color:#0f1e35;color:#f0c96b"><i class="ti ti-speakerphone"></i> Message all tenants</button>
       </div>
     </div>
 
@@ -2311,7 +2312,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","quickmaint","quickmsg","schedmaint","msgpick","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial","leasedoc","screening","docupload","checklist"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","quickmaint","quickmsg","schedmaint","msgpick","broadcast","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial","leasedoc","screening","docupload","checklist"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -2369,9 +2370,18 @@ function attachEvents() {
   // ── LANDLORD MESSAGES ────────────────────────────────────
   on("msg-ll-send-btn", "click", sendLandlordMessage);
   on("msg-new-btn", "click", function() {
-    // Show tenant picker modal
     openMo("msgpick");
     loadMsgTenantPicker();
+  });
+  on("msg-broadcast-btn", "click", openBroadcastModal);
+  on("close-broadcast-mo", "click", function() { closeMo("broadcast"); });
+  on("broadcast-send-btn", "click", sendBroadcastMessage);
+  document.addEventListener("click", function(e) {
+    var bcb = e.target.closest("[data-bc-msg]");
+    if (bcb) {
+      var inp = document.getElementById("broadcast-body");
+      if (inp) { inp.value = bcb.getAttribute("data-bc-msg"); inp.focus(); }
+    }
   });
   on("msg-send-email-btn", "click", sendLandlordEmailToTenant);
   on("msg-search", "input", function() {
@@ -7314,6 +7324,105 @@ function loadMsgTenantPicker() {
     el.appendChild(btn);
   });
 }
+
+// ════════════════════════════════════════════════════════════
+// BROADCAST MESSAGE — send to all tenants at once
+// ════════════════════════════════════════════════════════════
+function openBroadcastModal() {
+  var tenants = window._tenantCache || [];
+  var pillsEl = document.getElementById("broadcast-tenant-pills");
+  var bodyEl  = document.getElementById("broadcast-body");
+  var okEl    = document.getElementById("broadcast-ok");
+  var errEl   = document.getElementById("broadcast-err");
+  var progEl  = document.getElementById("broadcast-progress");
+
+  if (bodyEl)  bodyEl.value = "";
+  if (okEl)    okEl.style.display  = "none";
+  if (errEl)   errEl.style.display = "none";
+  if (progEl)  progEl.style.display = "none";
+
+  // Show tenant pills
+  if (pillsEl) {
+    pillsEl.innerHTML = "";
+    if (!tenants.length) {
+      pillsEl.innerHTML = "<span style='color:#999;font-size:12px'>No tenants found.</span>";
+    } else {
+      tenants.forEach(function(t) {
+        var pill = document.createElement("span");
+        pill.style.cssText = "background:#e6f0fb;color:#1a5fa8;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500";
+        pill.textContent = t.full_name || "Tenant";
+        pillsEl.appendChild(pill);
+      });
+    }
+  }
+  openMo("broadcast");
+}
+
+async function sendBroadcastMessage() {
+  var body   = (document.getElementById("broadcast-body")||{}).value||"";
+  var doEmail = document.getElementById("broadcast-email") && document.getElementById("broadcast-email").checked;
+  var errEl  = document.getElementById("broadcast-err");
+  var okEl   = document.getElementById("broadcast-ok");
+  var progEl = document.getElementById("broadcast-progress");
+  var sendBtn = document.getElementById("broadcast-send-btn");
+
+  if (!body.trim()) { if (errEl) errEl.style.display = "block"; return; }
+  if (errEl) errEl.style.display = "none";
+
+  var tenants = window._tenantCache || [];
+  if (!tenants.length) { alert("No tenants to send to."); return; }
+
+  if (sendBtn) sendBtn.style.display = "none";
+  if (progEl)  progEl.style.display = "block";
+
+  var sent = 0;
+  var errors = 0;
+
+  for (var i = 0; i < tenants.length; i++) {
+    var t = tenants[i];
+    // Insert into messages table (shows in tenant portal)
+    if (sb) {
+      var res = await sb.from("messages").insert({
+        tenant_id: t.id,
+        sender:    "landlord",
+        body:      body,
+        read:      false
+      });
+      if (res.error) { errors++; console.warn("Broadcast msg error for " + t.full_name + ":", res.error.message); }
+      else sent++;
+    }
+    // Send email if requested
+    if (doEmail && t.email) {
+      var emailHtml =
+        "<div style='font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:20px'>" +
+        "<div style='background:#0f1e35;padding:14px 18px;border-radius:9px 9px 0 0'>" +
+          "<span style='color:#f0c96b;font-weight:700;font-size:16px'>PropManager SC</span>" +
+          "<span style='color:rgba(255,255,255,.5);font-size:13px;margin-left:10px'>A&J Rush Properties</span>" +
+        "</div>" +
+        "<div style='border:1px solid #e5e7eb;border-top:none;border-radius:0 0 9px 9px;padding:20px'>" +
+          "<p style='margin:0 0 7px;font-size:13px;color:#6b7280'>Hi " + (t.full_name||"") + ",</p>" +
+          "<p style='margin:0 0 16px;font-size:14px;color:#374151;line-height:1.7'>" + body + "</p>" +
+          "<p style='margin:0;font-size:12.5px;color:#6b7280'>Log in at <a href='https://propmanagersc.com' style='color:#1a5fa8'>propmanagersc.com</a> to reply.</p>" +
+        "</div></div>";
+      await sendResendEmail(t.email, "Message from your landlord", emailHtml);
+    }
+  }
+
+  if (progEl) progEl.style.display = "none";
+  if (okEl) {
+    okEl.textContent = sent + " of " + tenants.length + " tenants messaged" + (errors ? " (" + errors + " failed)" : "") + ". Check their portals.";
+    okEl.style.display = "block";
+    okEl.classList.add("on");
+  }
+  if (sendBtn) sendBtn.style.display = "block";
+
+  // Reload messages if we are on that tab
+  if (document.getElementById("ds-ms") && document.getElementById("ds-ms").classList.contains("on")) {
+    loadLandlordMessages();
+  }
+
+  setTimeout(function() { closeMo("broadcast"); }, 3500);
+}
 </script>
 
 <!-- LOG PAYMENT MODAL -->
@@ -8325,6 +8434,40 @@ function loadMsgTenantPicker() {
     <div class="mo-title"><i class="ti ti-message-plus" style="color:#1a5fa8;margin-right:7px"></i>New message</div>
     <div class="mo-sub">Select a tenant to start a conversation.</div>
     <div id="msgpick-list" style="display:flex;flex-direction:column;gap:7px;max-height:320px;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- BROADCAST MESSAGE MODAL -->
+<div class="mo-overlay" id="mo-broadcast">
+  <div class="mo-box" style="max-width:500px">
+    <button class="mo-close" id="close-broadcast-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title"><i class="ti ti-speakerphone" style="color:#1a5fa8;margin-right:7px"></i>Message all tenants</div>
+    <div class="mo-sub">Sends the same message to every tenant's portal inbox. Optionally email all tenants too.</div>
+
+    <div style="background:rgba(15,30,53,.04);border-radius:9px;padding:11px 13px;margin-bottom:13px">
+      <div style="font-size:12px;font-weight:600;color:#0f1e35;margin-bottom:6px">Sending to:</div>
+      <div id="broadcast-tenant-pills" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+
+    <label class="mo-lbl">Message *</label>
+    <textarea class="mo-inp" id="broadcast-body" placeholder="Type your message to all tenants..." style="height:110px;resize:vertical;margin-bottom:9px"></textarea>
+
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px">
+      <button class="btn" style="font-size:11.5px;padding:4px 10px" data-bc-msg="Rent reminder: Your rent payment is due on the 1st of this month. Please log in to propmanagersc.com to pay online.">Rent reminder</button>
+      <button class="btn" style="font-size:11.5px;padding:4px 10px" data-bc-msg="Hi everyone! We will be performing routine property inspections next week. We will follow up individually with your scheduled time.">Inspection notice</button>
+      <button class="btn" style="font-size:11.5px;padding:4px 10px" data-bc-msg="Friendly reminder: Please ensure your rent is paid by the 5th to avoid late fees. Thank you for your cooperation.">Late fee reminder</button>
+      <button class="btn" style="font-size:11.5px;padding:4px 10px" data-bc-msg="Thank you all for being great tenants! We appreciate you and hope you are enjoying your homes.">Appreciation note</button>
+    </div>
+
+    <label style="display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;margin-bottom:16px">
+      <input type="checkbox" id="broadcast-email" style="width:15px;height:15px">
+      Also send as email to all tenants (requires Resend setup in Settings)
+    </label>
+
+    <button class="mo-btn" id="broadcast-send-btn"><i class="ti ti-send"></i> Send to all tenants</button>
+    <div id="broadcast-progress" style="display:none;margin-top:11px;font-size:13px;color:#1a5fa8;text-align:center"><i class="ti ti-loader"></i> Sending...</div>
+    <div class="ok-msg" id="broadcast-ok" style="margin-top:11px;display:none"><i class="ti ti-circle-check"></i> Message sent to all tenants!</div>
+    <div class="mo-err" id="broadcast-err" style="margin-top:9px">Please enter a message.</div>
   </div>
 </div>
 </body>
