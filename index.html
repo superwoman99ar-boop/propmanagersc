@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v20.0</div>
+<div class="vbadge">PropManager SC v20.1</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -418,7 +418,52 @@ footer{background:#0f1e35;padding:44px 20px 26px}
         </div>
       </div>
 
-      <div class="dsec" id="ds-mn">
+      <div class="dsec" id="ds-ms">
+  <div style="display:grid;grid-template-columns:280px 1fr;gap:0;height:600px;border:1px solid rgba(15,30,53,.1);border-radius:12px;overflow:hidden;background:#fff">
+
+    <!-- Tenant list panel -->
+    <div style="border-right:1px solid rgba(15,30,53,.1);display:flex;flex-direction:column">
+      <div style="padding:14px 16px;border-bottom:1px solid rgba(15,30,53,.1);background:#faf8f4">
+        <div style="font-size:13px;font-weight:600;color:#0f1e35;margin-bottom:8px">Conversations</div>
+        <input id="msg-search" type="text" placeholder="Search tenants..." style="width:100%;padding:7px 10px;border:1.5px solid rgba(15,30,53,.15);border-radius:7px;font-size:12.5px;font-family:inherit;box-sizing:border-box">
+      </div>
+      <div id="msg-tenant-list" style="flex:1;overflow-y:auto"></div>
+      <div style="padding:10px 14px;border-top:1px solid rgba(15,30,53,.08)">
+        <button class="btn btn-n" id="msg-new-btn" style="width:100%;justify-content:center;font-size:12.5px"><i class="ti ti-edit"></i> New message</button>
+      </div>
+    </div>
+
+    <!-- Thread panel -->
+    <div style="display:flex;flex-direction:column">
+      <div id="msg-thread-header" style="padding:14px 16px;border-bottom:1px solid rgba(15,30,53,.1);background:#faf8f4;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div id="msg-thread-name" style="font-size:13.5px;font-weight:600;color:#0f1e35">Select a tenant to message</div>
+          <div id="msg-thread-addr" style="font-size:11.5px;color:#5a5a5a"></div>
+        </div>
+        <div style="display:flex;gap:7px">
+          <button class="btn btn-n" id="msg-send-email-btn" style="font-size:11.5px;display:none"><i class="ti ti-mail"></i> Send email</button>
+        </div>
+      </div>
+      <div id="msg-ll-thread" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:9px;background:#f9f9f9">
+        <div style="text-align:center;color:#bbb;font-size:13px;margin-top:60px"><i class="ti ti-message-circle" style="font-size:36px;display:block;margin-bottom:9px;color:#ddd"></i>Select a tenant from the left to view your conversation</div>
+      </div>
+      <div id="msg-compose-area" style="padding:12px 14px;border-top:1px solid rgba(15,30,53,.1);background:#fff;display:none">
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <textarea id="msg-ll-input" placeholder="Type a message to your tenant..." style="flex:1;padding:9px 11px;border:1.5px solid rgba(15,30,53,.2);border-radius:8px;font-size:13px;font-family:inherit;resize:none;min-height:44px;max-height:120px;line-height:1.5"></textarea>
+          <button id="msg-ll-send-btn" style="background:#0f1e35;color:#f0c96b;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap"><i class="ti ti-send"></i> Send</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn" style="font-size:11px;padding:3px 9px" data-quick-msg="Rent reminder: Your rent payment of ${rent} is due on the 1st. Please log in to propmanagersc.com to pay online.">Rent reminder</button>
+          <button class="btn" style="font-size:11px;padding:3px 9px" data-quick-msg="Hi! Just following up on your maintenance request. Our team will be in touch shortly.">Maintenance follow-up</button>
+          <button class="btn" style="font-size:11px;padding:3px 9px" data-quick-msg="Friendly reminder that your lease renewal is coming up. Please contact us to discuss your options.">Lease renewal</button>
+          <button class="btn" style="font-size:11px;padding:3px 9px" data-quick-msg="Thank you for your payment! It has been received and recorded.">Payment received</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="dsec" id="ds-mn">
         <div id="maint-list"><div class="spin-wrap"><div class="spinner"></div> Loading...</div></div>
         <div class="card" style="margin-top:8px">
           <div class="card-title" style="margin-bottom:11px">Log new request</div>
@@ -1733,7 +1778,7 @@ var LANDLORD_EMAILS = ["superwoman99.ar@gmail.com", "j.rush45@yahoo.com"];
 var LANDLORD_EMAIL = "superwoman99.ar@gmail.com"; // primary
 
 var PAGES = ["home","dashboard","portal","vacancy","pricing","contact"];
-var DASH_SECS = ["ov","pr","tn","rn","mn","ls","gl","nt","tx","sc","docs","app","syn","sms","settings"];
+var DASH_SECS = ["ov","pr","tn","rn","mn","ms","ls","gl","nt","tx","sc","docs","app","syn","sms","settings"];
 var DASH_NAMES = {ov:"Dashboard",pr:"Properties",tn:"Tenants",rn:"Rent Payments",mn:"Maintenance",ls:"Leases",gl:"General Ledger",nt:"5-Day Notices",tx:"Tax Summary",sc:"Screening",docs:"Documents",app:"Applications",syn:"Listing Syndication",sms:"SMS Notifications"  "settings": "Settings"
 };
 var PORTAL_SECS = ["hm","py","ph","mn","ms","ls","st"];
@@ -2264,7 +2309,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","quickmaint","quickmsg","schedmaint","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial","leasedoc","screening","docupload","checklist"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","quickmaint","quickmsg","schedmaint","msgpick","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial","leasedoc","screening","docupload","checklist"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -2318,7 +2363,34 @@ function attachEvents() {
   // Lease document modal
   var closeLDMo = document.getElementById("close-leasedoc-mo");
   if (closeLDMo) closeLDMo.addEventListener("click", function() { closeMo("leasedoc"); });
+
+  // ── LANDLORD MESSAGES ────────────────────────────────────
+  on("msg-ll-send-btn", "click", sendLandlordMessage);
+  on("msg-new-btn", "click", function() {
+    // Show tenant picker modal
+    openMo("msgpick");
+    loadMsgTenantPicker();
+  });
+  on("msg-send-email-btn", "click", sendLandlordEmailToTenant);
+  on("msg-search", "input", function() {
+    var q = (document.getElementById("msg-search")||{}).value||"";
+    filterMsgTenantList(q);
+  });
+  var msgInput = document.getElementById("msg-ll-input");
+  if (msgInput) {
+    msgInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendLandlordMessage(); }
+    });
+  }
+  document.addEventListener("click", function(e) {
+    var qb = e.target.closest("[data-quick-msg]");
+    if (qb) {
+      var inp = document.getElementById("msg-ll-input");
+      if (inp) { inp.value = qb.getAttribute("data-quick-msg"); inp.focus(); }
+    }
+  });
   on("close-schedmaint-mo", "click", function() { closeMo("schedmaint"); });
+  on("close-msgpick-mo",    "click", function() { closeMo("msgpick"); });
   on("sched-confirm-btn",   "click", confirmSchedule);
 
   // ── DASHBOARD SETTINGS ──────────────────────────────────
@@ -3110,6 +3182,7 @@ async function loadDashboardData() {
   renderNoticeButtons(tenants);
   updateTaxMetrics(payments, expenses);
   checkLateRentAndNotify();
+  checkUnreadMessages();
   // Refresh hero card with live data now that tenants/payments are loaded
   if (currentRole === "landlord") {
     var llCard = document.getElementById("hero-landlord-card");
@@ -7022,6 +7095,223 @@ function confirmSchedule() {
   }, 2000);
 }
 
+
+// ════════════════════════════════════════════════════════════
+// LANDLORD MESSAGING
+// ════════════════════════════════════════════════════════════
+var _msgActiveTenantId   = null;
+var _msgActiveTenantName = "";
+var _msgActiveTenantEmail = "";
+var _msgActiveTenantRent = 0;
+var _msgTenantListCache  = [];
+
+async function loadLandlordMessages() {
+  // Load all tenants for sidebar
+  var tenants = window._tenantCache || [];
+  _msgTenantListCache = tenants;
+  renderMsgTenantList(tenants);
+  // Check unread count and update badge
+  checkUnreadMessages();
+}
+
+async function checkUnreadMessages() {
+  if (!sb) return;
+  var res = await sb.from("messages")
+    .select("id, tenant_id")
+    .eq("sender", "tenant")
+    .eq("read", false);
+  var count = res.data ? res.data.length : 0;
+  var badge = document.getElementById("di-ms-badge");
+  if (badge) {
+    badge.textContent = count;
+    badge.style.display = count > 0 ? "inline" : "none";
+  }
+}
+
+function renderMsgTenantList(tenants) {
+  var el = document.getElementById("msg-tenant-list");
+  if (!el) return;
+  if (!tenants.length) {
+    el.innerHTML = "<div style='padding:16px;color:#999;font-size:13px;text-align:center'>No tenants yet.</div>";
+    return;
+  }
+  el.innerHTML = "";
+  tenants.forEach(function(t) {
+    var ini = (t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
+    var div = document.createElement("div");
+    div.style.cssText = "display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid rgba(15,30,53,.06);transition:background .15s";
+    div.innerHTML =
+      "<div style='width:34px;height:34px;border-radius:50%;background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + ";display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0'>" + ini + "</div>" +
+      "<div style='flex:1;min-width:0'>" +
+        "<div style='font-size:13px;font-weight:500;color:#0f1e35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" + (t.full_name||"") + "</div>" +
+        "<div style='font-size:11px;color:#5a5a5a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>" + (t.properties ? t.properties.address : "No property") + "</div>" +
+      "</div>";
+    div.addEventListener("mouseenter", function() { div.style.background = "rgba(15,30,53,.04)"; });
+    div.addEventListener("mouseleave", function() { div.style.background = _msgActiveTenantId === t.id ? "rgba(26,95,168,.08)" : ""; });
+    div.addEventListener("click", function() {
+      // Highlight active
+      el.querySelectorAll("[data-tenant-row]").forEach(function(r) { r.style.background=""; });
+      div.style.background = "rgba(26,95,168,.08)";
+      openLandlordThread(t);
+    });
+    div.setAttribute("data-tenant-row", t.id);
+    el.appendChild(div);
+  });
+}
+
+function filterMsgTenantList(q) {
+  var filtered = !q ? _msgTenantListCache : _msgTenantListCache.filter(function(t) {
+    return (t.full_name||"").toLowerCase().includes(q.toLowerCase());
+  });
+  renderMsgTenantList(filtered);
+}
+
+async function openLandlordThread(tenant) {
+  _msgActiveTenantId    = tenant.id;
+  _msgActiveTenantName  = tenant.full_name || "";
+  _msgActiveTenantEmail = tenant.email || "";
+  _msgActiveTenantRent  = tenant.monthly_rent || 0;
+
+  // Update header
+  var nameEl = document.getElementById("msg-thread-name");
+  var addrEl = document.getElementById("msg-thread-addr");
+  var emailBtn = document.getElementById("msg-send-email-btn");
+  if (nameEl) nameEl.textContent = tenant.full_name || "";
+  if (addrEl) addrEl.textContent = (tenant.properties ? tenant.properties.address : "") + (tenant.email ? " · " + tenant.email : "");
+  if (emailBtn) emailBtn.style.display = tenant.email ? "flex" : "none";
+
+  // Show compose area
+  var composeEl = document.getElementById("msg-compose-area");
+  if (composeEl) composeEl.style.display = "block";
+
+  // Load thread
+  await loadLandlordThread();
+
+  // Mark tenant messages as read
+  if (sb) {
+    sb.from("messages").update({ read: true })
+      .eq("tenant_id", tenant.id).eq("sender", "tenant");
+    checkUnreadMessages();
+  }
+}
+
+async function loadLandlordThread() {
+  if (!_msgActiveTenantId || !sb) return;
+  var threadEl = document.getElementById("msg-ll-thread");
+  if (!threadEl) return;
+
+  var res = await sb.from("messages")
+    .select("*")
+    .eq("tenant_id", _msgActiveTenantId)
+    .order("created_at", { ascending: true });
+
+  var msgs = res.data || [];
+  if (!msgs.length) {
+    threadEl.innerHTML = "<div style='text-align:center;color:#bbb;font-size:13px;margin-top:40px'><i class='ti ti-message' style='font-size:28px;display:block;margin-bottom:7px;color:#ddd'></i>No messages yet. Send the first one below.</div>";
+    return;
+  }
+
+  threadEl.innerHTML = "";
+  msgs.forEach(function(m) {
+    var isLL = m.sender === "landlord";
+    var wrapper = document.createElement("div");
+    wrapper.style.cssText = "display:flex;flex-direction:column;align-items:" + (isLL ? "flex-end" : "flex-start");
+    var senderLabel = document.createElement("div");
+    senderLabel.style.cssText = "font-size:10.5px;color:#999;margin-bottom:3px";
+    senderLabel.textContent = isLL ? "You (Landlord)" : _msgActiveTenantName;
+    var bubble = document.createElement("div");
+    bubble.style.cssText = "max-width:75%;padding:9px 13px;border-radius:" + (isLL ? "12px 2px 12px 12px" : "2px 12px 12px 12px") + ";font-size:13px;line-height:1.55;" + (isLL ? "background:#0f1e35;color:#f0c96b" : "background:#fff;border:1px solid rgba(15,30,53,.1);color:#0f1e35");
+    bubble.textContent = m.body;
+    var timeEl = document.createElement("div");
+    timeEl.style.cssText = "font-size:10px;color:#bbb;margin-top:3px";
+    timeEl.textContent = m.created_at ? new Date(m.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "";
+    wrapper.appendChild(senderLabel);
+    wrapper.appendChild(bubble);
+    wrapper.appendChild(timeEl);
+    threadEl.appendChild(wrapper);
+  });
+  threadEl.scrollTop = threadEl.scrollHeight;
+}
+
+async function sendLandlordMessage() {
+  if (!_msgActiveTenantId || !sb) return;
+  var inp = document.getElementById("msg-ll-input");
+  var body = inp ? inp.value.trim() : "";
+  if (!body) return;
+
+  // Replace ${rent} placeholder
+  body = body.replace("${rent}", "$" + Number(_msgActiveTenantRent).toLocaleString());
+
+  var btn = document.getElementById("msg-ll-send-btn");
+  if (btn) { btn.textContent = "Sending..."; btn.disabled = true; }
+
+  var res = await sb.from("messages").insert({
+    tenant_id: _msgActiveTenantId,
+    sender:    "landlord",
+    body:      body,
+    read:      false
+  });
+
+  if (btn) { btn.innerHTML = "<i class='ti ti-send'></i> Send"; btn.disabled = false; }
+  if (!res.error) {
+    if (inp) inp.value = "";
+    loadLandlordThread();
+    // Also send email notification via Resend if tenant has email
+    if (_msgActiveTenantEmail) {
+      sendResendEmail(
+        _msgActiveTenantEmail,
+        "New message from your landlord",
+        "<div style='font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:20px'>" +
+        "<div style='background:#0f1e35;padding:14px 18px;border-radius:9px 9px 0 0'><span style='color:#f0c96b;font-weight:700;font-size:16px'>PropManager SC</span></div>" +
+        "<div style='border:1px solid #e5e7eb;border-top:none;border-radius:0 0 9px 9px;padding:20px'>" +
+        "<p style='margin:0 0 14px;font-size:14px;color:#374151'>You have a new message from your landlord:</p>" +
+        "<div style='background:#f9fafb;border-left:3px solid #0f1e35;padding:12px 14px;border-radius:4px;margin-bottom:16px;font-size:14px;color:#0f1e35;line-height:1.6'>" + body + "</div>" +
+        "<p style='margin:0;font-size:13px;color:#6b7280'>Log in at <a href='https://propmanagersc.com' style='color:#1a5fa8'>propmanagersc.com</a> to reply.</p>" +
+        "</div></div>"
+      );
+    }
+  }
+}
+
+async function sendLandlordEmailToTenant() {
+  if (!_msgActiveTenantEmail) return;
+  var subject = prompt("Email subject:", "Message from your landlord");
+  if (!subject) return;
+  var body = prompt("Message:", "");
+  if (!body) return;
+  await sendResendEmail(
+    _msgActiveTenantEmail,
+    subject,
+    "<div style='font-family:Arial,sans-serif;padding:20px;max-width:520px;margin:0 auto'>" +
+    "<div style='background:#0f1e35;padding:14px 18px;border-radius:9px 9px 0 0'><span style='color:#f0c96b;font-weight:700'>PropManager SC</span></div>" +
+    "<div style='border:1px solid #e5e7eb;border-top:none;border-radius:0 0 9px 9px;padding:20px'>" +
+    "<p style='font-size:14px;color:#0f1e35;line-height:1.7'>" + body + "</p>" +
+    "<p style='font-size:12px;color:#999;margin-top:18px'>A&amp;J Rush Properties &bull; propmanagersc.com</p>" +
+    "</div></div>"
+  );
+  alert("Email sent to " + _msgActiveTenantEmail);
+}
+
+function loadMsgTenantPicker() {
+  var el = document.getElementById("msgpick-list");
+  if (!el) return;
+  var tenants = window._tenantCache || [];
+  el.innerHTML = "";
+  tenants.forEach(function(t) {
+    var ini = (t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
+    var btn = document.createElement("button");
+    btn.style.cssText = "display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1px solid rgba(15,30,53,.1);border-radius:8px;background:#fff;cursor:pointer;font-family:inherit;text-align:left";
+    btn.innerHTML =
+      "<div style='width:32px;height:32px;border-radius:50%;background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + ";display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0'>" + ini + "</div>" +
+      "<div><div style='font-size:13px;font-weight:500;color:#0f1e35'>" + (t.full_name||"") + "</div><div style='font-size:11px;color:#5a5a5a'>" + (t.properties ? t.properties.address : "") + "</div></div>";
+    btn.addEventListener("click", function() {
+      closeMo("msgpick");
+      goDash("ms");
+      loadLandlordMessages().then(function() { openLandlordThread(t); });
+    });
+    el.appendChild(btn);
+  });
+}
 </script>
 
 <!-- LOG PAYMENT MODAL -->
@@ -8023,6 +8313,16 @@ function confirmSchedule() {
     <button class="mo-btn" id="sched-confirm-btn"><i class="ti ti-calendar-check"></i> Confirm schedule &amp; notify tenant</button>
     <div class="ok-msg" id="sched-ok" style="margin-top:9px"><i class="ti ti-circle-check"></i> Scheduled and tenant notified!</div>
     <div class="mo-err" id="sched-err" style="margin-top:9px">Please select a date.</div>
+  </div>
+</div>
+
+<!-- MESSAGE TENANT PICKER -->
+<div class="mo-overlay" id="mo-msgpick">
+  <div class="mo-box" style="max-width:400px">
+    <button class="mo-close" id="close-msgpick-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title"><i class="ti ti-message-plus" style="color:#1a5fa8;margin-right:7px"></i>New message</div>
+    <div class="mo-sub">Select a tenant to start a conversation.</div>
+    <div id="msgpick-list" style="display:flex;flex-direction:column;gap:7px;max-height:320px;overflow-y:auto"></div>
   </div>
 </div>
 </body>
