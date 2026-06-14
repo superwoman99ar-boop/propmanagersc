@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v22.3</div>
+<div class="vbadge">PropManager SC v22.4</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3369,6 +3369,9 @@ function renderPaymentList(payments, tenants) {
 
 function renderMaintList(maints) {
   var el = document.getElementById("maint-list");
+  if (!el) return;
+  // If called with no args (e.g. from confirmSchedule), reload from Supabase
+  if (!maints || !Array.isArray(maints)) { loadMaintTab(); return; }
   if (!maints.length) { el.innerHTML = "<div class='empty' style='margin-bottom:13px'>No maintenance requests yet.</div>"; return; }
   el.innerHTML = maints.map(function(m) {
     var border = m.priority === "High" ? "#c0392b" : m.priority === "Medium" ? "#c9962a" : "#2d7a4f";
@@ -3432,9 +3435,18 @@ function renderMaintList(maints) {
     btn.addEventListener("click", function() {
       if (!confirm("Delete this maintenance request?")) return;
       var id = parseInt(btn.getAttribute("data-del-maint"));
-      var row = btn.closest("div[style]");
+      var row = btn.closest("[data-del-maint]") ? btn.parentElement : btn.closest("div");
       if (row) row.style.opacity = "0.4";
-      if (sb) sb.from("maintenance").delete().eq("id", id).then(function() { loadMaintTab(); });
+      if (sb) {
+        sb.from("maintenance").delete().eq("id", id).then(function(res) {
+          if (res.error) { console.warn("maint delete error:", res.error.message); if (row) row.style.opacity = "1"; }
+          else loadMaintTab();
+        });
+      } else {
+        // No Supabase — remove from DOM
+        var card = btn.closest("[style*='border:1px']") || btn.parentElement.parentElement;
+        if (card) card.remove();
+      }
     });
   });
 }
@@ -6895,6 +6907,49 @@ document.addEventListener("DOMContentLoaded", function() {
   // PERMANENT GUARD: catches dynamically created buttons
   // Any button with data-action gets wired automatically - no onclick needed
   document.addEventListener("click", function(e) {
+    // Global delegation for delete buttons — catches any timing issues
+    var delMaint = e.target.closest("[data-del-maint]");
+    if (delMaint) {
+      e.stopPropagation();
+      if (!confirm("Delete this maintenance request?")) return;
+      var id = parseInt(delMaint.getAttribute("data-del-maint"));
+      var card = delMaint.closest("[style*='border:1px']") || delMaint.closest(".lr") || delMaint.parentElement;
+      if (card) card.style.opacity = "0.4";
+      if (sb) sb.from("maintenance").delete().eq("id", id).then(function(res) {
+        if (res.error) { console.warn("del maint:", res.error.message); if (card) card.style.opacity="1"; }
+        else loadMaintTab();
+      });
+      return;
+    }
+    var delDoc = e.target.closest("[data-del-doc]");
+    if (delDoc) {
+      e.stopPropagation();
+      var docId = parseInt(delDoc.getAttribute("data-del-doc"));
+      var docRow = delDoc.closest(".lr") || delDoc.parentElement;
+      if (docRow) docRow.style.opacity = "0.4";
+      if (sb) sb.from("documents").delete().eq("id", docId).then(function() { renderDocList(); });
+      return;
+    }
+    var delApp = e.target.closest("[data-del-app]");
+    if (delApp) {
+      e.stopPropagation();
+      if (!confirm("Delete this application?")) return;
+      var appId = parseInt(delApp.getAttribute("data-del-app"));
+      var appRow = delApp.closest(".lr") || delApp.parentElement;
+      if (appRow) appRow.style.opacity = "0.4";
+      if (sb) sb.from("applications").delete().eq("id", appId).then(function() { renderApplications(); });
+      return;
+    }
+    var delScreen = e.target.closest("[data-del-screen]");
+    if (delScreen) {
+      e.stopPropagation();
+      if (!confirm("Delete this screening request?")) return;
+      var scrId = parseInt(delScreen.getAttribute("data-del-screen"));
+      var scrRow = delScreen.closest(".lr") || delScreen.parentElement;
+      if (scrRow) scrRow.style.opacity = "0.4";
+      if (sb) sb.from("screenings").delete().eq("id", scrId).then(function() { renderScreeningList(); });
+      return;
+    }
     var btn = e.target.closest("[data-action]");
     if (!btn) return;
     var action = btn.getAttribute("data-action");
