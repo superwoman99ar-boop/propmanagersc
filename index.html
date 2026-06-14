@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v22.4</div>
+<div class="vbadge">PropManager SC v22.5</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1822,16 +1822,19 @@ function goDash(id) {
   refreshDashTab(id);
 }
 
+var _tabLastLoaded = {};
 function refreshDashTab(id) {
   if (!sb || currentRole !== "landlord") return;
+  var now = Date.now();
+  var lastLoad = _tabLastLoaded[id] || 0;
+  var STALE_MS = 120000; // only re-fetch if tab data is older than 2 minutes
+  if (now - lastLoad < STALE_MS) return;
+  _tabLastLoaded[id] = now;
   switch(id) {
-    case "ov":
-    case "tn":
-    case "rn":
+    case "ov": case "tn": case "rn":
       loadDashboardData(); break;
     case "mn":
-      if (typeof loadMaintTab === "function") loadMaintTab();
-      else loadDashboardData(); break;
+      loadMaintTab(); break;
     case "docs":
       renderDocList(); break;
     case "app":
@@ -3234,19 +3237,8 @@ async function loadDashboardData() {
     }
     checkStripeConnectStatus();
     requestBrowserNotifications();
-    setInterval(pollForNotifications, 15000);
-    // Also full data refresh every 30s so co-landlord changes appear
-    setInterval(function() {
-      if (currentRole === "landlord" && sb) {
-        loadDashboardData();
-        // Refresh whichever tab is active
-        var activeTab = DASH_SECS.find(function(s) {
-          var el = document.getElementById("ds-" + s);
-          return el && el.classList.contains("on");
-        });
-        if (activeTab) refreshDashTab(activeTab);
-      }
-    }, 30000);
+    setInterval(pollForNotifications, 300000); // 5 min — reduced to save Supabase quota
+// Background auto-refresh removed to preserve Supabase quota
     renderScreeningList();
     renderDocList();
   }
@@ -5973,47 +5965,20 @@ function requestBrowserNotifications() {
 
 // Poll for new messages/maintenance when landlord is logged in
 var _lastNotifCheck = null;
-// Supabase Realtime — subscribe once after login for instant cross-landlord sync
+// Realtime disabled — uses persistent connections that exhaust free tier quota
+// Tab-click refresh provides sufficient sync for co-landlord updates
 var _realtimeChannel = null;
 function subscribeRealtimeUpdates() {
-  if (!sb || _realtimeChannel) return;
-  try {
-    _realtimeChannel = sb.channel("propmanager-sync")
-      .on("postgres_changes", { event: "*", schema: "public", table: "maintenance" }, function() {
-        if (currentRole === "landlord") loadMaintTab();
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "documents" }, function() {
-        if (currentRole === "landlord") renderDocList();
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, function() {
-        if (currentRole === "landlord") {
-          checkUnreadMessages();
-          if (_msgActiveTenantId) loadLandlordThread();
-        }
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "vacancy" }, function() {
-        // Only reload if the edit modal is NOT open (don't interrupt editing)
-        var editModal = document.getElementById("mo-vacancyedit");
-        if (!editModal || !editModal.classList.contains("on")) {
-          initVacancyPage();
-        }
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "applications" }, function() {
-        if (currentRole === "landlord") renderApplications();
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "screenings" }, function() {
-        if (currentRole === "landlord") renderScreeningList();
-      })
-      .subscribe(function(status) {
-        console.log("Realtime status:", status);
-      });
-  } catch(e) {
-    console.warn("Realtime subscription failed:", e);
-  }
+  // Disabled to preserve Supabase free tier quota
+  // Re-enable after upgrading Supabase plan
 }
 
 async function pollForNotifications() {
   if (!sb || currentRole !== "landlord") return;
+  // Throttle — skip if last poll was recent
+  var now = Date.now();
+  if (window._lastPoll && now - window._lastPoll < 280000) return;
+  window._lastPoll = now;
   var now = new Date().toISOString();
   var checkFrom = _lastNotifCheck || new Date(Date.now() - 60000).toISOString();
   _lastNotifCheck = now;
