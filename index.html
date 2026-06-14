@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v20.9</div>
+<div class="vbadge">PropManager SC v21.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -5128,30 +5128,43 @@ function renderVacancyListing() {
     document.getElementById("vac-amenities-wrap").style.display = "none";
   }
 
-  // Photos — display in the vac-photo-main hero area
-  var photos = (d.photos && d.photos.length) ? d.photos : _vacancyPhotos || [];
-  var mainEl  = document.getElementById("vac-photo-main");
+  // Photos — display using existing vac-main-img element (DOM only, no onclick=)
+  var photos = (d.photos && d.photos.length)
+    ? d.photos
+    : (_vacancyPhotos && _vacancyPhotos.length ? _vacancyPhotos : []);
+  var mainImg = document.getElementById("vac-main-img");
   var noPhoto = document.getElementById("vac-no-photo");
-  if (mainEl) {
-    if (photos.length) {
-      // Show first photo as hero
-      mainEl.style.background = "none";
-      mainEl.innerHTML = "<img src='" + photos[0] + "' style='width:100%;height:100%;object-fit:cover;cursor:pointer' onclick="window.open('" + photos[0] + "','_blank')">";
-      if (noPhoto) noPhoto.style.display = "none";
-      // Show thumbnail strip if multiple photos
-      var stripEl = document.getElementById("vac-photo-strip");
-      if (stripEl && photos.length > 1) {
-        stripEl.innerHTML = photos.slice(1).map(function(u, i) {
-          return "<img src='" + u + "' style='width:80px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0' onclick="window.open('" + u + "','_blank')">";
-        }).join("");
-        stripEl.style.display = "flex";
-      }
-    } else {
-      mainEl.style.background = "linear-gradient(135deg,#a06010,#c9962a)";
-      if (noPhoto) noPhoto.style.display = "block";
+  var mainEl  = document.getElementById("vac-photo-main");
+  var stripEl = document.getElementById("vac-photo-strip");
+  if (photos.length) {
+    if (mainImg) {
+      mainImg.src = photos[0];
+      mainImg.style.display = "block";
+      (function(u){ mainImg.onclick = function(){ window.open(u,"_blank"); }; })(photos[0]);
     }
+    if (mainEl)  mainEl.style.background = "none";
+    if (noPhoto) noPhoto.style.display = "none";
+    if (stripEl) {
+      while (stripEl.firstChild) stripEl.removeChild(stripEl.firstChild);
+      if (photos.length > 1) {
+        photos.slice(1).forEach(function(u) {
+          var th = document.createElement("img");
+          th.src = u;
+          th.style.cssText = "width:80px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0";
+          (function(url){ th.addEventListener("click", function(){ window.open(url,"_blank"); }); })(u);
+          stripEl.appendChild(th);
+        });
+        stripEl.style.display = "flex";
+      } else {
+        stripEl.style.display = "none";
+      }
+    }
+  } else {
+    if (mainImg) mainImg.style.display = "none";
+    if (mainEl)  mainEl.style.background = "linear-gradient(135deg,#a06010,#c9962a)";
+    if (noPhoto) noPhoto.style.display = "block";
+    if (stripEl) stripEl.style.display = "none";
   }
-}
 
 function renderVacancyPhotos() {
   var mainImg = document.getElementById("vac-main-img");
