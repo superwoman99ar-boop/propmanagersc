@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v21.2</div>
+<div class="vbadge">PropManager SC v21.3</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -5165,12 +5165,12 @@ function renderVacancyListing() {
     if (noPhoto) noPhoto.style.display = "block";
     if (stripEl) stripEl.style.display = "none";
   }
-
+}
 
 function changeVacPhoto(dir) {
-  if (!_vacancyPhotos.length) return;
-  _vacancyPhotoIndex = (_vacancyPhotoIndex + dir + _vacancyPhotos.length) % _vacancyPhotos.length;
-  renderVacancyPhotos();
+  if (!_vacancyData || !_vacancyData.photos || !_vacancyData.photos.length) return;
+  _vacancyPhotoIndex = (_vacancyPhotoIndex + dir + _vacancyData.photos.length) % _vacancyData.photos.length;
+  renderVacancyListing();
 }
 
 function openVacancyEdit(isEdit) {
