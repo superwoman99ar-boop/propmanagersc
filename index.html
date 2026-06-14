@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v22.0</div>
+<div class="vbadge">PropManager SC v22.1</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -6410,6 +6410,15 @@ function renderScreeningList() {
         var badge = r.status === "Complete" ? "<span class='badge b-g'>Complete</span>" : "<span class='badge b-a'>Invited</span>";
         return "<div class='lr'><div class='l-ico' style='background:#e6f0fb;color:#1a5fa8'><i class='ti ti-user-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + name + (r.property ? " — " + r.property : "") + "</div><div class='l-sub'>" + date + " · " + (r.email||"") + "</div></div>" + badge + "<button class='btn btn-r' style='font-size:11px;padding:2px 7px;margin-left:6px' data-del-screen='" + r.id + "'><i class='ti ti-trash'></i></button></div>";
       }).join("");
+      // Wire delete buttons
+      el.querySelectorAll("[data-del-app]").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          if (!confirm("Delete this application?")) return;
+          var id = parseInt(btn.getAttribute("data-del-app"));
+          btn.closest(".lr").style.opacity = "0.4";
+          if (sb) sb.from("applications").delete().eq("id", id).then(function() { renderApplications(); });
+        });
+      });
     }).catch(function() {
       var reqs = [];
       try { reqs = JSON.parse(localStorage.getItem("propmanager_screenings") || "[]"); } catch(e) {}
