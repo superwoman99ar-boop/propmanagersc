@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v20.8</div>
+<div class="vbadge">PropManager SC v20.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1456,6 +1456,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
             <i class="ti ti-camera" style="font-size:48px;display:block;margin-bottom:9px"></i>
             <div style="font-size:13px">No photos yet</div>
           </div>
+          <div id="vac-photo-strip" style="display:none;gap:6px;padding:6px;background:rgba(0,0,0,.3);overflow-x:auto"></div>
           <img id="vac-main-img" style="display:none;width:100%;height:100%;object-fit:cover" alt="Vacancy photo">
         </div>
         <!-- Thumbnail strip -->
@@ -5127,23 +5128,27 @@ function renderVacancyListing() {
     document.getElementById("vac-amenities-wrap").style.display = "none";
   }
 
-  // Photos — display on the public listing page
-  var photoWrap = document.getElementById("vac-photo-wrap");
-  var photos = d.photos || _vacancyPhotos || [];
-  if (photoWrap) {
+  // Photos — display in the vac-photo-main hero area
+  var photos = (d.photos && d.photos.length) ? d.photos : _vacancyPhotos || [];
+  var mainEl  = document.getElementById("vac-photo-main");
+  var noPhoto = document.getElementById("vac-no-photo");
+  if (mainEl) {
     if (photos.length) {
-      photoWrap.style.display = "block";
-      photoWrap.innerHTML = "";
-      photos.forEach(function(url, idx) {
-        var img = document.createElement("img");
-        img.src = url;
-        img.style.cssText = "width:" + (idx===0?"100%":"calc(33.3% - 4px)") + ";height:" + (idx===0?"280px":"120px") + ";object-fit:cover;border-radius:" + (idx===0?"9px 9px 0 0":"7px") + ";cursor:pointer;display:block";
-        img.onclick = function() { window.open(url, "_blank"); };
-        photoWrap.appendChild(img);
-      });
+      // Show first photo as hero
+      mainEl.style.background = "none";
+      mainEl.innerHTML = "<img src='" + photos[0] + "' style='width:100%;height:100%;object-fit:cover;cursor:pointer' onclick="window.open('" + photos[0] + "','_blank')">";
+      if (noPhoto) noPhoto.style.display = "none";
+      // Show thumbnail strip if multiple photos
+      var stripEl = document.getElementById("vac-photo-strip");
+      if (stripEl && photos.length > 1) {
+        stripEl.innerHTML = photos.slice(1).map(function(u, i) {
+          return "<img src='" + u + "' style='width:80px;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0' onclick="window.open('" + u + "','_blank')">";
+        }).join("");
+        stripEl.style.display = "flex";
+      }
     } else {
-      // Show placeholder hero if no photos
-      photoWrap.style.display = "none";
+      mainEl.style.background = "linear-gradient(135deg,#a06010,#c9962a)";
+      if (noPhoto) noPhoto.style.display = "block";
     }
   }
 }
@@ -5266,6 +5271,11 @@ function openVacancyEdit(isEdit) {
 
 
 
+  // Load saved photos into _vacancyPhotos so preview shows them
+  _vacancyPhotos = (_vacancyData && _vacancyData.photos && _vacancyData.photos.length)
+    ? _vacancyData.photos.slice()
+    : [];
+  renderVacancyPhotoPreview();
   updatePhotoCount();
 
   // Reset status messages
