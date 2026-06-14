@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v21.4</div>
+<div class="vbadge">PropManager SC v21.5</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1817,6 +1817,35 @@ function goDash(id) {
   if (btn) { btn.classList.add("on"); }
   var ti = document.getElementById("dash-title");
   if (ti) { ti.textContent = DASH_NAMES[id] || id; }
+  // Refresh data from Supabase every time a tab is opened
+  // so both landlords always see the latest data
+  refreshDashTab(id);
+}
+
+function refreshDashTab(id) {
+  if (!sb || currentRole !== "landlord") return;
+  switch(id) {
+    case "ov":
+    case "tn":
+    case "rn":
+      loadDashboardData(); break;
+    case "mn":
+      if (typeof loadMaintTab === "function") loadMaintTab();
+      else loadDashboardData(); break;
+    case "docs":
+      renderDocList(); break;
+    case "app":
+      renderApplications(); break;
+    case "sc":
+      renderScreeningList(); break;
+    case "ms":
+      loadLandlordMessages(); break;
+    case "gl":
+      if (typeof renderLedger === "function") renderLedger(); break;
+    case "tx":
+      if (window._paymentCache && window._expenseCache)
+        updateTaxMetrics(window._paymentCache, window._expenseCache); break;
+  }
 }
 
 // ---- PORTAL NAV ----
@@ -2749,6 +2778,7 @@ async function landlordLogin() {
     closeMo("landlord");
     goPage("dashboard");
     loadDashboardData();
+    subscribeRealtimeUpdates();
   }
 }
 
@@ -3204,7 +3234,19 @@ async function loadDashboardData() {
     }
     checkStripeConnectStatus();
     requestBrowserNotifications();
-    setInterval(pollForNotifications, 60000);
+    setInterval(pollForNotifications, 15000);
+    // Also full data refresh every 30s so co-landlord changes appear
+    setInterval(function() {
+      if (currentRole === "landlord" && sb) {
+        loadDashboardData();
+        // Refresh whichever tab is active
+        var activeTab = DASH_SECS.find(function(s) {
+          var el = document.getElementById("ds-" + s);
+          return el && el.classList.contains("on");
+        });
+        if (activeTab) refreshDashTab(activeTab);
+      }
+    }, 30000);
     renderScreeningList();
     renderDocList();
   }
@@ -5876,6 +5918,41 @@ function requestBrowserNotifications() {
 
 // Poll for new messages/maintenance when landlord is logged in
 var _lastNotifCheck = null;
+// Supabase Realtime — subscribe once after login for instant cross-landlord sync
+var _realtimeChannel = null;
+function subscribeRealtimeUpdates() {
+  if (!sb || _realtimeChannel) return;
+  try {
+    _realtimeChannel = sb.channel("propmanager-sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "maintenance" }, function() {
+        if (currentRole === "landlord") loadMaintTab();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "documents" }, function() {
+        if (currentRole === "landlord") renderDocList();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, function() {
+        if (currentRole === "landlord") {
+          checkUnreadMessages();
+          if (_msgActiveTenantId) loadLandlordThread();
+        }
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "vacancy" }, function() {
+        initVacancyPage();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "applications" }, function() {
+        if (currentRole === "landlord") renderApplications();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "screenings" }, function() {
+        if (currentRole === "landlord") renderScreeningList();
+      })
+      .subscribe(function(status) {
+        console.log("Realtime status:", status);
+      });
+  } catch(e) {
+    console.warn("Realtime subscription failed:", e);
+  }
+}
+
 async function pollForNotifications() {
   if (!sb || currentRole !== "landlord") return;
   var now = new Date().toISOString();
@@ -7531,6 +7608,22 @@ async function uploadVacancyPhotos(files) {
   // Render previews
   renderVacancyPhotoPreview();
   updatePhotoCount();
+}
+
+function loadMaintTab() {
+  if (!sb) return;
+  sb.from("maintenance")
+    .select("*, tenants(full_name, email), properties(address)")
+    .order("created_at", { ascending: false })
+    .then(function(res) {
+      if (res.error) { console.warn("maint load:", res.error.message); return; }
+      var maints = res.data || [];
+      // Update badge
+      var openCount = maints.filter(function(m){ return m.status !== "Resolved"; }).length;
+      var badge = document.getElementById("maint-count");
+      if (badge) { badge.textContent = openCount; badge.style.display = openCount > 0 ? "inline" : "none"; }
+      renderMaintList(maints);
+    });
 }
 </script>
 
