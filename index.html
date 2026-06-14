@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v21.8</div>
+<div class="vbadge">PropManager SC v21.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3407,6 +3407,7 @@ function renderMaintList(maints) {
               "<i class='ti ti-calendar-event'></i> Schedule</button>"
           : "") +
         "<button class='btn btn-g' style='font-size:11px;padding:3px 7px' data-maint-id='" + m.id + "' data-maint-status='Resolved'>Resolved</button>" +
+        "<button class='btn btn-r' style='font-size:11px;padding:3px 7px;margin-left:auto' data-del-maint='" + m.id + "'><i class='ti ti-trash'></i> Del</button>" +
       "</div>" +
     "</div>";
   }).join("");
@@ -3425,6 +3426,15 @@ function renderMaintList(maints) {
         btn.getAttribute("data-tenant-email"),
         btn.getAttribute("data-issue")
       );
+    });
+  });
+  el.querySelectorAll("[data-del-maint]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      if (!confirm("Delete this maintenance request?")) return;
+      var id = parseInt(btn.getAttribute("data-del-maint"));
+      var row = btn.closest("div[style]");
+      if (row) row.style.opacity = "0.4";
+      if (sb) sb.from("maintenance").delete().eq("id", id).then(function() { loadMaintTab(); });
     });
   });
 }
@@ -5494,6 +5504,10 @@ function saveVacancyListing() {
     ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status","photos"].forEach(function(k){
       if (_vacancyData[k] !== undefined) vPayload[k] = _vacancyData[k];
     });
+    // Always include description even if key was 'desc' only
+    if (!vPayload.description && _vacancyData.desc) {
+      vPayload.description = _vacancyData.desc;
+    }
     sb.from("vacancy").select("id").limit(1).then(function(res) {
       if (res.error) { console.warn("vacancy select error:", res.error.message); return; }
       var existId = res.data && res.data.length > 0 ? res.data[0].id : null;
@@ -5536,6 +5550,10 @@ function markAsRented() {
     ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status","photos"].forEach(function(k){
       if (_vacancyData[k] !== undefined) vPayload[k] = _vacancyData[k];
     });
+    // Always include description even if key was 'desc' only
+    if (!vPayload.description && _vacancyData.desc) {
+      vPayload.description = _vacancyData.desc;
+    }
     sb.from("vacancy").select("id").limit(1).then(function(res) {
       if (res.error) { console.warn("vacancy select error:", res.error.message); return; }
       var existId = res.data && res.data.length > 0 ? res.data[0].id : null;
@@ -6390,7 +6408,7 @@ function renderScreeningList() {
         var name = r.full_name || r.name || "";
         var date = r.invited_date || r.date || "";
         var badge = r.status === "Complete" ? "<span class='badge b-g'>Complete</span>" : "<span class='badge b-a'>Invited</span>";
-        return "<div class='lr'><div class='l-ico' style='background:#e6f0fb;color:#1a5fa8'><i class='ti ti-user-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + name + (r.property ? " — " + r.property : "") + "</div><div class='l-sub'>" + date + " · " + (r.email||"") + "</div></div>" + badge + "</div>";
+        return "<div class='lr'><div class='l-ico' style='background:#e6f0fb;color:#1a5fa8'><i class='ti ti-user-check' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + name + (r.property ? " — " + r.property : "") + "</div><div class='l-sub'>" + date + " · " + (r.email||"") + "</div></div>" + badge + "<button class='btn btn-r' style='font-size:11px;padding:2px 7px;margin-left:6px' data-del-screen='" + r.id + "'><i class='ti ti-trash'></i></button></div>";
       }).join("");
     }).catch(function() {
       var reqs = [];
@@ -6761,7 +6779,10 @@ function renderApplications() {
           "<div class='l-ico' style='background:#eaf5ee;color:#2d7a4f'><i class='ti ti-file-plus' style='font-size:11px'></i></div>" +
           "<div style='flex:1'><div class='l-name'>" + name + (a.income ? " — $" + a.income + "/mo" : "") + "</div>" +
           "<div class='l-sub'>" + date + " · " + (a.email||"") + (a.phone ? " · " + a.phone : "") + "</div></div>" +
-          "<span class='badge " + badgeCls + "'>" + status + "</span></div>";
+          "<div style='display:flex;align-items:center;gap:6px'>" +
+          "<span class='badge " + badgeCls + "'>" + status + "</span>" +
+          "<button class='btn btn-r' style='font-size:11px;padding:2px 7px' data-del-app='" + a.id + "'><i class='ti ti-trash'></i> Del</button>" +
+        "</div></div>";
       }).join("");
     }).catch(function() {
       var apps = [];
