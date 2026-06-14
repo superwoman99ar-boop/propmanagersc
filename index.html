@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v21.7</div>
+<div class="vbadge">PropManager SC v21.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -5068,8 +5068,23 @@ function initVacancyPage() {
       _loadVacancyLocal(); return;
     }
     if (res.data && res.data.length > 0) {
-      _vacancyData = res.data[0];
-      _vacancyPhotos = [];
+      var sbRow = res.data[0];
+      // Merge with localStorage so description is never lost
+      // even if Supabase column is missing or empty
+      try {
+        var lsVac = JSON.parse(localStorage.getItem("propmanager_vacancy") || "{}");
+        if (!sbRow.description && !sbRow.desc) {
+          sbRow.description = lsVac.description || lsVac.desc || "";
+          sbRow.desc        = sbRow.description;
+        }
+        if (!sbRow.photos || !sbRow.photos.length) {
+          sbRow.photos = lsVac.photos || [];
+        }
+      } catch(e2) {}
+      _vacancyData   = sbRow;
+      _vacancyPhotos = _vacancyData.photos || [];
+      // Save merged data back to localStorage for this device
+      try { localStorage.setItem("propmanager_vacancy", JSON.stringify(_vacancyData)); } catch(e3) {}
       renderVacancyListing();
       _initVacancyUI();
     } else {
