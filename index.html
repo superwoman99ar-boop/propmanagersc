@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v22.5</div>
+<div class="vbadge">PropManager SC v22.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1753,6 +1753,12 @@ footer{background:#0f1e35;padding:44px 20px 26px}
     <select class="mo-inp" id="ae-cat"><option>Repairs</option><option>Insurance</option><option>Property Tax</option><option>Maintenance</option><option>Utilities</option><option>Professional Fees</option><option>Other</option></select>
     <label class="mo-lbl">Description</label>
     <input class="mo-inp" type="text" id="ae-desc" placeholder="e.g. HVAC repair at 510 11th St">
+    <label class="mo-lbl">Receipt (optional)</label>
+    <div style="border:1.5px solid rgba(15,30,53,.15);border-radius:8px;padding:12px;margin-bottom:13px;background:rgba(15,30,53,.02)">
+      <input type="file" id="ae-receipt-file" accept="image/*,application/pdf" style="display:block;width:100%;margin-bottom:8px;font-size:13px;cursor:pointer">
+      <div id="ae-receipt-status" style="font-size:12px;color:#5a5a5a;min-height:16px"></div>
+      <div id="ae-receipt-preview" style="margin-top:8px"></div>
+    </div>
     <button class="mo-btn" id="save-expense-btn">Save expense</button>
     <div class="ok-msg" id="ae-ok"><i class="ti ti-circle-check" style="font-size:17px"></i> Expense saved.</div>
   </div>
@@ -2225,6 +2231,26 @@ function attachEvents() {
   on("save-maint-btn", "click", saveMaintenance);
   on("save-tenant-btn", "click", addTenant);
   on("save-expense-btn", "click", saveExpense);
+  var aeReceiptInput = document.getElementById("ae-receipt-file");
+  if (aeReceiptInput) {
+    aeReceiptInput.addEventListener("change", function() {
+      var file = aeReceiptInput.files && aeReceiptInput.files[0];
+      var statusEl  = document.getElementById("ae-receipt-status");
+      var previewEl = document.getElementById("ae-receipt-preview");
+      if (!file) return;
+      if (statusEl) statusEl.textContent = file.name + " (" + Math.round(file.size/1024) + " KB)";
+      // Show image preview if it's an image
+      if (file.type.match(/image\//)) {
+        var fr = new FileReader();
+        fr.onload = function(ev) {
+          if (previewEl) previewEl.innerHTML = "<img src='" + ev.target.result + "' style='max-width:100%;max-height:120px;border-radius:6px;margin-top:6px;object-fit:contain'>";
+        };
+        fr.readAsDataURL(file);
+      } else if (file.type === "application/pdf") {
+        if (previewEl) previewEl.innerHTML = "<div style='font-size:12px;color:#1a5fa8;margin-top:6px'><i class='ti ti-file-type-pdf'></i> PDF receipt ready to attach</div>";
+      }
+    });
+  }
   on("send-notice-btn", "click", function() { showOk("nt-ok"); });
   var ovNotice = document.getElementById("ov-notice-btn");
   if (ovNotice) { ovNotice.addEventListener("click", function() { goDash("nt"); }); }
@@ -3634,14 +3660,83 @@ async function addTenant() {
 }
 
 async function saveExpense() {
-  if (!sb) { showOk("ae-ok"); return; }
-  var result = await sb.from("expenses").insert({
-    category: document.getElementById("ae-cat").value,
-    description: document.getElementById("ae-desc").value,
-    amount: parseFloat(document.getElementById("ae-amount").value) || 0,
-    expense_date: document.getElementById("ae-date").value
-  });
-  if (!result.error) { showOk("ae-ok"); loadDashboardData(); }
+  var dateVal   = (document.getElementById("ae-date")   || {}).value || "";
+  var amtVal    = parseFloat((document.getElementById("ae-amount") || {}).value) || 0;
+  var catVal    = (document.getElementById("ae-cat")    || {}).value || "Other";
+  var descVal   = (document.getElementById("ae-desc")   || {}).value || "";
+  var propVal   = (document.getElementById("ae-prop")   || {}).value || "";
+  var fileInput = document.getElementById("ae-receipt-file");
+  var statusEl  = document.getElementById("ae-receipt-status");
+  var saveBtn   = document.getElementById("save-expense-btn");
+
+  if (!dateVal || amtVal <= 0) {
+    alert("Please enter a date and amount.");
+    return;
+  }
+
+  var expRow = {
+    category:     catVal,
+    description:  descVal,
+    amount:       amtVal,
+    expense_date: dateVal,
+    property:     propVal
+  };
+
+  function doSave(receiptDataUrl, receiptFileName) {
+    if (receiptDataUrl) {
+      expRow.receipt_url      = receiptDataUrl;
+      expRow.receipt_filename = receiptFileName || "receipt";
+    }
+    if (!sb) {
+      showOk("ae-ok");
+      setTimeout(function() { closeMo("addexpense"); }, 1200);
+      return;
+    }
+    if (saveBtn) { saveBtn.textContent = "Saving..."; saveBtn.disabled = true; }
+    sb.from("expenses").insert(expRow).then(function(res) {
+      if (saveBtn) { saveBtn.textContent = "Save expense"; saveBtn.disabled = false; }
+      if (res.error) {
+        alert("Error saving expense: " + res.error.message);
+      } else {
+        // Also save receipt as document for easy retrieval
+        if (receiptDataUrl && sb) {
+          sb.from("documents").insert({
+            name:      "Receipt: " + descVal + " (" + dateVal + ")",
+            category:  "Receipts",
+            date:      dateVal,
+            file_name: receiptFileName || "receipt",
+            data_url:  receiptDataUrl
+          });
+        }
+        showOk("ae-ok");
+        loadDashboardData();
+        renderDocList();
+        setTimeout(function() { closeMo("addexpense"); }, 1500);
+      }
+    });
+  }
+
+  // Read receipt file if selected
+  if (fileInput && fileInput.files && fileInput.files[0]) {
+    var file = fileInput.files[0];
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Receipt file too large (max 5MB). Please use a smaller file or take a screenshot.");
+      return;
+    }
+    if (statusEl) statusEl.textContent = "Reading file...";
+    var fr = new FileReader();
+    fr.onload = function(ev) {
+      if (statusEl) statusEl.textContent = "";
+      doSave(ev.target.result, file.name);
+    };
+    fr.onerror = function() {
+      if (statusEl) statusEl.textContent = "Could not read file.";
+      doSave(null, null);
+    };
+    fr.readAsDataURL(file);
+  } else {
+    doSave(null, null);
+  }
 }
 
 // ---- PAYMENT & TENANT EDIT FUNCTIONS ----
