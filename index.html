@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v22.6</div>
+<div class="vbadge">PropManager SC v22.7</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2222,7 +2222,19 @@ function attachEvents() {
   on("btn-add-tenant", "click", function() { openMo("addtenant"); });
   on("add-tenant-btn2", "click", function() { openMo("addtenant"); });
   on("log-payment-btn", "click", function() { openAddPaymentModal(); });
-  on("add-expense-btn", "click", function() { openMo("addexpense"); });
+  on("add-expense-btn", "click", function() {
+    // Clear all fields including receipt
+    ["ae-date","ae-amount","ae-desc"].forEach(function(fid) {
+      var el = document.getElementById(fid); if (el) el.value = "";
+    });
+    var af = document.getElementById("ae-receipt-file");
+    var as = document.getElementById("ae-receipt-status");
+    var ap = document.getElementById("ae-receipt-preview");
+    try { if (af) af.value = ""; } catch(e) {}
+    if (as) as.textContent = "";
+    if (ap) ap.innerHTML = "";
+    openMo("addexpense");
+  });
   var impExpBtn = document.getElementById("import-expense-btn");
   if (impExpBtn) impExpBtn.addEventListener("click", function() { openInnagoModal(); });
 
