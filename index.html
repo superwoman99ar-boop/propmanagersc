@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v20.5</div>
+<div class="vbadge">PropManager SC v20.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -5257,6 +5257,20 @@ function openVacancyEdit(isEdit) {
   if (okEl)  okEl.classList.remove("on");
   if (errEl) errEl.style.display = "none";
 
+  // Wire photo upload button fresh each time modal opens
+  renderVacancyPhotoPreview();
+  var veAddBtn = document.getElementById("ve-photo-add-btn");
+  var veInput  = document.getElementById("ve-photo-input");
+  if (veAddBtn && veInput) {
+    veAddBtn.onclick = function() {
+      if (!veInput.files || veInput.files.length === 0) {
+        alert("Please select photos first using the Choose Files button.");
+        return;
+      }
+      uploadVacancyPhotos(Array.prototype.slice.call(veInput.files));
+    };
+  }
+
   openMo("vacancyedit");
 }
 
@@ -5433,7 +5447,7 @@ function saveVacancyListing() {
     desc:       document.getElementById("ve-desc").value,
     avail:      document.getElementById("ve-avail").value,
     amenities:  amenities,
-    photos:     [],
+    photos:     _vacancyPhotos || [],
     status:     "available"
   };
 
@@ -5443,7 +5457,7 @@ function saveVacancyListing() {
   // Then push to Supabase for sharing
   if (sb) {
     var vPayload = {};
-    ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status"].forEach(function(k){
+    ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status","photos"].forEach(function(k){
       if (_vacancyData[k] !== undefined) vPayload[k] = _vacancyData[k];
     });
     sb.from("vacancy").select("id").limit(1).then(function(res) {
@@ -5485,7 +5499,7 @@ function markAsRented() {
   // Then push to Supabase for sharing
   if (sb) {
     var vPayload = {};
-    ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status"].forEach(function(k){
+    ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status","photos"].forEach(function(k){
       if (_vacancyData[k] !== undefined) vPayload[k] = _vacancyData[k];
     });
     sb.from("vacancy").select("id").limit(1).then(function(res) {
@@ -7422,6 +7436,134 @@ async function sendBroadcastMessage() {
   }
 
   setTimeout(function() { closeMo("broadcast"); }, 3500);
+}
+
+// ════════════════════════════════════════════════════════════
+// VACANCY PHOTO UPLOAD — Supabase Storage
+// ════════════════════════════════════════════════════════════
+function renderVacancyPhotoPreview() {
+  var el = document.getElementById("ve-photo-preview");
+  if (!el) return;
+  if (!_vacancyPhotos || !_vacancyPhotos.length) {
+    el.innerHTML = "<div style='font-size:12px;color:#999;padding:4px 0'>No photos added yet.</div>";
+    return;
+  }
+  el.innerHTML = "";
+  _vacancyPhotos.forEach(function(url, idx) {
+    var wrap = document.createElement("div");
+    wrap.style.cssText = "position:relative;width:100px;height:80px;border-radius:7px;overflow:hidden;border:1.5px solid rgba(15,30,53,.15)";
+    var img = document.createElement("img");
+    img.src = url;
+    img.style.cssText = "width:100%;height:100%;object-fit:cover";
+    var del = document.createElement("button");
+    del.textContent = "x";
+    del.style.cssText = "position:absolute;top:3px;right:3px;background:rgba(192,57,43,.85);color:#fff;border:none;border-radius:4px;width:20px;height:20px;cursor:pointer;font-size:12px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;font-family:inherit";
+    del.onclick = function() {
+      _vacancyPhotos.splice(idx, 1);
+      renderVacancyPhotoPreview();
+    };
+    wrap.appendChild(img);
+    wrap.appendChild(del);
+    el.appendChild(wrap);
+  });
+}
+
+async function uploadVacancyPhotos(files) {
+  var statusEl = document.getElementById("ve-photo-status");
+  var btnEl    = document.getElementById("ve-photo-add-btn");
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = "Uploading..."; }
+  if (statusEl) statusEl.textContent = "";
+
+  var uploaded = 0;
+  var failed   = 0;
+
+  for (var i = 0; i < files.length; i++) {
+    var file = files[i];
+    // Validate type
+    if (!file.type.match(/image\/(jpeg|jpg|png|webp)/i)) {
+      failed++;
+      continue;
+    }
+    if (sb && sb.storage) {
+      // Upload to Supabase Storage vacancy-photos bucket
+      var ext  = file.name.split(".").pop().toLowerCase() || "jpg";
+      var path = "vacancy/" + Date.now() + "_" + i + "." + ext;
+      try {
+        var res = await sb.storage.from("vacancy-photos").upload(path, file, { upsert: true });
+        if (res.error) {
+          console.warn("Storage upload error:", res.error.message);
+          // Fallback to base64 for this file
+          await new Promise(function(resolve) {
+            var fr = new FileReader();
+            fr.onload = function(ev) {
+              if (ev.target && ev.target.result) { _vacancyPhotos.push(ev.target.result); uploaded++; }
+              resolve();
+            };
+            fr.onerror = function() { failed++; resolve(); };
+            fr.readAsDataURL(file);
+          });
+        } else {
+          var pubRes = sb.storage.from("vacancy-photos").getPublicUrl(path);
+          var pubUrl = pubRes.data && pubRes.data.publicUrl ? pubRes.data.publicUrl : null;
+          if (pubUrl) { _vacancyPhotos.push(pubUrl); uploaded++; }
+          else { failed++; }
+        }
+      } catch(e) {
+        console.warn("Upload exception:", e);
+        failed++;
+      }
+    } else {
+      // No Supabase Storage — use compressed base64
+      await new Promise(function(resolve) {
+        var fr = new FileReader();
+        fr.onload = function(ev) {
+          if (!ev.target || !ev.target.result) { failed++; resolve(); return; }
+          var img2 = new Image();
+          img2.onload = function() {
+            try {
+              var MAX = 900;
+              var sw = img2.naturalWidth || 800;
+              var sh = img2.naturalHeight || 600;
+              var scale = Math.min(MAX/sw, MAX/sh, 1);
+              var cv = document.createElement("canvas");
+              cv.width  = Math.floor(sw*scale);
+              cv.height = Math.floor(sh*scale);
+              cv.getContext("2d").drawImage(img2, 0, 0, cv.width, cv.height);
+              var out = cv.toDataURL("image/jpeg", 0.72);
+              _vacancyPhotos.push(out);
+              uploaded++;
+            } catch(e) { _vacancyPhotos.push(ev.target.result); uploaded++; }
+            resolve();
+          };
+          img2.onerror = function() { _vacancyPhotos.push(ev.target.result); uploaded++; resolve(); };
+          img2.src = ev.target.result;
+        };
+        fr.onerror = function() { failed++; resolve(); };
+        fr.readAsDataURL(file);
+      });
+    }
+  }
+
+  // Reset button and show result
+  if (btnEl) {
+    btnEl.disabled = false;
+    btnEl.innerHTML = "<i class='ti ti-upload'></i> Upload photos";
+  }
+  if (statusEl) {
+    if (uploaded > 0) {
+      statusEl.style.color = "#2d7a4f";
+      statusEl.textContent = uploaded + " photo" + (uploaded>1?"s":"") + " added" + (failed>0?" ("+failed+" skipped)":"") + ".";
+    } else {
+      statusEl.style.color = "#c0392b";
+      statusEl.textContent = "No photos added. Use JPG or PNG files.";
+    }
+  }
+  // Reset file input
+  var inp = document.getElementById("ve-photo-input");
+  if (inp) { try { inp.value = ""; } catch(e) {} }
+  // Render previews
+  renderVacancyPhotoPreview();
+  updatePhotoCount();
 }
 </script>
 
