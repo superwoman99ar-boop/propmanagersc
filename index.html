@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v21.6</div>
+<div class="vbadge">PropManager SC v21.7</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -5226,7 +5226,16 @@ function openVacancyEdit(isEdit) {
   setVal("ve-beds",    d.beds    || "");
   setVal("ve-baths",   d.baths   || "");
   setVal("ve-sqft",    d.sqft    || "");
-  setVal("ve-desc",    d.description || d.desc || "");
+  // Description — read from every possible key
+  var editDesc = d.description || d.desc || "";
+  if (!editDesc) {
+    // Try localStorage as last resort
+    try {
+      var ls = JSON.parse(localStorage.getItem("propmanager_vacancy") || "{}");
+      editDesc = ls.description || ls.desc || "";
+    } catch(e) {}
+  }
+  setVal("ve-desc", editDesc);
   setVal("ve-avail",   d.avail   || new Date().toISOString().split("T")[0]);
   document.getElementById("vac-edit-title").textContent = isEdit ? "Edit listing" : "Add new listing";
   var typeEl = document.getElementById("ve-type");
@@ -5444,20 +5453,21 @@ function saveVacancyListing() {
     return el && el.checked ? el.value : null;
   }).filter(Boolean);
 
+  var descVal = (document.getElementById("ve-desc") || {}).value || "";
   _vacancyData = {
-    address:    document.getElementById("ve-address").value,
-    rent:       parseFloat(document.getElementById("ve-rent").value) || 1500,
-    deposit:    parseFloat(document.getElementById("ve-deposit").value) || 1500,
-    beds:       document.getElementById("ve-beds").value,
-    baths:      document.getElementById("ve-baths").value,
-    sqft:       document.getElementById("ve-sqft").value,
-    type:       document.getElementById("ve-type").value,
-    description: document.getElementById("ve-desc").value,
-    desc:        document.getElementById("ve-desc").value,
-    avail:      document.getElementById("ve-avail").value,
-    amenities:  amenities,
-    photos:     _vacancyPhotos || [],
-    status:     "available"
+    address:     (document.getElementById("ve-address") || {}).value || "",
+    rent:        parseFloat((document.getElementById("ve-rent") || {}).value) || 1500,
+    deposit:     parseFloat((document.getElementById("ve-deposit") || {}).value) || 1500,
+    beds:        (document.getElementById("ve-beds") || {}).value || "",
+    baths:       (document.getElementById("ve-baths") || {}).value || "",
+    sqft:        (document.getElementById("ve-sqft") || {}).value || "",
+    type:        (document.getElementById("ve-type") || {}).value || "",
+    description: descVal,
+    desc:        descVal,
+    avail:       (document.getElementById("ve-avail") || {}).value || "",
+    amenities:   amenities,
+    photos:      _vacancyPhotos || [],
+    status:      "available"
   };
 
   // Save listing — photos are compressed so should fit in localStorage
@@ -5937,7 +5947,11 @@ function subscribeRealtimeUpdates() {
         }
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "vacancy" }, function() {
-        initVacancyPage();
+        // Only reload if the edit modal is NOT open (don't interrupt editing)
+        var editModal = document.getElementById("mo-vacancyedit");
+        if (!editModal || !editModal.classList.contains("on")) {
+          initVacancyPage();
+        }
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "applications" }, function() {
         if (currentRole === "landlord") renderApplications();
