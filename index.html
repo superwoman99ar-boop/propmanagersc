@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v21.1</div>
+<div class="vbadge">PropManager SC v21.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -5166,80 +5166,6 @@ function renderVacancyListing() {
     if (stripEl) stripEl.style.display = "none";
   }
 
-function renderVacancyPhotos() {
-  var mainImg = document.getElementById("vac-main-img");
-  var noPhoto = document.getElementById("vac-no-photo");
-  var thumbsEl = document.getElementById("vac-thumbs");
-  var prevBtn = document.getElementById("vac-photo-prev");
-  var nextBtn = document.getElementById("vac-photo-next");
-  var countEl = document.getElementById("vac-photo-count");
-
-  // Filter out broken/unsupported photos (HEIC etc)
-  var validPhotos = _vacancyPhotos.filter(function(p) {
-    // HEIC files cannot display in browser — filter them
-    return p && !p.toLowerCase().includes("heic");
-  });
-
-  if (!validPhotos.length) {
-    if (mainImg) mainImg.style.display = "none";
-    if (noPhoto) { noPhoto.style.display = "block"; }
-    if (prevBtn) prevBtn.style.display = "none";
-    if (nextBtn) nextBtn.style.display = "none";
-    if (countEl) countEl.style.display = "none";
-    if (thumbsEl) thumbsEl.innerHTML = "";
-    return;
-  }
-
-  // Clamp index
-  if (_vacancyPhotoIndex >= validPhotos.length) _vacancyPhotoIndex = 0;
-
-  if (noPhoto) noPhoto.style.display = "none";
-  if (mainImg) {
-    mainImg.style.display = "block";
-    mainImg.src = validPhotos[_vacancyPhotoIndex];
-    mainImg.onerror = function() {
-      _vacancyPhotoIndex = (_vacancyPhotoIndex + 1) % validPhotos.length;
-      if (validPhotos[_vacancyPhotoIndex]) mainImg.src = validPhotos[_vacancyPhotoIndex];
-    };
-  }
-  if (prevBtn) prevBtn.style.display = validPhotos.length > 1 ? "block" : "none";
-  if (nextBtn) nextBtn.style.display = validPhotos.length > 1 ? "block" : "none";
-  if (countEl) {
-    countEl.style.display = "block";
-    countEl.textContent = (_vacancyPhotoIndex+1) + " / " + validPhotos.length;
-  }
-
-  // Thumbnails — built with DOM API, no string concatenation of src
-  if (thumbsEl) {
-    while (thumbsEl.firstChild) thumbsEl.removeChild(thumbsEl.firstChild);
-    validPhotos.forEach(function(photo, i) {
-      var isActive = i === _vacancyPhotoIndex;
-      var wrap = document.createElement("div");
-      wrap.style.cssText = "position:relative;flex-shrink:0";
-
-      var img = document.createElement("img");
-      img.src = photo;
-      img.alt = "Photo " + (i + 1);
-      img.style.cssText = "width:64px;height:48px;object-fit:cover;border-radius:5px;cursor:pointer;border:2px solid " + (isActive ? "#c9962a" : "transparent");
-      (function(idx) {
-        img.addEventListener("error", function() { wrap.style.display = "none"; });
-        img.addEventListener("click", function() {
-          _vacancyPhotoIndex = idx;
-          renderVacancyPhotos();
-        });
-      })(i);
-      wrap.appendChild(img);
-
-      if (i === 0) {
-        var mainLabel = document.createElement("div");
-        mainLabel.style.cssText = "position:absolute;bottom:2px;left:2px;background:#c9962a;color:#0f1e35;font-size:8px;font-weight:700;padding:1px 4px;border-radius:2px";
-        mainLabel.textContent = "MAIN";
-        wrap.appendChild(mainLabel);
-      }
-      thumbsEl.appendChild(wrap);
-    });
-  }
-}
 
 function changeVacPhoto(dir) {
   if (!_vacancyPhotos.length) return;
