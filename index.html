@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v20.7</div>
+<div class="vbadge">PropManager SC v20.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -5127,8 +5127,25 @@ function renderVacancyListing() {
     document.getElementById("vac-amenities-wrap").style.display = "none";
   }
 
-  // Photos
-  renderVacancyPhotos();
+  // Photos — display on the public listing page
+  var photoWrap = document.getElementById("vac-photo-wrap");
+  var photos = d.photos || _vacancyPhotos || [];
+  if (photoWrap) {
+    if (photos.length) {
+      photoWrap.style.display = "block";
+      photoWrap.innerHTML = "";
+      photos.forEach(function(url, idx) {
+        var img = document.createElement("img");
+        img.src = url;
+        img.style.cssText = "width:" + (idx===0?"100%":"calc(33.3% - 4px)") + ";height:" + (idx===0?"280px":"120px") + ";object-fit:cover;border-radius:" + (idx===0?"9px 9px 0 0":"7px") + ";cursor:pointer;display:block";
+        img.onclick = function() { window.open(url, "_blank"); };
+        photoWrap.appendChild(img);
+      });
+    } else {
+      // Show placeholder hero if no photos
+      photoWrap.style.display = "none";
+    }
+  }
 }
 
 function renderVacancyPhotos() {
@@ -5444,7 +5461,8 @@ function saveVacancyListing() {
     baths:      document.getElementById("ve-baths").value,
     sqft:       document.getElementById("ve-sqft").value,
     type:       document.getElementById("ve-type").value,
-    desc:       document.getElementById("ve-desc").value,
+    description: document.getElementById("ve-desc").value,
+    desc:        document.getElementById("ve-desc").value,
     avail:      document.getElementById("ve-avail").value,
     amenities:  amenities,
     photos:     _vacancyPhotos || [],
