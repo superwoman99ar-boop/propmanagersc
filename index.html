@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v22.7</div>
+<div class="vbadge">PropManager SC v22.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2383,7 +2383,7 @@ function attachEvents() {
   // Escape key
   document.addEventListener("keydown", function(e) {
     if (e.key === "Escape") {
-      ["tenant","landlord","apply","quickmaint","quickmsg","schedmaint","msgpick","broadcast","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial","leasedoc","screening","docupload","checklist"].forEach(function(id) { closeMo(id); });
+      ["tenant","landlord","apply","quickmaint","quickmsg","schedmaint","msgpick","broadcast","receipt-viewer","addtenant","addexpense","addpayment","edittenant","editpayment","editprop","lease","importexpenses","innagocsv","pnl","recurring","tenantpreview","latefee","renewal","vacancyedit","markrente","register","stripeconnect","forgotpass","changepass","notifications","partial","leasedoc","screening","docupload","checklist"].forEach(function(id) { closeMo(id); });
     }
   });
 
@@ -2472,7 +2472,22 @@ function attachEvents() {
       if (inp) { inp.value = qb.getAttribute("data-quick-msg"); inp.focus(); }
     }
   });
-  on("close-schedmaint-mo", "click", function() { closeMo("schedmaint"); });
+  on("close-schedmaint-mo",  "click", function() { closeMo("schedmaint"); });
+  on("close-receipt-viewer", "click", function() { closeMo("receipt-viewer"); });
+  on("receipt-download-btn", "click", function() {
+    if (window._currentReceipt) downloadReceipt(window._currentReceipt);
+  });
+  on("receipt-print-btn", "click", function() {
+    var iframe = document.getElementById("receipt-print-frame");
+    if (iframe) { iframe.contentWindow.focus(); iframe.contentWindow.print(); }
+    else if (window._currentReceipt) {
+      var w = window.open("", "_blank");
+      if (w) {
+        w.document.write("<img src='" + window._currentReceipt.url + "' style='max-width:100%'>");
+        w.document.close(); w.print();
+      }
+    }
+  });
   on("close-msgpick-mo",    "click", function() { closeMo("msgpick"); });
   on("sched-confirm-btn",   "click", confirmSchedule);
 
@@ -4414,8 +4429,25 @@ function renderLedger(data, sort, filters) {
         expEl.innerHTML = exps.map(function(e) {
           var isRec = (e.description||"").startsWith("[Recurring]");
           var recBadge = isRec ? "<span class='badge b-b' style='font-size:10px;margin-right:5px'><i class='ti ti-repeat' style='font-size:9px'></i> Recurring</span>" : "";
-          return "<div class='lr'><div class='l-ico' style='background:#fdecea;color:#c0392b'><i class='ti ti-arrow-up-right' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + e.description + "</div><div class='l-sub'>" + e.expense_date + " · " + (e.category||"Other") + "</div></div>" + recBadge + "<div class='l-dr' style='margin-right:8px'>-$" + Number(e.amount).toLocaleString() + "</div><button class='btn btn-r' style='font-size:11px;padding:3px 8px' data-exp-id='" + e.id + "'>Del</button></div>";
+          var receiptBtns = (e.receipt_url)
+            ? "<button class='btn' style='font-size:11px;padding:3px 8px;margin-right:4px;background:#e6f0fb;border-color:#1a5fa8;color:#1a5fa8' data-view-receipt='" + e.id + "'><i class='ti ti-eye'></i> View</button>" +
+              "<button class='btn' style='font-size:11px;padding:3px 8px;margin-right:6px;background:#eaf5ee;border-color:#2d7a4f;color:#2d7a4f' data-dl-receipt='" + e.id + "' data-dl-filename='" + (e.receipt_filename||"receipt") + "' data-dl-url='" + e.receipt_url.substring(0,50) + "'><i class='ti ti-download'></i> Receipt</button>"
+            : "";
+          return "<div class='lr'><div class='l-ico' style='background:#fdecea;color:#c0392b'><i class='ti ti-arrow-up-right' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + e.description + "</div><div class='l-sub'>" + e.expense_date + " · " + (e.category||"Other") + "</div></div>" + recBadge + receiptBtns + "<div class='l-dr' style='margin-right:8px'>-$" + Number(e.amount).toLocaleString() + "</div><button class='btn btn-r' style='font-size:11px;padding:3px 8px' data-exp-id='" + e.id + "'>Del</button></div>";
         }).join("");
+        // Store receipt data for viewer
+        window._receiptMap = window._receiptMap || {};
+        expenses.forEach(function(e) {
+          if (e.receipt_url) {
+            window._receiptMap[String(e.id)] = {
+              url:      e.receipt_url,
+              filename: e.receipt_filename || "receipt",
+              desc:     e.description || "",
+              date:     e.expense_date || "",
+              amount:   e.amount
+            };
+          }
+        });
         expEl.querySelectorAll("[data-exp-id]").forEach(function(btn) {
           btn.addEventListener("click", async function() {
             if (!confirm("Delete this expense?")) return;
@@ -6980,6 +7012,23 @@ document.addEventListener("DOMContentLoaded", function() {
   // Any button with data-action gets wired automatically - no onclick needed
   document.addEventListener("click", function(e) {
     // Global delegation for delete buttons — catches any timing issues
+    // Receipt view button
+    var viewReceipt = e.target.closest("[data-view-receipt]");
+    if (viewReceipt) {
+      var expId = String(viewReceipt.getAttribute("data-view-receipt"));
+      var rec   = window._receiptMap && window._receiptMap[expId];
+      if (rec) { openReceiptViewer(rec); }
+      else { alert("Receipt not found. It may not have loaded yet — try refreshing the Ledger tab."); }
+      return;
+    }
+    // Receipt download button
+    var dlReceipt = e.target.closest("[data-dl-receipt]");
+    if (dlReceipt) {
+      var expId2 = String(dlReceipt.getAttribute("data-dl-receipt"));
+      var rec2   = window._receiptMap && window._receiptMap[expId2];
+      if (rec2) { downloadReceipt(rec2); }
+      return;
+    }
     var delMaint = e.target.closest("[data-del-maint]");
     if (delMaint) {
       e.stopPropagation();
@@ -7810,6 +7859,62 @@ function loadMaintTab() {
       if (badge) { badge.textContent = openCount; badge.style.display = openCount > 0 ? "inline" : "none"; }
       renderMaintList(maints);
     });
+}
+
+// ════════════════════════════════════════════════════════════
+// RECEIPT VIEWER + DOWNLOAD
+// ════════════════════════════════════════════════════════════
+function openReceiptViewer(rec) {
+  window._currentReceipt = rec;
+  var metaEl    = document.getElementById("receipt-viewer-meta");
+  var contentEl = document.getElementById("receipt-viewer-content");
+  if (metaEl) {
+    metaEl.textContent = (rec.desc || "Expense") +
+      (rec.date   ? "  ·  " + rec.date   : "") +
+      (rec.amount ? "  ·  -$" + Number(rec.amount).toLocaleString() : "") +
+      (rec.filename && rec.filename !== "receipt" ? "  ·  " + rec.filename : "");
+  }
+  if (contentEl) {
+    contentEl.innerHTML = "";
+    var url = rec.url || "";
+    if (url.startsWith("data:image") || url.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
+      // Image receipt
+      var img = document.createElement("img");
+      img.src = url;
+      img.style.cssText = "max-width:100%;max-height:460px;border-radius:7px;object-fit:contain";
+      contentEl.appendChild(img);
+    } else if (url.startsWith("data:application/pdf") || url.match(/\.pdf$/i)) {
+      // PDF receipt — show in iframe
+      var ifr = document.createElement("iframe");
+      ifr.id = "receipt-print-frame";
+      ifr.src = url;
+      ifr.style.cssText = "width:100%;height:460px;border:none;border-radius:7px";
+      contentEl.appendChild(ifr);
+    } else if (url.startsWith("data:")) {
+      // Unknown type — offer download
+      contentEl.innerHTML = "<div style='padding:40px;color:#5a5a5a;font-size:14px'>" +
+        "<i class='ti ti-file' style='font-size:48px;display:block;margin-bottom:12px;color:#1a5fa8'></i>" +
+        "File: " + (rec.filename || "receipt") +
+        "<br><br>Click <strong>Download</strong> below to save the file.</div>";
+    } else {
+      contentEl.innerHTML = "<div style='padding:40px;color:#5a5a5a'>No preview available. Click Download to save.</div>";
+    }
+  }
+  openMo("receipt-viewer");
+}
+
+function downloadReceipt(rec) {
+  var url      = rec.url      || "";
+  var filename = rec.filename || ("receipt_" + (rec.date||"").replace(/-/g,"") + "_" + (rec.desc||"expense").replace(/[^a-zA-Z0-9]/g,"_").slice(0,20));
+  if (!url) { alert("No receipt file available."); return; }
+  // Create a temporary download link
+  var a = document.createElement("a");
+  a.href     = url;
+  a.download = filename;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function() { document.body.removeChild(a); }, 500);
 }
 </script>
 
@@ -8865,6 +8970,24 @@ function loadMaintTab() {
     <div id="broadcast-progress" style="display:none;margin-top:11px;font-size:13px;color:#1a5fa8;text-align:center"><i class="ti ti-loader"></i> Sending...</div>
     <div class="ok-msg" id="broadcast-ok" style="margin-top:11px;display:none"><i class="ti ti-circle-check"></i> Message sent to all tenants!</div>
     <div class="mo-err" id="broadcast-err" style="margin-top:9px">Please enter a message.</div>
+  </div>
+</div>
+
+<!-- RECEIPT VIEWER MODAL -->
+<div class="mo-overlay" id="mo-receipt-viewer">
+  <div class="mo-box" style="max-width:640px">
+    <button class="mo-close" id="close-receipt-viewer"><i class="ti ti-x"></i></button>
+    <div class="mo-title"><i class="ti ti-receipt" style="color:#1a5fa8;margin-right:8px"></i>Receipt</div>
+    <div id="receipt-viewer-meta" style="font-size:12.5px;color:#5a5a5a;margin-bottom:14px"></div>
+    <div id="receipt-viewer-content" style="text-align:center;min-height:200px;background:#f9f9f9;border-radius:9px;padding:16px;margin-bottom:16px;overflow:auto;max-height:500px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-n" id="receipt-download-btn" style="font-size:13px;padding:8px 18px">
+        <i class="ti ti-download"></i> Download
+      </button>
+      <button class="btn" id="receipt-print-btn" style="font-size:13px;padding:8px 18px">
+        <i class="ti ti-printer"></i> Print
+      </button>
+    </div>
   </div>
 </div>
 </body>
