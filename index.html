@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v22.8</div>
+<div class="vbadge">PropManager SC v22.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1841,6 +1841,8 @@ function refreshDashTab(id) {
       loadDashboardData(); break;
     case "mn":
       loadMaintTab(); break;
+    case "nt":
+      renderNoticeButtons(window._tenantCache || []); break;
     case "docs":
       renderDocList(); break;
     case "app":
@@ -3611,8 +3613,23 @@ function renderExpenseList(expenses) {
 }
 
 function renderNoticeButtons(tenants) {
+  // Use cached tenants if none passed
+  var tenants = tenants || window._tenantCache || [];
   var el = document.getElementById("notice-btns-wrap");
   if (!el) return;
+  // If still empty, load from Supabase now
+  if (!tenants.length && sb) {
+    el.innerHTML = "<div style='color:#999;font-size:13px'>Loading tenants...</div>";
+    sb.from("tenants").select("*, properties(address,city)").order("full_name").then(function(res) {
+      if (res.data && res.data.length) {
+        window._tenantCache = res.data;
+        renderNoticeButtons(res.data);
+      } else {
+        el.innerHTML = "<div style='color:#999;font-size:13px'>No tenants found.</div>";
+      }
+    });
+    return;
+  }
   el.innerHTML = "";
   tenants.forEach(function(t) {
     var p = t.properties;
@@ -7083,6 +7100,7 @@ document.addEventListener("DOMContentLoaded", function() {
       "closeMo":            function() { closeMo(param); },
       "signOut":            function() { signOut(); },
       "sendLateNotices":    function() { sendLateNotices(); },
+      "openNotices":        function() { goDash("nt"); renderNoticeButtons(window._tenantCache || []); },
       "openPartialPayment": function() { openPartialPayment(); },
       "selectNotice":       function() {
         var parts = (param||"").split("|");
