@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v23.0</div>
+<div class="vbadge">PropManager SC v23.1</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4448,23 +4448,41 @@ function renderLedger(data, sort, filters) {
           var recBadge = isRec ? "<span class='badge b-b' style='font-size:10px;margin-right:5px'><i class='ti ti-repeat' style='font-size:9px'></i> Recurring</span>" : "";
           var receiptBtns = (e.receipt_url)
             ? "<button class='btn' style='font-size:11px;padding:3px 8px;margin-right:4px;background:#e6f0fb;border-color:#1a5fa8;color:#1a5fa8' data-view-receipt='" + e.id + "'><i class='ti ti-eye'></i> View</button>" +
-              "<button class='btn' style='font-size:11px;padding:3px 8px;margin-right:6px;background:#eaf5ee;border-color:#2d7a4f;color:#2d7a4f' data-dl-receipt='" + e.id + "' data-dl-filename='" + (e.receipt_filename||"receipt") + "' data-dl-url='" + e.receipt_url.substring(0,50) + "'><i class='ti ti-download'></i> Receipt</button>"
+              "<button class='btn' style='font-size:11px;padding:3px 8px;margin-right:6px;background:#eaf5ee;border-color:#2d7a4f;color:#2d7a4f' data-dl-receipt='" + e.id + "'><i class='ti ti-download'></i> Receipt</button>"
             : "";
           return "<div class='lr'><div class='l-ico' style='background:#fdecea;color:#c0392b'><i class='ti ti-arrow-up-right' style='font-size:11px'></i></div><div style='flex:1'><div class='l-name'>" + e.description + "</div><div class='l-sub'>" + e.expense_date + " · " + (e.category||"Other") + "</div></div>" + recBadge + receiptBtns + "<div class='l-dr' style='margin-right:8px'>-$" + Number(e.amount).toLocaleString() + "</div><button class='btn btn-r' style='font-size:11px;padding:3px 8px' data-exp-id='" + e.id + "'>Del</button></div>";
         }).join("");
-        // Store receipt data for viewer
-        window._receiptMap = window._receiptMap || {};
+        // Store receipt data for viewer — keyed by id as string
+        window._receiptMap = {};
         expenses.forEach(function(e) {
           if (e.receipt_url) {
             window._receiptMap[String(e.id)] = {
               url:      e.receipt_url,
-              filename: e.receipt_filename || "receipt",
+              filename: e.receipt_filename || ("receipt_" + (e.expense_date||"").replace(/-/g,"") + ".jpg"),
               desc:     e.description || "",
               date:     e.expense_date || "",
               amount:   e.amount
             };
           }
         });
+        // Also pull receipts from documents table (category = Receipts)
+        if (sb) {
+          sb.from("documents").select("id,name,date,file_name,data_url").eq("category","Receipts").then(function(docRes) {
+            if (docRes.data && docRes.data.length) {
+              docRes.data.forEach(function(d) {
+                if (d.data_url) {
+                  window._receiptMap["doc_" + String(d.id)] = {
+                    url:      d.data_url,
+                    filename: d.file_name || d.name || "receipt",
+                    desc:     d.name || "",
+                    date:     d.date || "",
+                    amount:   null
+                  };
+                }
+              });
+            }
+          });
+        }
         expEl.querySelectorAll("[data-exp-id]").forEach(function(btn) {
           btn.addEventListener("click", async function() {
             if (!confirm("Delete this expense?")) return;
@@ -7034,8 +7052,24 @@ document.addEventListener("DOMContentLoaded", function() {
     if (viewReceipt) {
       var expId = String(viewReceipt.getAttribute("data-view-receipt"));
       var rec   = window._receiptMap && window._receiptMap[expId];
-      if (rec) { openReceiptViewer(rec); }
-      else { alert("Receipt not found. It may not have loaded yet — try refreshing the Ledger tab."); }
+      if (rec) {
+        openReceiptViewer(rec);
+      } else if (sb) {
+        // Receipt not in map yet — fetch the expense directly from DB
+        sb.from("expenses").select("receipt_url,receipt_filename,description,expense_date,amount").eq("id", parseInt(expId)).then(function(res) {
+          var row = res.data && res.data[0];
+          if (row && row.receipt_url) {
+            var r2 = { url: row.receipt_url, filename: row.receipt_filename||"receipt", desc: row.description||"", date: row.expense_date||"", amount: row.amount };
+            if (!window._receiptMap) window._receiptMap = {};
+            window._receiptMap[expId] = r2;
+            openReceiptViewer(r2);
+          } else {
+            alert("No receipt attached to this expense. Attach one by editing the expense.");
+          }
+        });
+      } else {
+        alert("No receipt found for this expense.");
+      }
       return;
     }
     // Receipt download button
@@ -7043,7 +7077,19 @@ document.addEventListener("DOMContentLoaded", function() {
     if (dlReceipt) {
       var expId2 = String(dlReceipt.getAttribute("data-dl-receipt"));
       var rec2   = window._receiptMap && window._receiptMap[expId2];
-      if (rec2) { downloadReceipt(rec2); }
+      if (rec2) {
+        downloadReceipt(rec2);
+      } else if (sb) {
+        sb.from("expenses").select("receipt_url,receipt_filename,description,expense_date,amount").eq("id", parseInt(expId2)).then(function(res) {
+          var row = res.data && res.data[0];
+          if (row && row.receipt_url) {
+            var r3 = { url: row.receipt_url, filename: row.receipt_filename||"receipt", desc: row.description||"", date: row.expense_date||"", amount: row.amount };
+            downloadReceipt(r3);
+          } else {
+            alert("No receipt file found for this expense.");
+          }
+        });
+      }
       return;
     }
     var delMaint = e.target.closest("[data-del-maint]");
