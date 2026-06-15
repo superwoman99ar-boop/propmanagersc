@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v23.1</div>
+<div class="vbadge">PropManager SC v23.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -7132,6 +7132,34 @@ document.addEventListener("DOMContentLoaded", function() {
       var scrRow = delScreen.closest(".lr") || delScreen.parentElement;
       if (scrRow) scrRow.style.opacity = "0.4";
       if (sb) sb.from("screenings").delete().eq("id", scrId).then(function() { renderScreeningList(); });
+      return;
+    }
+    // Expense delete (ledger)
+    var delExp = e.target.closest("[data-exp-id]");
+    if (delExp) {
+      e.stopPropagation();
+      if (!confirm("Delete this expense?")) return;
+      var expDelId = delExp.getAttribute("data-exp-id");
+      var expRow = delExp.closest(".lr") || delExp.parentElement;
+      if (expRow) expRow.style.opacity = "0.4";
+      if (sb) sb.from("expenses").delete().eq("id", expDelId).then(function(res) {
+        if (res.error) { console.warn("del expense:", res.error.message); if (expRow) expRow.style.opacity = "1"; }
+        else renderLedger();
+      });
+      return;
+    }
+    // Payment delete (ledger income)
+    var delPay = e.target.closest("[data-del-pay]");
+    if (delPay) {
+      e.stopPropagation();
+      if (!confirm("Delete this payment record?")) return;
+      var payDelId = parseInt(delPay.getAttribute("data-del-pay"));
+      var payRow = delPay.closest(".lr") || delPay.parentElement;
+      if (payRow) payRow.style.opacity = "0.4";
+      if (sb) sb.from("payments").delete().eq("id", payDelId).then(function(res) {
+        if (res.error) { console.warn("del payment:", res.error.message); if (payRow) payRow.style.opacity = "1"; }
+        else { loadDashboardData(); renderLedger(); }
+      });
       return;
     }
     var btn = e.target.closest("[data-action]");
