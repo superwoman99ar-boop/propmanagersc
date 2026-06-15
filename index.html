@@ -192,7 +192,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v22.9</div>
+<div class="vbadge">PropManager SC v23.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2036,7 +2036,7 @@ function attachEvents() {
     goDash("gl");
     if (window._ledgerCache) renderLedger(window._ledgerCache);
   });
-  on("di-nt", "click", function() { goDash("nt"); });
+  on("di-nt", "click", function() { if(window._tabLastLoaded) window._tabLastLoaded["nt"]=0; goDash("nt"); });
   on("di-tx", "click", function() {
     goDash("tx");
     if (window._paymentCache && window._expenseCache) {
@@ -7100,7 +7100,7 @@ document.addEventListener("DOMContentLoaded", function() {
       "closeMo":            function() { closeMo(param); },
       "signOut":            function() { signOut(); },
       "sendLateNotices":    function() { sendLateNotices(); },
-      "openNotices":        function() { goDash("nt"); renderNoticeButtons(window._tenantCache || []); },
+      "openNotices":        function() { if(window._tabLastLoaded) window._tabLastLoaded["nt"]=0; goDash("nt"); },
       "openPartialPayment": function() { openPartialPayment(); },
       "selectNotice":       function() {
         var parts = (param||"").split("|");
