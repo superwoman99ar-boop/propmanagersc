@@ -6,7 +6,111 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>PropManager SC</title>
+<title>Rental Properties in Gaffney, SC | A&amp;J Rush Properties</title>
+
+<!-- ═══ PRIMARY SEO ═══ -->
+<meta name="description" content="Quality rental homes in Gaffney, South Carolina managed by A&amp;J Rush Properties. View available units, apply online, and pay rent at propmanagersc.com.">
+<meta name="keywords" content="rental homes Gaffney SC, houses for rent Gaffney South Carolina, Cherokee County rentals, A&amp;J Rush Properties, property management Gaffney SC, apartments Gaffney SC">
+<meta name="author" content="A&amp;J Rush Properties">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://propmanagersc.com">
+
+<!-- ═══ OPEN GRAPH (Facebook, iMessage, LinkedIn previews) ═══ -->
+<meta property="og:type"        content="website">
+<meta property="og:url"         content="https://propmanagersc.com">
+<meta property="og:site_name"   content="A&amp;J Rush Properties">
+<meta property="og:title"       content="Rental Homes in Gaffney, SC | A&amp;J Rush Properties">
+<meta property="og:description" content="Quality single-family rental homes in Gaffney, South Carolina. Apply online in minutes. Managed by A&amp;J Rush Properties.">
+<meta property="og:image"       content="https://propmanagersc.com/og-image.jpg">
+<meta property="og:image:width"  content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale"      content="en_US">
+
+<!-- ═══ TWITTER / X CARD ═══ -->
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="Rental Homes in Gaffney, SC | A&amp;J Rush Properties">
+<meta name="twitter:description" content="Quality single-family rental homes in Gaffney, SC. Apply online, pay rent, and submit maintenance requests.">
+<meta name="twitter:image"       content="https://propmanagersc.com/og-image.jpg">
+
+<!-- ═══ GEO / LOCAL SEO ═══ -->
+<meta name="geo.region"      content="US-SC">
+<meta name="geo.placename"   content="Gaffney, South Carolina">
+<meta name="geo.position"    content="35.0718;-81.6496">
+<meta name="ICBM"            content="35.0718, -81.6496">
+
+<!-- ═══ STRUCTURED DATA — Local Business ═══ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "RealEstateAgent",
+  "name": "A&J Rush Properties",
+  "alternateName": "PropManager SC",
+  "url": "https://propmanagersc.com",
+  "description": "Property management company offering quality single-family rental homes in Gaffney, South Carolina and the Cherokee County area.",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Gaffney",
+    "addressRegion": "SC",
+    "postalCode": "29340",
+    "addressCountry": "US"
+  },
+  "areaServed": {
+    "@type": "City",
+    "name": "Gaffney",
+    "sameAs": "https://en.wikipedia.org/wiki/Gaffney,_South_Carolina"
+  },
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "email": "superwoman99.ar@gmail.com",
+    "contactType": "customer service",
+    "availableLanguage": "English"
+  },
+  "sameAs": [
+    "https://propmanagersc.com"
+  ]
+}
+</script>
+
+<!-- ═══ STRUCTURED DATA — Rental Listing (vacancy) ═══ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ApartmentComplex",
+  "name": "608 11th Street — Available Rental",
+  "description": "2-bedroom single-family home now available in Gaffney, SC. Newly renovated with washer/dryer, central A/C, dishwasher, and more.",
+  "url": "https://propmanagersc.com/#vacancy",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "608 11th Street",
+    "addressLocality": "Gaffney",
+    "addressRegion": "SC",
+    "postalCode": "29340",
+    "addressCountry": "US"
+  },
+  "numberOfRooms": 2,
+  "petsAllowed": false,
+  "amenityFeature": [
+    { "@type": "LocationFeatureSpecification", "name": "Washer/Dryer", "value": true },
+    { "@type": "LocationFeatureSpecification", "name": "Central A/C", "value": true },
+    { "@type": "LocationFeatureSpecification", "name": "Dishwasher",  "value": true },
+    { "@type": "LocationFeatureSpecification", "name": "Central Heat", "value": true }
+  ],
+  "offers": {
+    "@type": "Offer",
+    "price": "1500",
+    "priceCurrency": "USD",
+    "priceSpecification": {
+      "@type": "UnitPriceSpecification",
+      "price": "1500",
+      "priceCurrency": "USD",
+      "referenceQuantity": { "@type": "QuantitativeValue", "value": 1, "unitCode": "MON" }
+    }
+  }
+}
+</script>
+
+<!-- ═══ FAVICON ═══ -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23c9962a'/><text y='22' x='5' font-size='18' font-weight='700' fill='%230f1e35' font-family='Arial'>P</text></svg>">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -192,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v23.2</div>
+<div class="vbadge">PropManager SC v23.3</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -5300,6 +5404,10 @@ function _loadVacancyLocal() {
   _initVacancyUI();
 }
 function _initVacancyUI() {
+  // Update page title and meta for SEO when vacancy is viewed
+  if (_vacancyData && _vacancyData.address) {
+    document.title = _vacancyData.beds + "BR for Rent — " + _vacancyData.address + ", Gaffney SC | A&J Rush Properties";
+  }
   // Show landlord tools ONLY for landlord role — never for tenants or public
   var tools = document.getElementById("vac-landlord-tools");
   if (tools) {
