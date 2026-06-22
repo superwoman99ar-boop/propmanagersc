@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v23.6</div>
+<div class="vbadge">PropManager SC v23.7</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3221,7 +3221,7 @@ function reviewPayment() {
   // Populate review screen
   document.getElementById("review-property").textContent = addr;
   document.getElementById("review-month").textContent    = month + " rent";
-  document.getElementById("review-method").textContent   = method;
+  document.getElementById("review-method").textContent   = "Stripe (Secure)";
   document.getElementById("review-fee").textContent      = isCard ? "$" + fee.toFixed(2) + " (2.9% + 30¢)" : "Free";
   document.getElementById("review-total").textContent    = "$" + total.toLocaleString();
   document.getElementById("pay-btn-label").textContent   = "Confirm & pay $" + total.toLocaleString();
@@ -3325,7 +3325,8 @@ async function recordPaymentInDB(method) {
       "Amount: <strong>$" + Number(rent).toLocaleString() + "</strong><br>" +
       "Method: <strong>" + method + "</strong><br>" +
       "Date: <strong>" + new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) + "</strong><br>" +
-      "Status: <strong style='color:#2d7a4f'>Confirmed ✔</strong>";
+      "Status: <strong style='color:#2d7a4f'>Initiated via Stripe ✔</strong><br>" +
+      "<span style='font-size:12px;color:#5a5a5a'>Complete payment in the Stripe tab that opened. Your landlord will be notified.</span>";
   }
   showPayStep(3);
   btn.disabled = false;
@@ -8162,12 +8163,27 @@ function loadPortalPaymentTab() {
   var rent = currentTenant.monthly_rent || 0;
   var amtEl   = document.getElementById("py-amount");
   var monthEl = document.getElementById("py-month-label");
-  var badgeEl = document.getElementById("py-status-badge");
   var nameEl  = document.getElementById("pay-name");
+  var hasLink = !!currentTenant.stripe_payment_link;
+
   if (amtEl)   amtEl.textContent  = "$" + Number(rent).toLocaleString();
   if (monthEl) monthEl.textContent = new Date().toLocaleDateString("en-US",{month:"long",year:"numeric"});
-  if (nameEl && !nameEl.value)  nameEl.value = currentTenant.full_name || "";
-  // Default to ACH
+  if (nameEl && !nameEl.value) nameEl.value = currentTenant.full_name || "";
+
+  // Show Stripe availability status
+  var methodWrap = document.getElementById("pay-method-ach");
+  if (methodWrap && hasLink) {
+    // Show Stripe is ready
+    var stripeBadge = document.getElementById("stripe-ready-badge");
+    if (!stripeBadge) {
+      stripeBadge = document.createElement("div");
+      stripeBadge.id = "stripe-ready-badge";
+      stripeBadge.style.cssText = "display:flex;align-items:center;gap:8px;background:#f0fff8;border:1px solid #2d7a4f;border-radius:8px;padding:10px 14px;margin-bottom:11px;font-size:13px;color:#2d7a4f;font-weight:500";
+      stripeBadge.innerHTML = "<i class='ti ti-shield-check' style='font-size:18px'></i> Your secure Stripe payment is ready. Click Review to continue.";
+      var methodParent = methodWrap.parentElement;
+      if (methodParent) methodParent.insertBefore(stripeBadge, methodWrap);
+    }
+  }
   if (typeof selectPayMethod === "function") selectPayMethod("ach");
 }
 </script>
@@ -9680,7 +9696,7 @@ function reviewPayment() {
   // Populate review screen
   document.getElementById("review-property").textContent = addr;
   document.getElementById("review-month").textContent    = month + " rent";
-  document.getElementById("review-method").textContent   = method;
+  document.getElementById("review-method").textContent   = "Stripe (Secure)";
   document.getElementById("review-fee").textContent      = isCard ? "$" + fee.toFixed(2) + " (2.9% + 30¢)" : "Free";
   document.getElementById("review-total").textContent    = "$" + total.toLocaleString();
   document.getElementById("pay-btn-label").textContent   = "Confirm & pay $" + total.toLocaleString();
@@ -9784,7 +9800,8 @@ async function recordPaymentInDB(method) {
       "Amount: <strong>$" + Number(rent).toLocaleString() + "</strong><br>" +
       "Method: <strong>" + method + "</strong><br>" +
       "Date: <strong>" + new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) + "</strong><br>" +
-      "Status: <strong style='color:#2d7a4f'>Confirmed ✔</strong>";
+      "Status: <strong style='color:#2d7a4f'>Initiated via Stripe ✔</strong><br>" +
+      "<span style='font-size:12px;color:#5a5a5a'>Complete payment in the Stripe tab that opened. Your landlord will be notified.</span>";
   }
   showPayStep(3);
   btn.disabled = false;
@@ -14621,12 +14638,27 @@ function loadPortalPaymentTab() {
   var rent = currentTenant.monthly_rent || 0;
   var amtEl   = document.getElementById("py-amount");
   var monthEl = document.getElementById("py-month-label");
-  var badgeEl = document.getElementById("py-status-badge");
   var nameEl  = document.getElementById("pay-name");
+  var hasLink = !!currentTenant.stripe_payment_link;
+
   if (amtEl)   amtEl.textContent  = "$" + Number(rent).toLocaleString();
   if (monthEl) monthEl.textContent = new Date().toLocaleDateString("en-US",{month:"long",year:"numeric"});
-  if (nameEl && !nameEl.value)  nameEl.value = currentTenant.full_name || "";
-  // Default to ACH
+  if (nameEl && !nameEl.value) nameEl.value = currentTenant.full_name || "";
+
+  // Show Stripe availability status
+  var methodWrap = document.getElementById("pay-method-ach");
+  if (methodWrap && hasLink) {
+    // Show Stripe is ready
+    var stripeBadge = document.getElementById("stripe-ready-badge");
+    if (!stripeBadge) {
+      stripeBadge = document.createElement("div");
+      stripeBadge.id = "stripe-ready-badge";
+      stripeBadge.style.cssText = "display:flex;align-items:center;gap:8px;background:#f0fff8;border:1px solid #2d7a4f;border-radius:8px;padding:10px 14px;margin-bottom:11px;font-size:13px;color:#2d7a4f;font-weight:500";
+      stripeBadge.innerHTML = "<i class='ti ti-shield-check' style='font-size:18px'></i> Your secure Stripe payment is ready. Click Review to continue.";
+      var methodParent = methodWrap.parentElement;
+      if (methodParent) methodParent.insertBefore(stripeBadge, methodWrap);
+    }
+  }
   if (typeof selectPayMethod === "function") selectPayMethod("ach");
 }
 </script>
