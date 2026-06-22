@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v23.3</div>
+<div class="vbadge">PropManager SC v23.4</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1981,7 +1981,7 @@ function goPortal(id) {
   if (id === "ph") { loadPortalPayments(); }
   if (id === "mn") { loadPortalMaintenance(); }
   if (id === "ls") { loadPortalLease(); }
-  if (id === "py") { showPayStep(1); }
+  if (id === "py") { showPayStep(1); loadPortalPaymentTab(); }
 }
 
 // ---- MODALS ----
@@ -2404,28 +2404,9 @@ function attachEvents() {
   on("home-msg-card", "click", function() { goPortal("ms"); });
   on("pay-now-link", "click", function() { goPortal("py"); });
 
-  // Pay tabs
+  // Pay tabs — use global delegation so they work after tenant login
   on("pay-tab-full", "click", function() { swPayTab("full"); });
   on("pay-tab-flex", "click", function() { swPayTab("flex"); });
-  // Review button (step 1 -> step 2)
-  var reviewBtn = document.getElementById("review-payment-btn");
-  if (reviewBtn) reviewBtn.addEventListener("click", reviewPayment);
-
-  // Back button (step 2 -> step 1)
-  var backBtn = document.getElementById("back-to-pay-btn");
-  if (backBtn) backBtn.addEventListener("click", function() { showPayStep(1); });
-
-  // Confirm & Pay button (step 2 -> submit)
-  var confirmBtn = document.getElementById("submit-payment-btn");
-  if (confirmBtn) confirmBtn.addEventListener("click", logPayment);
-
-  // Done button (step 3 -> home)
-  var doneBtn = document.getElementById("done-pay-btn");
-  if (doneBtn) doneBtn.addEventListener("click", function() { goPortal("hm"); showPayStep(1); });
-  var achOpt = document.getElementById("pay-method-ach");
-  if (achOpt) achOpt.addEventListener("click", function() { selectPayMethod("ach"); });
-  var cardOpt = document.getElementById("pay-method-card");
-  if (cardOpt) cardOpt.addEventListener("click", function() { selectPayMethod("card"); });
   var flexBtn = document.getElementById("flex-enroll-btn");
   if (flexBtn) flexBtn.addEventListener("click", function() {
     showOk("flex-ok");
@@ -7270,6 +7251,31 @@ document.addEventListener("DOMContentLoaded", function() {
       });
       return;
     }
+    // ── PAYMENT PORTAL BUTTONS (wired globally — work after tenant login) ──
+    if (e.target.closest("#review-payment-btn")) {
+      reviewPayment(); return;
+    }
+    if (e.target.closest("#back-to-pay-btn")) {
+      showPayStep(1); return;
+    }
+    if (e.target.closest("#submit-payment-btn")) {
+      logPayment(); return;
+    }
+    if (e.target.closest("#done-pay-btn")) {
+      goPortal("hm"); showPayStep(1); return;
+    }
+    if (e.target.closest("#pay-method-ach")) {
+      selectPayMethod("ach"); return;
+    }
+    if (e.target.closest("#pay-method-card")) {
+      selectPayMethod("card"); return;
+    }
+    if (e.target.closest("#pay-tab-full")) {
+      swPayTab("full"); return;
+    }
+    if (e.target.closest("#pay-tab-flex")) {
+      swPayTab("flex"); return;
+    }
     var btn = e.target.closest("[data-action]");
     if (!btn) return;
     var action = btn.getAttribute("data-action");
@@ -8115,6 +8121,20 @@ function downloadReceipt(rec) {
   document.body.appendChild(a);
   a.click();
   setTimeout(function() { document.body.removeChild(a); }, 500);
+}
+
+function loadPortalPaymentTab() {
+  if (!currentTenant) return;
+  var rent = currentTenant.monthly_rent || 0;
+  var amtEl   = document.getElementById("py-amount");
+  var monthEl = document.getElementById("py-month-label");
+  var badgeEl = document.getElementById("py-status-badge");
+  var nameEl  = document.getElementById("pay-name");
+  if (amtEl)   amtEl.textContent  = "$" + Number(rent).toLocaleString();
+  if (monthEl) monthEl.textContent = new Date().toLocaleDateString("en-US",{month:"long",year:"numeric"});
+  if (nameEl && !nameEl.value)  nameEl.value = currentTenant.full_name || "";
+  // Default to ACH
+  if (typeof selectPayMethod === "function") selectPayMethod("ach");
 }
 </script>
 
