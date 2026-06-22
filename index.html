@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v23.7</div>
+<div class="vbadge">PropManager SC v23.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3231,66 +3231,48 @@ function reviewPayment() {
 
 async function logPayment() {
   if (!currentTenant) return;
-  var btn   = document.getElementById("submit-payment-btn");
-  var errEl = document.getElementById("pay-err");
-  if (errEl) errEl.style.display = "none";
-  if (btn) { btn.disabled = true; btn.innerHTML = "<i class='ti ti-loader'></i> Processing..."; }
-
-  var rent   = currentTenant.monthly_rent || 0;
-  var method = _payReviewData ? _payReviewData.method : "ACH";
-  var isCard = method === "Card" || _payMethod === "card";
-
-  // STRIPE CARD PAYMENT — tokenize then record
-  if (isCard && stripe && _stripeCardElement) {
-    try {
-      var result = await stripe.createPaymentMethod({
-        type: "card",
-        card: _stripeCardElement,
-        billing_details: {
-          name:  (document.getElementById("pay-name")||{}).value || currentTenant.full_name || "",
-          email: currentTenant.email || ""
-        }
-      });
-      if (result.error) {
-        if (errEl) { errEl.textContent = result.error.message; errEl.style.display = "block"; }
-        if (btn)   { btn.disabled = false; btn.innerHTML = "<i class='ti ti-lock'></i> Confirm & pay"; }
-        return;
-      }
-      // Card tokenized — record payment and show receipt
-      await recordPaymentInDB("Card");
-      return;
-    } catch(cardErr) {
-      console.warn("Card payment error:", cardErr);
-      // Fall through to ACH record
-    }
-  }
-
-  // ACH / BANK — record as pending, direct tenant to pay via Stripe Payment Link
-  // Set stripe_payment_link on the tenant record in Supabase to enable real processing
+  var btn       = document.getElementById("submit-payment-btn");
+  var errEl     = document.getElementById("pay-err");
   var stripeLink = currentTenant.stripe_payment_link || null;
-  if (stripeLink && !isCard) {
-    // Record as pending then open Stripe link
-    if (sb && currentTenant) {
-      await sb.from("payments").insert({
-        tenant_id:    currentTenant.id,
-        property_id:  currentTenant.property_id,
-        amount:       rent,
-        payment_date: new Date().toISOString().split("T")[0],
-        method:       "Stripe Link",
-        status:       "pending",
-        notes:        "Payment initiated via Stripe Payment Link"
-      });
+
+  if (errEl) errEl.style.display = "none";
+  if (btn)   { btn.disabled = true; btn.innerHTML = "<i class='ti ti-loader'></i> Opening Stripe..."; }
+
+  if (!stripeLink) {
+    if (errEl) {
+      errEl.textContent = "Online payment not yet configured. Please contact your landlord.";
+      errEl.style.display = "block";
     }
-    if (btn) { btn.disabled = false; btn.innerHTML = "<i class='ti ti-external-link'></i> Complete payment"; }
-    // Open Stripe link in new tab
-    window.open(stripeLink, "_blank");
-    showPayStep(3);
+    if (btn) { btn.disabled = false; btn.innerHTML = "<i class='ti ti-lock'></i> Confirm & pay"; }
     return;
   }
 
-  // Fallback — no Stripe, record manually (landlord reconciles offline)
-  await recordPaymentInDB(isCard ? "Card" : "ACH / Zelle");
+  // Log payment initiation in database
+  if (sb && currentTenant) {
+    var month = new Date().toLocaleDateString("en-US", { month:"long", year:"numeric" });
+    await sb.from("payments").insert({
+      tenant_id:    currentTenant.id,
+      property_id:  currentTenant.property_id || null,
+      amount:       currentTenant.monthly_rent || 0,
+      payment_date: new Date().toISOString().split("T")[0],
+      method:       "Stripe",
+      status:       "pending",
+      notes:        month + " rent — Stripe payment initiated"
+    });
+  }
+
+  // Open tenant's personal Stripe payment page in new tab
+  window.open(stripeLink, "_blank");
+
+  if (btn) { btn.disabled = false; btn.innerHTML = "<i class='ti ti-lock'></i> Confirm & pay"; }
+
+  // Show receipt/confirmation step
+  showPayStep(3);
+  setTimeout(function() {
+    if (typeof loadPortalHome === "function") loadPortalHome();
+  }, 1200);
 }
+
 
 async function recordPaymentInDB(method) {
   var btn = document.getElementById("submit-payment-btn");
