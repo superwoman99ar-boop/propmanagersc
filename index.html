@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v23.8</div>
+<div class="vbadge">PropManager SC v23.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1240,8 +1240,8 @@ footer{background:#0f1e35;padding:44px 20px 26px}
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:11px">
                 <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:8px;text-align:center">
-                  <div style="font-size:10px;color:#999;margin-bottom:3px">Split into</div>
-                  <div style="font-size:14px;font-weight:600">2 payments</div>
+                  <div style="font-size:10px;color:#999;margin-bottom:3px">Each payment</div>
+                  <div style="font-size:14px;font-weight:600" id="flex-half">--</div>
                 </div>
                 <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:8px;text-align:center">
                   <div style="font-size:10px;color:#999;margin-bottom:3px">Service fee</div>
@@ -1272,8 +1272,8 @@ footer{background:#0f1e35;padding:44px 20px 26px}
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:11px">
                 <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:8px;text-align:center">
-                  <div style="font-size:10px;color:#999;margin-bottom:3px">Split into</div>
-                  <div style="font-size:14px;font-weight:600">4 payments</div>
+                  <div style="font-size:10px;color:#999;margin-bottom:3px">Per week</div>
+                  <div style="font-size:14px;font-weight:600" id="livable-weekly">--</div>
                 </div>
                 <div style="background:rgba(15,30,53,.04);border-radius:7px;padding:8px;text-align:center">
                   <div style="font-size:10px;color:#999;margin-bottom:3px">Service fee</div>
@@ -2416,21 +2416,7 @@ function attachEvents() {
   // Pay tabs — use global delegation so they work after tenant login
   on("pay-tab-full", "click", function() { swPayTab("full"); });
   on("pay-tab-flex", "click", function() { swPayTab("flex"); });
-  var flexBtn = document.getElementById("flex-enroll-btn");
-  if (flexBtn) flexBtn.addEventListener("click", function() {
-    showOk("flex-ok");
-    setTimeout(function() { window.open("https://getflex.com", "_blank"); }, 800);
-  });
-  var livableBtn = document.getElementById("livable-enroll-btn");
-  if (livableBtn) livableBtn.addEventListener("click", function() {
-    showOk("flex-ok");
-    setTimeout(function() { window.open("https://getlivable.com", "_blank"); }, 800);
-  });
-  var tillBtn = document.getElementById("till-enroll-btn");
-  if (tillBtn) tillBtn.addEventListener("click", function() {
-    showOk("flex-ok");
-    setTimeout(function() { window.open("https://gettill.com", "_blank"); }, 800);
-  });
+  // Flex / Livable / Till moved to global delegation — see document click handler
 
   // Maintenance submit
   on("submit-maint-btn", "click", submitMaintenanceRequest);
@@ -7269,6 +7255,25 @@ document.addEventListener("DOMContentLoaded", function() {
       return;
     }
     // ── PAYMENT PORTAL BUTTONS (wired globally — work after tenant login) ──
+    // ── INSTALLMENT PLAN BUTTONS ──
+    if (e.target.closest("#flex-enroll-btn")) {
+      var flexOk = document.getElementById("flex-ok");
+      if (flexOk) { flexOk.style.display = "block"; flexOk.classList.add("on"); }
+      setTimeout(function() { window.open("https://getflex.com", "_blank"); }, 600);
+      return;
+    }
+    if (e.target.closest("#livable-enroll-btn")) {
+      var livOk = document.getElementById("flex-ok");
+      if (livOk) { livOk.style.display = "block"; livOk.classList.add("on"); }
+      setTimeout(function() { window.open("https://getlivable.com", "_blank"); }, 600);
+      return;
+    }
+    if (e.target.closest("#till-enroll-btn")) {
+      var tillOk = document.getElementById("flex-ok");
+      if (tillOk) { tillOk.style.display = "block"; tillOk.classList.add("on"); }
+      setTimeout(function() { window.open("https://gettill.com", "_blank"); }, 600);
+      return;
+    }
     if (e.target.closest("#review-payment-btn")) {
       reviewPayment(); return;
     }
@@ -13744,6 +13749,25 @@ document.addEventListener("DOMContentLoaded", function() {
       return;
     }
     // ── PAYMENT PORTAL BUTTONS (wired globally — work after tenant login) ──
+    // ── INSTALLMENT PLAN BUTTONS ──
+    if (e.target.closest("#flex-enroll-btn")) {
+      var flexOk = document.getElementById("flex-ok");
+      if (flexOk) { flexOk.style.display = "block"; flexOk.classList.add("on"); }
+      setTimeout(function() { window.open("https://getflex.com", "_blank"); }, 600);
+      return;
+    }
+    if (e.target.closest("#livable-enroll-btn")) {
+      var livOk = document.getElementById("flex-ok");
+      if (livOk) { livOk.style.display = "block"; livOk.classList.add("on"); }
+      setTimeout(function() { window.open("https://getlivable.com", "_blank"); }, 600);
+      return;
+    }
+    if (e.target.closest("#till-enroll-btn")) {
+      var tillOk = document.getElementById("flex-ok");
+      if (tillOk) { tillOk.style.display = "block"; tillOk.classList.add("on"); }
+      setTimeout(function() { window.open("https://gettill.com", "_blank"); }, 600);
+      return;
+    }
     if (e.target.closest("#review-payment-btn")) {
       reviewPayment(); return;
     }
