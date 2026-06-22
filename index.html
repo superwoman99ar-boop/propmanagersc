@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v23.5</div>
+<div class="vbadge">PropManager SC v23.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3253,7 +3253,7 @@ async function logPayment() {
       });
       if (result.error) {
         if (errEl) { errEl.textContent = result.error.message; errEl.style.display = "block"; }
-        if (btn)   { btn.disabled = false; btn.innerHTML = "<i class='ti ti-lock'></i> Confirm &amp; pay"; }
+        if (btn)   { btn.disabled = false; btn.innerHTML = "<i class='ti ti-lock'></i> Confirm & pay"; }
         return;
       }
       // Card tokenized — record payment and show receipt
@@ -8415,8 +8415,8 @@ function loadPortalPaymentTab() {
 <div class="mo-overlay" id="mo-pnl">
   <div class="mo-box" style="max-width:500px">
     <button class="mo-close" id="close-pnl-mo"><i class="ti ti-x"></i></button>
-    <div class="mo-title">Profit &amp; Loss Report</div>
-    <div class="mo-sub">Generate your P&amp;L from database or upload an existing document.</div>
+    <div class="mo-title">Profit & Loss Report</div>
+    <div class="mo-sub">Generate your P&L from database or upload an existing document.</div>
 
     <div class="tab-row" style="margin-bottom:16px">
       <button class="tab on" id="pnl-tab-gen">Generate from data</button>
@@ -8430,14 +8430,14 @@ function loadPortalPaymentTab() {
         <div><label class="mo-lbl" style="margin:0 0 5px">To date</label>
           <input class="mo-inp" type="date" id="pnl-end" style="margin:0"></div>
       </div>
-      <button class="mo-btn" id="gen-pnl-btn">Generate P&amp;L report</button>
+      <button class="mo-btn" id="gen-pnl-btn">Generate P&L report</button>
       <div id="pnl-report" style="display:none;margin-top:14px"></div>
     </div>
 
     <div id="pnl-up-panel" style="display:none">
       <div id="pnl-drop-zone" style="border:2px dashed rgba(15,30,53,.2);border-radius:9px;padding:28px;text-align:center;cursor:pointer;margin-bottom:11px">
         <i class="ti ti-file-upload" style="font-size:32px;color:#999;display:block;margin-bottom:9px"></i>
-        <div style="font-size:13px;color:#5a5a5a">Drop your P&amp;L document or <span style="color:#1a5fa8;font-weight:500">click to browse</span></div>
+        <div style="font-size:13px;color:#5a5a5a">Drop your P&L document or <span style="color:#1a5fa8;font-weight:500">click to browse</span></div>
         <div style="font-size:11px;color:#999;margin-top:4px">PDF, Excel, or CSV formats accepted</div>
         <input type="file" id="pnl-file-input" accept=".pdf,.xlsx,.xls,.csv" style="display:none">
       </div>
@@ -8594,7 +8594,7 @@ function loadPortalPaymentTab() {
     <label class="mo-lbl">Notes for tenant (optional)</label>
     <textarea class="mo-inp" id="ren-notes" placeholder="Any changes or special terms..." style="height:65px;resize:vertical"></textarea>
     <div style="display:flex;gap:8px;margin-top:3px">
-      <button class="mo-btn" id="save-renewal-btn" style="flex:1">Save &amp; renew lease</button>
+      <button class="mo-btn" id="save-renewal-btn" style="flex:1">Save & renew lease</button>
     </div>
     <div class="ok-msg" id="ren-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Lease renewed! Tenant notified.</div>
     <div class="mo-err" id="ren-err">Error saving renewal.</div>
@@ -8653,7 +8653,7 @@ function loadPortalPaymentTab() {
     <label class="mo-lbl" style="margin-top:4px">Photos</label>
     <div style="border:1.5px solid rgba(15,30,53,.15);border-radius:9px;padding:14px;margin-bottom:11px;background:rgba(15,30,53,.02)">
       <input type="file" id="ve-photo-input" accept="image/jpeg,image/jpg,image/png,image/webp" multiple style="display:block;width:100%;margin-bottom:10px;font-size:13px;cursor:pointer">
-      <div style="font-size:11.5px;color:#5a5a5a;margin-bottom:10px">Select JPG or PNG photos. iPhone users: Settings &rarr; Camera &rarr; Most Compatible.</div>
+      <div style="font-size:11.5px;color:#5a5a5a;margin-bottom:10px">Select JPG or PNG photos. iPhone users: Settings → Camera → Most Compatible.</div>
       <button type="button" class="btn btn-n" id="ve-photo-add-btn" style="width:100%;justify-content:center"><i class="ti ti-upload"></i> Upload photos</button>
       <div id="ve-photo-status" style="font-size:12.5px;color:#2d7a4f;margin-top:8px;min-height:18px"></div>
     </div>
@@ -8970,7 +8970,7 @@ function loadPortalPaymentTab() {
             <label class="mo-lbl">Grace period (days)</label>
             <input class="mo-inp" type="number" id="le-grace" value="5" style="margin-bottom:9px">
             <label class="mo-lbl">Landlord name</label>
-            <input class="mo-inp" type="text" id="le-landlord" value="A&amp;J Rush Properties" style="margin-bottom:9px">
+            <input class="mo-inp" type="text" id="le-landlord" value="A&J Rush Properties" style="margin-bottom:9px">
           </div>
         </div>
         <label class="mo-lbl">Pet policy</label>
@@ -8988,7 +8988,7 @@ function loadPortalPaymentTab() {
           <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ut-trash"> Trash</label>
           <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" id="ut-internet"> Internet/Cable</label>
         </div>
-        <button class="mo-btn" id="le-apply-btn">Apply changes &amp; preview</button>
+        <button class="mo-btn" id="le-apply-btn">Apply changes & preview</button>
       </div>
 
       <!-- SPECIAL TERMS PANEL -->
@@ -9177,7 +9177,7 @@ function loadPortalPaymentTab() {
       <input type="checkbox" id="sched-notify-tenant" checked style="width:15px;height:15px">
       Send notification email to tenant
     </label>
-    <button class="mo-btn" id="sched-confirm-btn"><i class="ti ti-calendar-check"></i> Confirm schedule &amp; notify tenant</button>
+    <button class="mo-btn" id="sched-confirm-btn"><i class="ti ti-calendar-check"></i> Confirm schedule & notify tenant</button>
     <div class="ok-msg" id="sched-ok" style="margin-top:9px"><i class="ti ti-circle-check"></i> Scheduled and tenant notified!</div>
     <div class="mo-err" id="sched-err" style="margin-top:9px">Please select a date.</div>
   </div>
@@ -9712,7 +9712,7 @@ async function logPayment() {
       });
       if (result.error) {
         if (errEl) { errEl.textContent = result.error.message; errEl.style.display = "block"; }
-        if (btn)   { btn.disabled = false; btn.innerHTML = "<i class='ti ti-lock'></i> Confirm &amp; pay"; }
+        if (btn)   { btn.disabled = false; btn.innerHTML = "<i class='ti ti-lock'></i> Confirm & pay"; }
         return;
       }
       // Card tokenized — record payment and show receipt
