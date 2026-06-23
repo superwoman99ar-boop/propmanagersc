@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v24.2</div>
+<div class="vbadge">PropManager SC v24.3</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4357,7 +4357,7 @@ function openPnlModal() {
   };
 
   var genBtn = document.getElementById("gen-pnl-btn");
-  genBtn.onclick = generatePnL;
+  if (genBtn) genBtn.onclick = generatePnL;
 
   // Upload drop zone
   var pnlDrop = document.getElementById("pnl-drop-zone");
@@ -10951,7 +10951,7 @@ function openPnlModal() {
   };
 
   var genBtn = document.getElementById("gen-pnl-btn");
-  genBtn.onclick = generatePnL;
+  if (genBtn) genBtn.onclick = generatePnL;
 
   // Upload drop zone
   var pnlDrop = document.getElementById("pnl-drop-zone");
