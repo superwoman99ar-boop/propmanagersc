@@ -2992,9 +2992,21 @@ function initSupabase() {
 // ---- TENANT PROFILE ----
 async function loadTenantProfile() {
   if (!sb || !currentUser) return;
-  var result = await sb.from("tenants").select("*, properties(*)").eq("user_id", currentUser.id).single();
+  var result = await sb.from("tenants").select("*, properties(*), stripe_payment_link").eq("user_id", currentUser.id).single();
   if (result.data) {
     currentTenant = result.data;
+    // Hardcoded Stripe payment links as fallback — works even if DB column missing
+    var STRIPE_LINK_MAP = {
+      "jonnynyg8@gmail.com":         "https://buy.stripe.com/4gM9AMaxd8LP4FYcv27ok00",
+      "msmonayrios99@gmail.com":     "https://buy.stripe.com/dRm9AMfRxe691tMeDa7ok01",
+      "tiswellkalaneisha@gmail.com": "https://buy.stripe.com/4gMcMYgVB9PT7Sa52A7ok02",
+      "rglynn810@gmail.com":         "https://buy.stripe.com/7sY4gsgVB8LP5K266E7ok03",
+      "georgecamryn01@gmail.com":    "https://buy.stripe.com/eVq5kw20He69fkCbqY7ok04",
+      "stephenmarshall191@gmail.com":"https://buy.stripe.com/8x27sE5cTe695K2cv27ok05"
+    };
+    if (!currentTenant.stripe_payment_link && currentTenant.email) {
+      currentTenant.stripe_payment_link = STRIPE_LINK_MAP[currentTenant.email] || null;
+    }
     var ini = currentTenant.full_name.split(" ").map(function(w) { return w[0]; }).join("").slice(0,2).toUpperCase();
     showNavUser(ini, currentTenant.full_name, "tenant");
     document.getElementById("portal-av").textContent = ini;
@@ -3195,26 +3207,37 @@ function selectPayMethod(method) {
 
 function reviewPayment() {
   if (!currentTenant) return;
-  var rent    = currentTenant.monthly_rent || 0;
-  var name    = document.getElementById("pay-name").value.trim() || currentTenant.full_name;
-  var isCard  = _payMethod === "card";
-  var fee     = isCard ? Math.round(rent * 0.029 + 0.30) : 0;
-  var total   = rent + fee;
-  var month   = new Date().toLocaleDateString("en-US", { month:"long", year:"numeric" });
-  var addr    = currentTenant.properties ? currentTenant.properties.address : "Your unit";
-  var method  = isCard ? "Credit / Debit Card" : "Bank Account (ACH)";
 
-  // Store for submission
-  _payReviewData = { rent:rent, fee:fee, total:total, method:isCard?"Card":"ACH", month:month, addr:addr, name:name };
+  // If tenant has a Stripe link, skip review and go straight to Stripe
+  var stripeLink = currentTenant.stripe_payment_link || null;
+  if (!stripeLink && currentTenant.email) {
+    var LINK_MAP = {
+      "jonnynyg8@gmail.com":         "https://buy.stripe.com/4gM9AMaxd8LP4FYcv27ok00",
+      "msmonayrios99@gmail.com":     "https://buy.stripe.com/dRm9AMfRxe691tMeDa7ok01",
+      "tiswellkalaneisha@gmail.com": "https://buy.stripe.com/4gMcMYgVB9PT7Sa52A7ok02",
+      "rglynn810@gmail.com":         "https://buy.stripe.com/7sY4gsgVB8LP5K266E7ok03",
+      "georgecamryn01@gmail.com":    "https://buy.stripe.com/eVq5kw20He69fkCbqY7ok04",
+      "stephenmarshall191@gmail.com":"https://buy.stripe.com/8x27sE5cTe695K2cv27ok05"
+    };
+    stripeLink = LINK_MAP[currentTenant.email] || null;
+    if (stripeLink) currentTenant.stripe_payment_link = stripeLink;
+  }
 
-  // Populate review screen
-  document.getElementById("review-property").textContent = addr;
-  document.getElementById("review-month").textContent    = month + " rent";
-  document.getElementById("review-method").textContent   = "Stripe (Secure)";
-  document.getElementById("review-fee").textContent      = isCard ? "$" + fee.toFixed(2) + " (2.9% + 30¢)" : "Free";
-  document.getElementById("review-total").textContent    = "$" + total.toLocaleString();
-  document.getElementById("pay-btn-label").textContent   = "Confirm & pay $" + total.toLocaleString();
+  if (stripeLink) {
+    // Go straight to Stripe — no intermediate review screen needed
+    logPayment();
+    return;
+  }
 
+  // No Stripe link — show review screen as fallback
+  var rent  = currentTenant.monthly_rent || 0;
+  var month = new Date().toLocaleDateString("en-US", { month:"long", year:"numeric" });
+  var addr  = currentTenant.properties ? currentTenant.properties.address : "Your unit";
+  _payReviewData = { rent:rent, fee:0, total:rent, method:"ACH", month:month, addr:addr };
+  var rpEl = document.getElementById("review-property"); if (rpEl) rpEl.textContent = addr;
+  var rmEl = document.getElementById("review-month");    if (rmEl) rmEl.textContent = month + " rent";
+  var rtEl = document.getElementById("review-total");    if (rtEl) rtEl.textContent = "$" + rent.toLocaleString();
+  var rmtEl = document.getElementById("review-method");  if (rmtEl) rmtEl.textContent = "Contact landlord";
   showPayStep(2);
 }
 
@@ -9504,9 +9527,21 @@ function initSupabase() {
 // ---- TENANT PROFILE ----
 async function loadTenantProfile() {
   if (!sb || !currentUser) return;
-  var result = await sb.from("tenants").select("*, properties(*)").eq("user_id", currentUser.id).single();
+  var result = await sb.from("tenants").select("*, properties(*), stripe_payment_link").eq("user_id", currentUser.id).single();
   if (result.data) {
     currentTenant = result.data;
+    // Hardcoded Stripe payment links as fallback — works even if DB column missing
+    var STRIPE_LINK_MAP = {
+      "jonnynyg8@gmail.com":         "https://buy.stripe.com/4gM9AMaxd8LP4FYcv27ok00",
+      "msmonayrios99@gmail.com":     "https://buy.stripe.com/dRm9AMfRxe691tMeDa7ok01",
+      "tiswellkalaneisha@gmail.com": "https://buy.stripe.com/4gMcMYgVB9PT7Sa52A7ok02",
+      "rglynn810@gmail.com":         "https://buy.stripe.com/7sY4gsgVB8LP5K266E7ok03",
+      "georgecamryn01@gmail.com":    "https://buy.stripe.com/eVq5kw20He69fkCbqY7ok04",
+      "stephenmarshall191@gmail.com":"https://buy.stripe.com/8x27sE5cTe695K2cv27ok05"
+    };
+    if (!currentTenant.stripe_payment_link && currentTenant.email) {
+      currentTenant.stripe_payment_link = STRIPE_LINK_MAP[currentTenant.email] || null;
+    }
     var ini = currentTenant.full_name.split(" ").map(function(w) { return w[0]; }).join("").slice(0,2).toUpperCase();
     showNavUser(ini, currentTenant.full_name, "tenant");
     document.getElementById("portal-av").textContent = ini;
@@ -9707,26 +9742,37 @@ function selectPayMethod(method) {
 
 function reviewPayment() {
   if (!currentTenant) return;
-  var rent    = currentTenant.monthly_rent || 0;
-  var name    = document.getElementById("pay-name").value.trim() || currentTenant.full_name;
-  var isCard  = _payMethod === "card";
-  var fee     = isCard ? Math.round(rent * 0.029 + 0.30) : 0;
-  var total   = rent + fee;
-  var month   = new Date().toLocaleDateString("en-US", { month:"long", year:"numeric" });
-  var addr    = currentTenant.properties ? currentTenant.properties.address : "Your unit";
-  var method  = isCard ? "Credit / Debit Card" : "Bank Account (ACH)";
 
-  // Store for submission
-  _payReviewData = { rent:rent, fee:fee, total:total, method:isCard?"Card":"ACH", month:month, addr:addr, name:name };
+  // If tenant has a Stripe link, skip review and go straight to Stripe
+  var stripeLink = currentTenant.stripe_payment_link || null;
+  if (!stripeLink && currentTenant.email) {
+    var LINK_MAP = {
+      "jonnynyg8@gmail.com":         "https://buy.stripe.com/4gM9AMaxd8LP4FYcv27ok00",
+      "msmonayrios99@gmail.com":     "https://buy.stripe.com/dRm9AMfRxe691tMeDa7ok01",
+      "tiswellkalaneisha@gmail.com": "https://buy.stripe.com/4gMcMYgVB9PT7Sa52A7ok02",
+      "rglynn810@gmail.com":         "https://buy.stripe.com/7sY4gsgVB8LP5K266E7ok03",
+      "georgecamryn01@gmail.com":    "https://buy.stripe.com/eVq5kw20He69fkCbqY7ok04",
+      "stephenmarshall191@gmail.com":"https://buy.stripe.com/8x27sE5cTe695K2cv27ok05"
+    };
+    stripeLink = LINK_MAP[currentTenant.email] || null;
+    if (stripeLink) currentTenant.stripe_payment_link = stripeLink;
+  }
 
-  // Populate review screen
-  document.getElementById("review-property").textContent = addr;
-  document.getElementById("review-month").textContent    = month + " rent";
-  document.getElementById("review-method").textContent   = "Stripe (Secure)";
-  document.getElementById("review-fee").textContent      = isCard ? "$" + fee.toFixed(2) + " (2.9% + 30¢)" : "Free";
-  document.getElementById("review-total").textContent    = "$" + total.toLocaleString();
-  document.getElementById("pay-btn-label").textContent   = "Confirm & pay $" + total.toLocaleString();
+  if (stripeLink) {
+    // Go straight to Stripe — no intermediate review screen needed
+    logPayment();
+    return;
+  }
 
+  // No Stripe link — show review screen as fallback
+  var rent  = currentTenant.monthly_rent || 0;
+  var month = new Date().toLocaleDateString("en-US", { month:"long", year:"numeric" });
+  var addr  = currentTenant.properties ? currentTenant.properties.address : "Your unit";
+  _payReviewData = { rent:rent, fee:0, total:rent, method:"ACH", month:month, addr:addr };
+  var rpEl = document.getElementById("review-property"); if (rpEl) rpEl.textContent = addr;
+  var rmEl = document.getElementById("review-month");    if (rmEl) rmEl.textContent = month + " rent";
+  var rtEl = document.getElementById("review-total");    if (rtEl) rtEl.textContent = "$" + rent.toLocaleString();
+  var rmtEl = document.getElementById("review-method");  if (rmtEl) rmtEl.textContent = "Contact landlord";
   showPayStep(2);
 }
 
