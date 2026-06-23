@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v24.1</div>
+<div class="vbadge">PropManager SC v24.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -7347,6 +7347,42 @@ document.addEventListener("DOMContentLoaded", function() {
       if (link) window.open(link, "_blank");
       return;
     }
+    // Partial payment submit
+    if (e.target.closest("#submit-partial-btn")) {
+      var amt = parseFloat((document.getElementById("partial-amount")||{}).value||0);
+      var errEl = document.getElementById("partial-err");
+      var okEl  = document.getElementById("partial-ok");
+      if (!amt || amt <= 0) { if(errEl) errEl.style.display="block"; return; }
+      if (errEl) errEl.style.display = "none";
+      var stripeLink = currentTenant && currentTenant.stripe_payment_link;
+      if (stripeLink) {
+        // Log partial payment then open Stripe
+        if (sb && currentTenant) {
+          sb.from("payments").insert({
+            tenant_id: currentTenant.id, property_id: currentTenant.property_id||null,
+            amount: amt, payment_date: new Date().toISOString().split("T")[0],
+            method: "Stripe (partial)", status: "pending",
+            notes: "Partial payment — $" + amt + " of $" + (currentTenant.monthly_rent||0)
+          });
+        }
+        window.open(stripeLink, "_blank");
+        if (okEl) { okEl.style.display="block"; okEl.classList.add("on"); }
+        setTimeout(function() { closeMo("partial"); }, 2000);
+      } else {
+        if (okEl) { okEl.style.display="block"; okEl.classList.add("on"); }
+        setTimeout(function() { closeMo("partial"); }, 1500);
+      }
+      return;
+    }
+    // Generate P&L
+    if (e.target.closest("#gen-pnl-btn")) {
+      if (typeof generatePnL === "function") generatePnL();
+      else {
+        var pnlEl = document.getElementById("pnl-report");
+        if (pnlEl) { pnlEl.style.display="block"; pnlEl.innerHTML="<p style='color:#5a5a5a;font-size:13px'>P&L generation requires financial data. Visit the Ledger tab first to load your income and expenses.</p>"; }
+      }
+      return;
+    }
     if (e.target.closest("#pay-method-ach")) {
       selectPayMethod("ach"); return;
     }
@@ -13903,6 +13939,42 @@ document.addEventListener("DOMContentLoaded", function() {
     if (e.target.closest("#reopen-stripe-link")) {
       var link = currentTenant && currentTenant.stripe_payment_link;
       if (link) window.open(link, "_blank");
+      return;
+    }
+    // Partial payment submit
+    if (e.target.closest("#submit-partial-btn")) {
+      var amt = parseFloat((document.getElementById("partial-amount")||{}).value||0);
+      var errEl = document.getElementById("partial-err");
+      var okEl  = document.getElementById("partial-ok");
+      if (!amt || amt <= 0) { if(errEl) errEl.style.display="block"; return; }
+      if (errEl) errEl.style.display = "none";
+      var stripeLink = currentTenant && currentTenant.stripe_payment_link;
+      if (stripeLink) {
+        // Log partial payment then open Stripe
+        if (sb && currentTenant) {
+          sb.from("payments").insert({
+            tenant_id: currentTenant.id, property_id: currentTenant.property_id||null,
+            amount: amt, payment_date: new Date().toISOString().split("T")[0],
+            method: "Stripe (partial)", status: "pending",
+            notes: "Partial payment — $" + amt + " of $" + (currentTenant.monthly_rent||0)
+          });
+        }
+        window.open(stripeLink, "_blank");
+        if (okEl) { okEl.style.display="block"; okEl.classList.add("on"); }
+        setTimeout(function() { closeMo("partial"); }, 2000);
+      } else {
+        if (okEl) { okEl.style.display="block"; okEl.classList.add("on"); }
+        setTimeout(function() { closeMo("partial"); }, 1500);
+      }
+      return;
+    }
+    // Generate P&L
+    if (e.target.closest("#gen-pnl-btn")) {
+      if (typeof generatePnL === "function") generatePnL();
+      else {
+        var pnlEl = document.getElementById("pnl-report");
+        if (pnlEl) { pnlEl.style.display="block"; pnlEl.innerHTML="<p style='color:#5a5a5a;font-size:13px'>P&L generation requires financial data. Visit the Ledger tab first to load your income and expenses.</p>"; }
+      }
       return;
     }
     if (e.target.closest("#pay-method-ach")) {
