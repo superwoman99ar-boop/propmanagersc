@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v23.9</div>
+<div class="vbadge">PropManager SC v24.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2541,12 +2541,15 @@ function attachEvents() {
     var q = (document.getElementById("msg-search")||{}).value||"";
     filterMsgTenantList(q);
   });
-  var msgInput = document.getElementById("msg-ll-input");
-  if (msgInput) {
-    msgInput.addEventListener("keydown", function(e) {
-      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendLandlordMessage(); }
-    });
-  }
+  // msg-ll-input Enter key — use delegation since element may not exist at attachEvents time
+  document.addEventListener("keydown", function(e) {
+    if (e.target && e.target.id === "msg-ll-input") {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendLandlordMessage();
+      }
+    }
+  });
   document.addEventListener("click", function(e) {
     var qb = e.target.closest("[data-quick-msg]");
     if (qb) {
@@ -7254,6 +7257,18 @@ document.addEventListener("DOMContentLoaded", function() {
       });
       return;
     }
+    // ── MESSAGING BUTTONS (wired globally — work after landlord login) ──
+    if (e.target.closest("#msg-ll-send-btn")) {
+      sendLandlordMessage(); return;
+    }
+    if (e.target.closest("#msg-send-email-btn")) {
+      sendLandlordEmailToTenant(); return;
+    }
+    if (e.target.closest("[data-quick-msg]")) {
+      var inp2 = document.getElementById("msg-ll-input");
+      if (inp2) { inp2.value = e.target.closest("[data-quick-msg]").getAttribute("data-quick-msg"); inp2.focus(); }
+      return;
+    }
     // ── PAYMENT PORTAL BUTTONS (wired globally — work after tenant login) ──
     // ── INSTALLMENT PLAN BUTTONS ──
     if (e.target.closest("#flex-enroll-btn")) {
@@ -7653,12 +7668,30 @@ async function checkUnreadMessages() {
     .select("id, tenant_id")
     .eq("sender", "tenant")
     .eq("read", false);
-  var count = res.data ? res.data.length : 0;
+  var rows  = res.data || [];
+  var count = rows.length;
+  // Update sidebar badge
   var badge = document.getElementById("di-ms-badge");
   if (badge) {
     badge.textContent = count;
     badge.style.display = count > 0 ? "inline" : "none";
   }
+  // Update per-tenant unread dots in tenant list
+  var unreadIds = new Set(rows.map(function(r){ return r.tenant_id; }));
+  document.querySelectorAll("[data-tenant-row]").forEach(function(row) {
+    var tid = row.getAttribute("data-tenant-row");
+    var dot = row.querySelector(".unread-dot");
+    if (unreadIds.has(tid)) {
+      if (!dot) {
+        dot = document.createElement("span");
+        dot.className = "unread-dot";
+        dot.style.cssText = "width:8px;height:8px;background:#c0392b;border-radius:50%;flex-shrink:0";
+        row.appendChild(dot);
+      }
+    } else {
+      if (dot) dot.remove();
+    }
+  });
 }
 
 function renderMsgTenantList(tenants) {
@@ -7713,17 +7746,23 @@ async function openLandlordThread(tenant) {
   if (addrEl) addrEl.textContent = (tenant.properties ? tenant.properties.address : "") + (tenant.email ? " · " + tenant.email : "");
   if (emailBtn) emailBtn.style.display = tenant.email ? "flex" : "none";
 
-  // Show compose area
+  // Show compose area and focus input
   var composeEl = document.getElementById("msg-compose-area");
   if (composeEl) composeEl.style.display = "block";
+  setTimeout(function() {
+    var inp = document.getElementById("msg-ll-input");
+    if (inp) inp.focus();
+  }, 300);
 
   // Load thread
   await loadLandlordThread();
 
-  // Mark tenant messages as read
+  // Mark tenant messages as read — await so badge updates after DB write
   if (sb) {
-    sb.from("messages").update({ read: true })
-      .eq("tenant_id", tenant.id).eq("sender", "tenant");
+    await sb.from("messages")
+      .update({ read: true })
+      .eq("tenant_id", tenant.id)
+      .eq("sender", "tenant");
     checkUnreadMessages();
   }
 }
@@ -13748,6 +13787,18 @@ document.addEventListener("DOMContentLoaded", function() {
       });
       return;
     }
+    // ── MESSAGING BUTTONS (wired globally — work after landlord login) ──
+    if (e.target.closest("#msg-ll-send-btn")) {
+      sendLandlordMessage(); return;
+    }
+    if (e.target.closest("#msg-send-email-btn")) {
+      sendLandlordEmailToTenant(); return;
+    }
+    if (e.target.closest("[data-quick-msg]")) {
+      var inp2 = document.getElementById("msg-ll-input");
+      if (inp2) { inp2.value = e.target.closest("[data-quick-msg]").getAttribute("data-quick-msg"); inp2.focus(); }
+      return;
+    }
     // ── PAYMENT PORTAL BUTTONS (wired globally — work after tenant login) ──
     // ── INSTALLMENT PLAN BUTTONS ──
     if (e.target.closest("#flex-enroll-btn")) {
@@ -14147,12 +14198,30 @@ async function checkUnreadMessages() {
     .select("id, tenant_id")
     .eq("sender", "tenant")
     .eq("read", false);
-  var count = res.data ? res.data.length : 0;
+  var rows  = res.data || [];
+  var count = rows.length;
+  // Update sidebar badge
   var badge = document.getElementById("di-ms-badge");
   if (badge) {
     badge.textContent = count;
     badge.style.display = count > 0 ? "inline" : "none";
   }
+  // Update per-tenant unread dots in tenant list
+  var unreadIds = new Set(rows.map(function(r){ return r.tenant_id; }));
+  document.querySelectorAll("[data-tenant-row]").forEach(function(row) {
+    var tid = row.getAttribute("data-tenant-row");
+    var dot = row.querySelector(".unread-dot");
+    if (unreadIds.has(tid)) {
+      if (!dot) {
+        dot = document.createElement("span");
+        dot.className = "unread-dot";
+        dot.style.cssText = "width:8px;height:8px;background:#c0392b;border-radius:50%;flex-shrink:0";
+        row.appendChild(dot);
+      }
+    } else {
+      if (dot) dot.remove();
+    }
+  });
 }
 
 function renderMsgTenantList(tenants) {
@@ -14207,17 +14276,23 @@ async function openLandlordThread(tenant) {
   if (addrEl) addrEl.textContent = (tenant.properties ? tenant.properties.address : "") + (tenant.email ? " · " + tenant.email : "");
   if (emailBtn) emailBtn.style.display = tenant.email ? "flex" : "none";
 
-  // Show compose area
+  // Show compose area and focus input
   var composeEl = document.getElementById("msg-compose-area");
   if (composeEl) composeEl.style.display = "block";
+  setTimeout(function() {
+    var inp = document.getElementById("msg-ll-input");
+    if (inp) inp.focus();
+  }, 300);
 
   // Load thread
   await loadLandlordThread();
 
-  // Mark tenant messages as read
+  // Mark tenant messages as read — await so badge updates after DB write
   if (sb) {
-    sb.from("messages").update({ read: true })
-      .eq("tenant_id", tenant.id).eq("sender", "tenant");
+    await sb.from("messages")
+      .update({ read: true })
+      .eq("tenant_id", tenant.id)
+      .eq("sender", "tenant");
     checkUnreadMessages();
   }
 }
