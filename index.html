@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v24.0</div>
+<div class="vbadge">PropManager SC v24.1</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1158,8 +1158,12 @@ footer{background:#0f1e35;padding:44px 20px 26px}
           <!-- STEP 3: Receipt -->
           <div id="pay-step-3" style="display:none;text-align:center;padding:20px 0">
             <div style="font-size:52px;margin-bottom:11px">&#10003;</div>
-            <div style="font-size:20px;font-weight:500;color:#0f1e35;font-family:Georgia,serif;margin-bottom:7px">Payment submitted!</div>
-            <div style="font-size:13px;color:#5a5a5a;margin-bottom:16px">Your landlord has been notified. Keep this as your receipt.</div>
+            <div style="font-size:20px;font-weight:500;color:#0f1e35;font-family:Georgia,serif;margin-bottom:7px">Stripe Payment Page Opened!</div>
+            <div style="background:#eaf5ee;border:1px solid rgba(45,122,79,.25);border-radius:9px;padding:13px;margin-bottom:13px;font-size:13px;color:#2d7a4f;text-align:left">
+              <strong>&#10003; A new tab opened with your Stripe payment page.</strong><br>
+              Complete your payment there. You can pay any amount &mdash; full rent or partial.
+            </div>
+            <div style="font-size:12.5px;color:#5a5a5a;margin-bottom:16px">If the Stripe tab did not open, check your browser pop-up settings or <span id="reopen-stripe-link" style="color:#1a5fa8;cursor:pointer;text-decoration:underline">click here to open it again</span>.</div>
             <div style="background:rgba(15,30,53,.04);border-radius:9px;padding:14px;text-align:left;margin-bottom:16px">
               <div style="font-size:12px;font-weight:600;color:#0f1e35;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Payment receipt</div>
               <div id="receipt-details" style="font-size:13px;color:#5a5a5a;line-height:2"></div>
@@ -3278,6 +3282,20 @@ async function logPayment() {
 
   if (btn) { btn.disabled = false; btn.innerHTML = "<i class='ti ti-lock'></i> Confirm & pay"; }
 
+  // Populate receipt details
+  var receiptEl = document.getElementById("receipt-details");
+  if (receiptEl && currentTenant) {
+    var month = new Date().toLocaleDateString("en-US",{month:"long",year:"numeric"});
+    var addr  = currentTenant.properties ? currentTenant.properties.address : "Your unit";
+    receiptEl.innerHTML =
+      "Tenant: <strong>" + (currentTenant.full_name||"") + "</strong><br>" +
+      "Property: <strong>" + addr + "</strong><br>" +
+      "Period: <strong>" + month + "</strong><br>" +
+      "Amount: <strong>$" + Number(currentTenant.monthly_rent||0).toLocaleString() + "</strong><br>" +
+      "Method: <strong>Stripe</strong><br>" +
+      "Date: <strong>" + new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"}) + "</strong><br>" +
+      "Status: <strong style='color:#2d7a4f'>Stripe page opened &#10003;</strong>";
+  }
   // Show receipt/confirmation step
   showPayStep(3);
   setTimeout(function() {
@@ -7323,6 +7341,11 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     if (e.target.closest("#done-pay-btn")) {
       goPortal("hm"); showPayStep(1); return;
+    }
+    if (e.target.closest("#reopen-stripe-link")) {
+      var link = currentTenant && currentTenant.stripe_payment_link;
+      if (link) window.open(link, "_blank");
+      return;
     }
     if (e.target.closest("#pay-method-ach")) {
       selectPayMethod("ach"); return;
@@ -13876,6 +13899,11 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     if (e.target.closest("#done-pay-btn")) {
       goPortal("hm"); showPayStep(1); return;
+    }
+    if (e.target.closest("#reopen-stripe-link")) {
+      var link = currentTenant && currentTenant.stripe_payment_link;
+      if (link) window.open(link, "_blank");
+      return;
     }
     if (e.target.closest("#pay-method-ach")) {
       selectPayMethod("ach"); return;
