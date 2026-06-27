@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v24.3</div>
+<div class="vbadge">PropManager SC v24.4</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -8099,97 +8099,101 @@ function renderVacancyPhotoPreview() {
 async function uploadVacancyPhotos(files) {
   var statusEl = document.getElementById("ve-photo-status");
   var btnEl    = document.getElementById("ve-photo-add-btn");
-  if (btnEl) { btnEl.disabled = true; btnEl.textContent = "Uploading..."; }
+  if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = "<i class='ti ti-loader'></i> Uploading..."; }
   if (statusEl) statusEl.textContent = "";
+
+  // Cap total photos at 6
+  if (_vacancyPhotos.length >= 6) {
+    if (statusEl) { statusEl.style.color="#c0392b"; statusEl.textContent = "Max 6 photos allowed. Remove some first."; }
+    if (btnEl)    { btnEl.disabled=false; btnEl.innerHTML="<i class='ti ti-upload'></i> Upload photos"; }
+    return;
+  }
 
   var uploaded = 0;
   var failed   = 0;
+  var MAX_PHOTOS = 6;
 
   for (var i = 0; i < files.length; i++) {
+    if (_vacancyPhotos.length >= MAX_PHOTOS) { failed++; continue; }
+
     var file = files[i];
-    // Validate type
-    if (!file.type.match(/image\/(jpeg|jpg|png|webp)/i)) {
-      failed++;
-      continue;
-    }
+    // Accept images only
+    if (!file.type.match(/image\//i)) { failed++; continue; }
+
+    // ── Try Supabase Storage first ──────────────────────────────
     if (sb && sb.storage) {
-      // Upload to Supabase Storage vacancy-photos bucket
-      var ext  = file.name.split(".").pop().toLowerCase() || "jpg";
+      var ext  = (file.name.split(".").pop() || "jpg").toLowerCase();
       var path = "vacancy/" + Date.now() + "_" + i + "." + ext;
       try {
         var res = await sb.storage.from("vacancy-photos").upload(path, file, { upsert: true });
-        if (res.error) {
-          console.warn("Storage upload error:", res.error.message);
-          // Fallback to base64 for this file
-          await new Promise(function(resolve) {
-            var fr = new FileReader();
-            fr.onload = function(ev) {
-              if (ev.target && ev.target.result) { _vacancyPhotos.push(ev.target.result); uploaded++; }
-              resolve();
-            };
-            fr.onerror = function() { failed++; resolve(); };
-            fr.readAsDataURL(file);
-          });
-        } else {
+        if (!res.error) {
           var pubRes = sb.storage.from("vacancy-photos").getPublicUrl(path);
-          var pubUrl = pubRes.data && pubRes.data.publicUrl ? pubRes.data.publicUrl : null;
-          if (pubUrl) { _vacancyPhotos.push(pubUrl); uploaded++; }
-          else { failed++; }
+          var pubUrl = pubRes.data && pubRes.data.publicUrl;
+          if (pubUrl) { _vacancyPhotos.push(pubUrl); uploaded++; continue; }
         }
-      } catch(e) {
-        console.warn("Upload exception:", e);
-        failed++;
-      }
-    } else {
-      // No Supabase Storage — use compressed base64
-      await new Promise(function(resolve) {
-        var fr = new FileReader();
-        fr.onload = function(ev) {
-          if (!ev.target || !ev.target.result) { failed++; resolve(); return; }
-          var img2 = new Image();
-          img2.onload = function() {
-            try {
-              var MAX = 900;
-              var sw = img2.naturalWidth || 800;
-              var sh = img2.naturalHeight || 600;
-              var scale = Math.min(MAX/sw, MAX/sh, 1);
-              var cv = document.createElement("canvas");
-              cv.width  = Math.floor(sw*scale);
-              cv.height = Math.floor(sh*scale);
-              cv.getContext("2d").drawImage(img2, 0, 0, cv.width, cv.height);
-              var out = cv.toDataURL("image/jpeg", 0.72);
-              _vacancyPhotos.push(out);
-              uploaded++;
-            } catch(e) { _vacancyPhotos.push(ev.target.result); uploaded++; }
-            resolve();
-          };
-          img2.onerror = function() { _vacancyPhotos.push(ev.target.result); uploaded++; resolve(); };
-          img2.src = ev.target.result;
-        };
-        fr.onerror = function() { failed++; resolve(); };
-        fr.readAsDataURL(file);
-      });
+        // Storage failed — fall through to base64
+      } catch(e) { /* fall through */ }
     }
+
+    // ── Fallback: aggressive canvas compression ──────────────────
+    await new Promise(function(resolve) {
+      var fr = new FileReader();
+      fr.onload = function(ev) {
+        if (!ev.target || !ev.target.result) { failed++; resolve(); return; }
+        var img2 = new Image();
+        img2.onload = function() {
+          try {
+            // Aggressively resize — max 600px, 0.5 quality = ~30-50KB per photo
+            var MAX = 600;
+            var sw  = img2.naturalWidth  || 800;
+            var sh  = img2.naturalHeight || 600;
+            var scale = Math.min(MAX/sw, MAX/sh, 1);
+            var cv = document.createElement("canvas");
+            cv.width  = Math.floor(sw * scale);
+            cv.height = Math.floor(sh * scale);
+            cv.getContext("2d").drawImage(img2, 0, 0, cv.width, cv.height);
+            var out = cv.toDataURL("image/jpeg", 0.50);
+            // Safety check — if still > 150KB skip it
+            if (out.length > 200000) {
+              // Try even harder
+              cv.width  = Math.floor(cv.width  * 0.6);
+              cv.height = Math.floor(cv.height * 0.6);
+              cv.getContext("2d").drawImage(img2, 0, 0, cv.width, cv.height);
+              out = cv.toDataURL("image/jpeg", 0.40);
+            }
+            _vacancyPhotos.push(out);
+            uploaded++;
+          } catch(e2) { failed++; }
+          resolve();
+        };
+        img2.onerror = function() { failed++; resolve(); };
+        img2.src = ev.target.result;
+      };
+      fr.onerror = function() { failed++; resolve(); };
+      fr.readAsDataURL(file);
+    });
   }
 
-  // Reset button and show result
-  if (btnEl) {
-    btnEl.disabled = false;
-    btnEl.innerHTML = "<i class='ti ti-upload'></i> Upload photos";
-  }
+  // Reset button
+  if (btnEl) { btnEl.disabled=false; btnEl.innerHTML="<i class='ti ti-upload'></i> Upload photos"; }
+
+  // Show result
   if (statusEl) {
     if (uploaded > 0) {
       statusEl.style.color = "#2d7a4f";
-      statusEl.textContent = uploaded + " photo" + (uploaded>1?"s":"") + " added" + (failed>0?" ("+failed+" skipped)":"") + ".";
+      statusEl.textContent = uploaded + " photo" + (uploaded>1?"s":"") + " added" +
+        (_vacancyPhotos.length >= MAX_PHOTOS ? " (max reached)" : "") +
+        (failed > 0 ? " · " + failed + " skipped" : "") + ".";
     } else {
       statusEl.style.color = "#c0392b";
-      statusEl.textContent = "No photos added. Use JPG or PNG files.";
+      statusEl.textContent = failed + " photo(s) could not be added. Use JPG or PNG.";
     }
   }
-  // Reset file input
+
+  // Clear file input
   var inp = document.getElementById("ve-photo-input");
   if (inp) { try { inp.value = ""; } catch(e) {} }
-  // Render previews
+
   renderVacancyPhotoPreview();
   updatePhotoCount();
 }
