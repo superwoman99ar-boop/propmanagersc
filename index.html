@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v24.4</div>
+<div class="vbadge">PropManager SC v24.5</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2111,6 +2111,18 @@ function attachEvents() {
 
   // Modal closes
   on("close-tenant-mo", "click", function() { closeMo("tenant"); });
+  on("forgot-pass-link", "click", function() {
+    var email = (document.getElementById("t-email")||{}).value || "";
+    var fp = document.getElementById("fp-email");
+    if (fp && email) fp.value = email;
+    openMo("forgotpass");
+  });
+  on("contact-link-from-login", "click", function() {
+    closeMo("tenant");
+    // Scroll to contact section
+    var el = document.getElementById("contact");
+    if (el) el.scrollIntoView({behavior:"smooth"});
+  });
   on("close-landlord-mo", "click", function() { closeMo("landlord"); });
   on("close-apply-mo", "click", function() { closeMo("apply"); });
   on("close-addtenant-mo", "click", function() { closeMo("addtenant"); });
@@ -14891,6 +14903,31 @@ function loadPortalPaymentTab() {
     }
   }
   if (typeof selectPayMethod === "function") selectPayMethod("ach");
+}
+
+async function inviteTenant(email, name) {
+  if (!sb || !email) return;
+  // Send password reset email which acts as an invite
+  var result = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: "https://propmanagersc.com"
+  });
+  if (result.error) {
+    alert("Could not send invite to " + name + ": " + result.error.message);
+  } else {
+    alert("Invite sent to " + name + " at " + email + "!\n\nThey will receive an email to set their password and access the tenant portal.");
+    // Also notify via Resend if configured
+    sendResendEmail(email, "You have been invited to PropManager SC",
+      "<div style='font-family:Arial,sans-serif;max-width:520px;margin:0 auto'>" +
+      "<div style='background:#0f1e35;padding:16px 20px;border-radius:10px 10px 0 0'><span style='color:#f0c96b;font-size:17px;font-weight:700'>PropManager SC</span></div>" +
+      "<div style='border:1px solid #e5e7eb;border-top:none;border-radius:0 0 10px 10px;padding:24px'>" +
+      "<h2 style='margin:0 0 12px;color:#0f1e35'>Welcome, " + name + "!</h2>" +
+      "<p style='color:#374151;font-size:14px;line-height:1.7'>Your landlord has invited you to the PropManager SC tenant portal where you can pay rent, submit maintenance requests, and communicate directly.</p>" +
+      "<p style='color:#374151;font-size:14px'>You should receive a separate email to set your password. Once set, log in at:</p>" +
+      "<div style='text-align:center;margin:20px 0'><a href='https://propmanagersc.com' style='background:#0f1e35;color:#f0c96b;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px'>propmanagersc.com</a></div>" +
+      "<p style='color:#6b7280;font-size:13px'>Use your email address <strong>" + email + "</strong> to log in.</p>" +
+      "</div></div>"
+    );
+  }
 }
 </script>
 
