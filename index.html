@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v24.7</div>
+<div class="vbadge">PropManager SC v24.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3479,15 +3479,23 @@ function renderTenantList(tenants) {
     var ini = t.initials || t.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
     var bal = t.status === "overdue" ? "<span style='color:#c0392b;font-weight:500'>$" + ((t.monthly_rent||0)+80) + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
     var badge = t.status === "current" ? "<span class='badge b-g'>Current</span>" : t.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-a'>Vacating</span>";
-    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td><button class='btn' style='font-size:11px;padding:3px 8px' data-tenant-id='" + t.id + "'>Edit</button></td></tr>";
+    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td style='display:flex;gap:4px;align-items:center'><button class='btn' style='font-size:11px;padding:3px 8px' data-tenant-id='" + t.id + "'>Edit</button><button class='btn' style='font-size:11px;padding:3px 8px;background:#e6f0fb;border-color:#1a5fa8;color:#1a5fa8' data-invite-email='" + (t.email||"") + "' data-invite-name='" + (t.full_name||"Tenant").replace(/'/g,"") + "' title='Send portal invite'><i class='ti ti-mail'></i></button></td></tr>";
   }).join("");
-  el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:23%'>Tenant</th><th style='width:23%'>Address</th><th style='width:11%'>Rent</th><th style='width:14%'>Status</th><th style='width:11%'>Balance</th><th style='width:10%'>Edit</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
+  el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:23%'>Tenant</th><th style='width:23%'>Address</th><th style='width:11%'>Rent</th><th style='width:14%'>Status</th><th style='width:11%'>Balance</th><th style='width:14%'>Actions</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
   // Attach edit button events
   el.querySelectorAll("[data-tenant-id]").forEach(function(btn) {
     btn.addEventListener("click", function() {
       var tid = btn.getAttribute("data-tenant-id");
       var tenant = tenants.find(function(t) { return t.id === tid; });
       if (tenant) openEditTenantModal(tenant);
+    });
+  });
+  // Attach invite button events
+  el.querySelectorAll("[data-invite-email]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var email = btn.getAttribute("data-invite-email");
+      var name  = btn.getAttribute("data-invite-name");
+      if (email) inviteTenant(email, name);
     });
   });
 }
@@ -10088,7 +10096,7 @@ function renderTenantList(tenants) {
     var ini = t.initials || t.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
     var bal = t.status === "overdue" ? "<span style='color:#c0392b;font-weight:500'>$" + ((t.monthly_rent||0)+80) + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
     var badge = t.status === "current" ? "<span class='badge b-g'>Current</span>" : t.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-a'>Vacating</span>";
-    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td><button class='btn' style='font-size:11px;padding:3px 8px' data-tenant-id='" + t.id + "'>Edit</button></td></tr>";
+    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td style='display:flex;gap:4px;align-items:center'><button class='btn' style='font-size:11px;padding:3px 8px' data-tenant-id='" + t.id + "'>Edit</button><button class='btn' style='font-size:11px;padding:3px 8px;background:#e6f0fb;border-color:#1a5fa8;color:#1a5fa8' data-invite-email='" + (t.email||"") + "' data-invite-name='" + (t.full_name||"Tenant").replace(/'/g,"") + "' title='Send portal invite'><i class='ti ti-mail'></i></button></td></tr>";
   }).join("");
   el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:23%'>Tenant</th><th style='width:23%'>Address</th><th style='width:11%'>Rent</th><th style='width:14%'>Status</th><th style='width:11%'>Balance</th><th style='width:10%'>Edit</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
   // Attach edit button events
@@ -10097,6 +10105,14 @@ function renderTenantList(tenants) {
       var tid = btn.getAttribute("data-tenant-id");
       var tenant = tenants.find(function(t) { return t.id === tid; });
       if (tenant) openEditTenantModal(tenant);
+    });
+  });
+  // Attach invite button events
+  el.querySelectorAll("[data-invite-email]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var email = btn.getAttribute("data-invite-email");
+      var name  = btn.getAttribute("data-invite-name");
+      if (email) inviteTenant(email, name);
     });
   });
 }
