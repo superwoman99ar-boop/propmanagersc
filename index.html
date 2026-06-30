@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v24.9</div>
+<div class="vbadge">PropManager SC v25.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -14945,14 +14945,22 @@ function loadPortalPaymentTab() {
 
 async function inviteTenant(email, name) {
   if (!sb || !email) return;
-  // Send password reset email which acts as an invite
+  if (!confirm("Send a fresh portal invite to " + name + " (" + email + ")?\n\nThey will receive an email with a link to set their password. Links expire after 24 hours.")) return;
   var result = await sb.auth.resetPasswordForEmail(email, {
     redirectTo: "https://propmanagersc.com"
   });
   if (result.error) {
+    // If user doesn't exist in Auth, try signUp first
+    if (result.error.message && result.error.message.toLowerCase().includes("not found")) {
+      var signupRes = await sb.auth.signUp({ email: email, password: Math.random().toString(36).slice(2) + "Aa1!" });
+      if (!signupRes.error) {
+        alert("Account created and invite sent to " + name + " at " + email + "!\n\n⚠️ The link expires in 24 hours — tell them to check their inbox now.");
+        return;
+      }
+    }
     alert("Could not send invite to " + name + ": " + result.error.message);
   } else {
-    alert("Invite sent to " + name + " at " + email + "!\n\nThey will receive an email to set their password and access the tenant portal.");
+    alert("✅ Fresh invite sent to " + name + " at " + email + "!\n\n⚠️ IMPORTANT: Tell Rudolph to check his email RIGHT NOW. The link expires in 24 hours.\n\nSubject line to look for: \"Confirm your signup\" or \"Reset your password\"");
     // Also notify via Resend if configured
     sendResendEmail(email, "You have been invited to PropManager SC",
       "<div style='font-family:Arial,sans-serif;max-width:520px;margin:0 auto'>" +
