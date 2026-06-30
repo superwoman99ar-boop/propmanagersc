@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v24.5</div>
+<div class="vbadge">PropManager SC v24.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3465,9 +3465,9 @@ function renderTenantTable(tenants) {
     var ini = t.initials || t.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
     var bal = t.status === "overdue" ? "<span style='color:#c0392b;font-weight:500'>$" + ((t.monthly_rent||0)+80) + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
     var badge = t.status === "current" ? "<span class='badge b-g'>Current</span>" : t.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-a'>Other</span>";
-    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td></tr>";
+    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td><button class='btn' style='font-size:11px;padding:2px 8px' data-invite-email='" + (t.email||"" )+ "' data-invite-name='" + (t.full_name||"Tenant").replace(/'/g,"") + "'><i class='ti ti-mail'></i> Invite</button></td></tr>";
   }).join("");
-  el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:28%'>Tenant</th><th style='width:28%'>Address</th><th style='width:14%'>Rent</th><th style='width:16%'>Status</th><th style='width:14%'>Balance</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
+  el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:28%'>Tenant</th><th style='width:28%'>Address</th><th style='width:14%'>Rent</th><th style='width:16%'>Status</th><th style='width:14%'>Balance</th><th style='width:10%'>Portal</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
 }
 
 function renderTenantList(tenants) {
@@ -7272,6 +7272,14 @@ document.addEventListener("DOMContentLoaded", function() {
       if (sb) sb.from("applications").delete().eq("id", appId).then(function() { renderApplications(); });
       return;
     }
+    // Send portal invite
+    var inviteBtn = e.target.closest("[data-invite-email]");
+    if (inviteBtn) {
+      var iEmail = inviteBtn.getAttribute("data-invite-email");
+      var iName  = inviteBtn.getAttribute("data-invite-name");
+      if (iEmail) inviteTenant(iEmail, iName);
+      return;
+    }
     var delScreen = e.target.closest("[data-del-screen]");
     if (delScreen) {
       e.stopPropagation();
@@ -7353,6 +7361,9 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     if (e.target.closest("#done-pay-btn")) {
       goPortal("hm"); showPayStep(1); return;
+    }
+    if (e.target.closest("#send-reset-btn")) {
+      sendPasswordReset(); return;
     }
     if (e.target.closest("#reopen-stripe-link")) {
       var link = currentTenant && currentTenant.stripe_payment_link;
@@ -10063,9 +10074,9 @@ function renderTenantTable(tenants) {
     var ini = t.initials || t.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
     var bal = t.status === "overdue" ? "<span style='color:#c0392b;font-weight:500'>$" + ((t.monthly_rent||0)+80) + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
     var badge = t.status === "current" ? "<span class='badge b-g'>Current</span>" : t.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-a'>Other</span>";
-    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td></tr>";
+    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td><button class='btn' style='font-size:11px;padding:2px 8px' data-invite-email='" + (t.email||"" )+ "' data-invite-name='" + (t.full_name||"Tenant").replace(/'/g,"") + "'><i class='ti ti-mail'></i> Invite</button></td></tr>";
   }).join("");
-  el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:28%'>Tenant</th><th style='width:28%'>Address</th><th style='width:14%'>Rent</th><th style='width:16%'>Status</th><th style='width:14%'>Balance</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
+  el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:28%'>Tenant</th><th style='width:28%'>Address</th><th style='width:14%'>Rent</th><th style='width:16%'>Status</th><th style='width:14%'>Balance</th><th style='width:10%'>Portal</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
 }
 
 function renderTenantList(tenants) {
@@ -13870,6 +13881,14 @@ document.addEventListener("DOMContentLoaded", function() {
       if (sb) sb.from("applications").delete().eq("id", appId).then(function() { renderApplications(); });
       return;
     }
+    // Send portal invite
+    var inviteBtn = e.target.closest("[data-invite-email]");
+    if (inviteBtn) {
+      var iEmail = inviteBtn.getAttribute("data-invite-email");
+      var iName  = inviteBtn.getAttribute("data-invite-name");
+      if (iEmail) inviteTenant(iEmail, iName);
+      return;
+    }
     var delScreen = e.target.closest("[data-del-screen]");
     if (delScreen) {
       e.stopPropagation();
@@ -13951,6 +13970,9 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     if (e.target.closest("#done-pay-btn")) {
       goPortal("hm"); showPayStep(1); return;
+    }
+    if (e.target.closest("#send-reset-btn")) {
+      sendPasswordReset(); return;
     }
     if (e.target.closest("#reopen-stripe-link")) {
       var link = currentTenant && currentTenant.stripe_payment_link;
