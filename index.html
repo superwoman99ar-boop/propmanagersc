@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v24.6</div>
+<div class="vbadge">PropManager SC v24.7</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2149,9 +2149,9 @@ function attachEvents() {
 
   // Dashboard sidebar
   on("di-ov", "click", function() { goDash("ov"); });
-  on("di-pr", "click", function() { goDash("pr"); });
-  on("di-tn", "click", function() { goDash("tn"); });
-  on("di-rn", "click", function() { goDash("rn"); });
+  on("di-pr", "click", function() { if(window._tabLastLoaded) window._tabLastLoaded["pr"]=0; goDash("pr"); });
+  on("di-tn", "click", function() { if(window._tabLastLoaded) window._tabLastLoaded["tn"]=0; goDash("tn"); });
+  on("di-rn", "click", function() { if(window._tabLastLoaded) window._tabLastLoaded["rn"]=0; goDash("rn"); });
   on("di-mn", "click", function() { goDash("mn"); loadMaintTab(); });
   on("di-ms", "click", function() { goDash("ms"); loadLandlordMessages(); });
   on("di-ls", "click", function() {
