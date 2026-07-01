@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v25.4</div>
+<div class="vbadge">PropManager SC v25.5</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2897,6 +2897,11 @@ async function tenantLogin() {
   } else {
     document.getElementById("tenant-form").style.display = "none";
     document.getElementById("tenant-ok").style.display = "block";
+    currentUser = result.data && result.data.user ? result.data.user : (result.data || null);
+    setTimeout(function() {
+      closeMo("tenant");
+      loadTenantProfile();
+    }, 800);
   }
 }
 
@@ -3008,7 +3013,16 @@ function initSupabase() {
 // ---- TENANT PROFILE ----
 async function loadTenantProfile() {
   if (!sb || !currentUser) return;
+  // Primary: match by user_id
   var result = await sb.from("tenants").select("*, properties(*), stripe_payment_link").eq("user_id", currentUser.id).single();
+  // Fallback: match by email if user_id not set (happens when Supabase user is recreated)
+  if (!result.data && currentUser.email) {
+    result = await sb.from("tenants").select("*, properties(*), stripe_payment_link").eq("email", currentUser.email).single();
+    // Update tenant record with new user_id so future logins work
+    if (result.data) {
+      sb.from("tenants").update({ user_id: currentUser.id }).eq("email", currentUser.email);
+    }
+  }
   if (result.data) {
     currentTenant = result.data;
     // Hardcoded Stripe payment links as fallback — works even if DB column missing
@@ -9513,6 +9527,11 @@ async function tenantLogin() {
   } else {
     document.getElementById("tenant-form").style.display = "none";
     document.getElementById("tenant-ok").style.display = "block";
+    currentUser = result.data && result.data.user ? result.data.user : (result.data || null);
+    setTimeout(function() {
+      closeMo("tenant");
+      loadTenantProfile();
+    }, 800);
   }
 }
 
@@ -9624,7 +9643,16 @@ function initSupabase() {
 // ---- TENANT PROFILE ----
 async function loadTenantProfile() {
   if (!sb || !currentUser) return;
+  // Primary: match by user_id
   var result = await sb.from("tenants").select("*, properties(*), stripe_payment_link").eq("user_id", currentUser.id).single();
+  // Fallback: match by email if user_id not set (happens when Supabase user is recreated)
+  if (!result.data && currentUser.email) {
+    result = await sb.from("tenants").select("*, properties(*), stripe_payment_link").eq("email", currentUser.email).single();
+    // Update tenant record with new user_id so future logins work
+    if (result.data) {
+      sb.from("tenants").update({ user_id: currentUser.id }).eq("email", currentUser.email);
+    }
+  }
   if (result.data) {
     currentTenant = result.data;
     // Hardcoded Stripe payment links as fallback — works even if DB column missing
