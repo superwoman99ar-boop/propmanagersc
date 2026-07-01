@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v25.1</div>
+<div class="vbadge">PropManager SC v25.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3496,6 +3496,14 @@ function renderTenantList(tenants) {
       var email = btn.getAttribute("data-invite-email");
       var name  = btn.getAttribute("data-invite-name");
       if (email) inviteTenant(email, name);
+    });
+  });
+  // Attach set-password button events
+  el.querySelectorAll("[data-setpass-email]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var email = btn.getAttribute("data-setpass-email");
+      var name  = btn.getAttribute("data-setpass-name");
+      openSetPassModal(email, name);
     });
   });
 }
@@ -10121,6 +10129,14 @@ function renderTenantList(tenants) {
       var email = btn.getAttribute("data-invite-email");
       var name  = btn.getAttribute("data-invite-name");
       if (email) inviteTenant(email, name);
+    });
+  });
+  // Attach set-password button events
+  el.querySelectorAll("[data-setpass-email]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var email = btn.getAttribute("data-setpass-email");
+      var name  = btn.getAttribute("data-setpass-name");
+      openSetPassModal(email, name);
     });
   });
 }
