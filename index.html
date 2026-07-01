@@ -3013,15 +3013,49 @@ function initSupabase() {
 // ---- TENANT PROFILE ----
 async function loadTenantProfile() {
   if (!sb || !currentUser) return;
-  // Primary: match by user_id
-  var result = await sb.from("tenants").select("*, properties(*), stripe_payment_link").eq("user_id", currentUser.id).single();
-  // Fallback: match by email if user_id not set (happens when Supabase user is recreated)
+
+  var result = { data: null, error: null };
+
+  // 1. Primary: match by user_id
+  result = await sb.from("tenants").select("*, properties(*), stripe_payment_link").eq("user_id", currentUser.id).single();
+
+  // 2. Fallback: match by email (handles recreated Supabase users)
   if (!result.data && currentUser.email) {
-    result = await sb.from("tenants").select("*, properties(*), stripe_payment_link").eq("email", currentUser.email).single();
-    // Update tenant record with new user_id so future logins work
+    var email = currentUser.email.trim().toLowerCase();
+    result = await sb.from("tenants")
+      .select("*, properties(*), stripe_payment_link")
+      .ilike("email", email)
+      .single();
     if (result.data) {
-      sb.from("tenants").update({ user_id: currentUser.id }).eq("email", currentUser.email);
+      // Auto-heal: update user_id so next login works without fallback
+      sb.from("tenants").update({ user_id: currentUser.id }).eq("id", result.data.id);
+      console.log("Tenant matched by email — user_id updated for future logins");
     }
+  }
+
+  // 3. Last resort: fetch all tenants and find by email client-side
+  if (!result.data && currentUser.email) {
+    var allRes = await sb.from("tenants").select("*, properties(*), stripe_payment_link");
+    if (allRes.data) {
+      var match = allRes.data.find(function(t) {
+        return t.email && t.email.trim().toLowerCase() === currentUser.email.trim().toLowerCase();
+      });
+      if (match) {
+        result.data = match;
+        sb.from("tenants").update({ user_id: currentUser.id }).eq("id", match.id);
+        console.log("Tenant matched by client-side email scan — user_id healed");
+      }
+    }
+  }
+  if (!result.data) {
+    // Could not find tenant record — show helpful error
+    var errEl = document.getElementById("t-err");
+    if (errEl) {
+      errEl.textContent = "Account found but tenant profile not linked. Please contact your landlord to re-send your portal invite.";
+      errEl.style.display = "block";
+    }
+    console.warn("loadTenantProfile: no tenant record found for", currentUser.email, "uid:", currentUser.id);
+    return;
   }
   if (result.data) {
     currentTenant = result.data;
@@ -9643,14 +9677,38 @@ function initSupabase() {
 // ---- TENANT PROFILE ----
 async function loadTenantProfile() {
   if (!sb || !currentUser) return;
-  // Primary: match by user_id
-  var result = await sb.from("tenants").select("*, properties(*), stripe_payment_link").eq("user_id", currentUser.id).single();
-  // Fallback: match by email if user_id not set (happens when Supabase user is recreated)
+
+  var result = { data: null, error: null };
+
+  // 1. Primary: match by user_id
+  result = await sb.from("tenants").select("*, properties(*), stripe_payment_link").eq("user_id", currentUser.id).single();
+
+  // 2. Fallback: match by email (handles recreated Supabase users)
   if (!result.data && currentUser.email) {
-    result = await sb.from("tenants").select("*, properties(*), stripe_payment_link").eq("email", currentUser.email).single();
-    // Update tenant record with new user_id so future logins work
+    var email = currentUser.email.trim().toLowerCase();
+    result = await sb.from("tenants")
+      .select("*, properties(*), stripe_payment_link")
+      .ilike("email", email)
+      .single();
     if (result.data) {
-      sb.from("tenants").update({ user_id: currentUser.id }).eq("email", currentUser.email);
+      // Auto-heal: update user_id so next login works without fallback
+      sb.from("tenants").update({ user_id: currentUser.id }).eq("id", result.data.id);
+      console.log("Tenant matched by email — user_id updated for future logins");
+    }
+  }
+
+  // 3. Last resort: fetch all tenants and find by email client-side
+  if (!result.data && currentUser.email) {
+    var allRes = await sb.from("tenants").select("*, properties(*), stripe_payment_link");
+    if (allRes.data) {
+      var match = allRes.data.find(function(t) {
+        return t.email && t.email.trim().toLowerCase() === currentUser.email.trim().toLowerCase();
+      });
+      if (match) {
+        result.data = match;
+        sb.from("tenants").update({ user_id: currentUser.id }).eq("id", match.id);
+        console.log("Tenant matched by client-side email scan — user_id healed");
+      }
     }
   }
   if (result.data) {
