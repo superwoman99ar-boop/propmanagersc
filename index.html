@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v25.5</div>
+<div class="vbadge">PropManager SC v25.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3332,7 +3332,7 @@ async function logPayment() {
       amount:       currentTenant.monthly_rent || 0,
       payment_date: new Date().toISOString().split("T")[0],
       method:       "Stripe",
-      status:       "pending",
+      status:       "paid",
       notes:        month + " rent — Stripe payment initiated"
     });
   }
@@ -3696,7 +3696,8 @@ function renderLeaseList(tenants) {
     var _msL  = _nowL.getFullYear() + "-" + String(_nowL.getMonth()+1).padStart(2,"0");
     var _paidL = new Set();
     (window._paymentCache||[]).forEach(function(p){
-      if (p.payment_date && p.payment_date.startsWith(_msL) && p.status==="paid") _paidL.add(p.tenant_id);
+      // Count any payment this month (paid, pending, partial) as "has paid"
+      if (p.payment_date && p.payment_date.startsWith(_msL)) _paidL.add(p.tenant_id);
     });
     var totalTenants = tenants.filter(function(t){ return Number(t.monthly_rent||0) > 0; }).length;
     var paidCount    = tenants.filter(function(t){ return _paidL.has(t.id) && Number(t.monthly_rent||0) > 0; }).length;
@@ -10007,7 +10008,7 @@ async function logPayment() {
         amount:       rent,
         payment_date: new Date().toISOString().split("T")[0],
         method:       "Stripe Link",
-        status:       "pending",
+        status:       "paid",
         notes:        "Payment initiated via Stripe Payment Link"
       });
     }
@@ -10354,7 +10355,8 @@ function renderLeaseList(tenants) {
     var _msL  = _nowL.getFullYear() + "-" + String(_nowL.getMonth()+1).padStart(2,"0");
     var _paidL = new Set();
     (window._paymentCache||[]).forEach(function(p){
-      if (p.payment_date && p.payment_date.startsWith(_msL) && p.status==="paid") _paidL.add(p.tenant_id);
+      // Count any payment this month (paid, pending, partial) as "has paid"
+      if (p.payment_date && p.payment_date.startsWith(_msL)) _paidL.add(p.tenant_id);
     });
     var totalTenants = tenants.filter(function(t){ return Number(t.monthly_rent||0) > 0; }).length;
     var paidCount    = tenants.filter(function(t){ return _paidL.has(t.id) && Number(t.monthly_rent||0) > 0; }).length;
