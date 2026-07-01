@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v25.3</div>
+<div class="vbadge">PropManager SC v25.4</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3482,35 +3482,7 @@ function renderTenantList(tenants) {
     return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td style='display:flex;gap:4px;align-items:center'><button class='btn' style='font-size:11px;padding:3px 8px' data-tenant-id='" + t.id + "'>Edit</button><button class='btn' style='font-size:11px;padding:3px 8px;background:#e6f0fb;border-color:#1a5fa8;color:#1a5fa8' data-invite-email='" + (t.email||"") + "' data-invite-name='" + (t.full_name||"Tenant").replace(/'/g,"") + "' title='Send portal invite'><i class='ti ti-mail'></i></button><button class='btn' style='font-size:11px;padding:3px 8px;background:#fdf3e0;border-color:#c9962a;color:#7a4f10;margin-left:2px' data-setpass-email='" + (t.email||"") + "' data-setpass-name='" + (t.full_name||"Tenant").replace(/'/g,"") + "' title='Set temporary password'><i class='ti ti-key'></i></button></td></tr>";
   }).join("");
   el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:23%'>Tenant</th><th style='width:23%'>Address</th><th style='width:11%'>Rent</th><th style='width:14%'>Status</th><th style='width:11%'>Balance</th><th style='width:14%'>Actions</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
-  // Attach edit button events — only fires on the Edit button itself
-  el.querySelectorAll("[data-tenant-id]").forEach(function(btn) {
-    btn.addEventListener("click", function(e) {
-      e.stopPropagation();
-      // Only handle if this button actually has data-tenant-id (not invite/setpass buttons)
-      if (!btn.hasAttribute("data-tenant-id")) return;
-      var tid = btn.getAttribute("data-tenant-id");
-      var tenant = tenants.find(function(t) { return String(t.id) === String(tid); });
-      if (tenant) openEditTenantModal(tenant);
-    });
-  });
-  // Attach invite button events
-  el.querySelectorAll("[data-invite-email]").forEach(function(btn) {
-    btn.addEventListener("click", function(e) {
-      e.stopPropagation();
-      var email = btn.getAttribute("data-invite-email");
-      var name  = btn.getAttribute("data-invite-name");
-      if (email) inviteTenant(email, name);
-    });
-  });
-  // Attach set-password button events
-  el.querySelectorAll("[data-setpass-email]").forEach(function(btn) {
-    btn.addEventListener("click", function(e) {
-      e.stopPropagation();
-      var email = btn.getAttribute("data-setpass-email");
-      var name  = btn.getAttribute("data-setpass-name");
-      if (email) openSetPassModal(email, name);
-    });
-  });
+  // All button clicks handled via global delegation below — no local listeners needed
 }
 
 function renderPropList(tenants) {
@@ -7299,6 +7271,15 @@ document.addEventListener("DOMContentLoaded", function() {
       var iEmail = inviteBtn.getAttribute("data-invite-email");
       var iName  = inviteBtn.getAttribute("data-invite-name");
       if (iEmail) inviteTenant(iEmail, iName);
+      return;
+    }
+    // Edit tenant button
+    var editTenBtn = e.target.closest("[data-tenant-id]");
+    if (editTenBtn) {
+      var tid = editTenBtn.getAttribute("data-tenant-id");
+      var cache = window._tenantCache || [];
+      var tenant = cache.find(function(t) { return String(t.id) === String(tid); });
+      if (tenant) openEditTenantModal(tenant);
       return;
     }
     // Set temp password button
@@ -10121,35 +10102,7 @@ function renderTenantList(tenants) {
     return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td style='display:flex;gap:4px;align-items:center'><button class='btn' style='font-size:11px;padding:3px 8px' data-tenant-id='" + t.id + "'>Edit</button><button class='btn' style='font-size:11px;padding:3px 8px;background:#e6f0fb;border-color:#1a5fa8;color:#1a5fa8' data-invite-email='" + (t.email||"") + "' data-invite-name='" + (t.full_name||"Tenant").replace(/'/g,"") + "' title='Send portal invite'><i class='ti ti-mail'></i></button><button class='btn' style='font-size:11px;padding:3px 8px;background:#fdf3e0;border-color:#c9962a;color:#7a4f10;margin-left:2px' data-setpass-email='" + (t.email||"") + "' data-setpass-name='" + (t.full_name||"Tenant").replace(/'/g,"") + "' title='Set temporary password'><i class='ti ti-key'></i></button></td></tr>";
   }).join("");
   el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:23%'>Tenant</th><th style='width:23%'>Address</th><th style='width:11%'>Rent</th><th style='width:14%'>Status</th><th style='width:11%'>Balance</th><th style='width:10%'>Edit</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
-  // Attach edit button events — only fires on the Edit button itself
-  el.querySelectorAll("[data-tenant-id]").forEach(function(btn) {
-    btn.addEventListener("click", function(e) {
-      e.stopPropagation();
-      // Only handle if this button actually has data-tenant-id (not invite/setpass buttons)
-      if (!btn.hasAttribute("data-tenant-id")) return;
-      var tid = btn.getAttribute("data-tenant-id");
-      var tenant = tenants.find(function(t) { return String(t.id) === String(tid); });
-      if (tenant) openEditTenantModal(tenant);
-    });
-  });
-  // Attach invite button events
-  el.querySelectorAll("[data-invite-email]").forEach(function(btn) {
-    btn.addEventListener("click", function(e) {
-      e.stopPropagation();
-      var email = btn.getAttribute("data-invite-email");
-      var name  = btn.getAttribute("data-invite-name");
-      if (email) inviteTenant(email, name);
-    });
-  });
-  // Attach set-password button events
-  el.querySelectorAll("[data-setpass-email]").forEach(function(btn) {
-    btn.addEventListener("click", function(e) {
-      e.stopPropagation();
-      var email = btn.getAttribute("data-setpass-email");
-      var name  = btn.getAttribute("data-setpass-name");
-      if (email) openSetPassModal(email, name);
-    });
-  });
+  // All button clicks handled via global delegation below — no local listeners needed
 }
 
 function renderPropList(tenants) {
@@ -13938,6 +13891,15 @@ document.addEventListener("DOMContentLoaded", function() {
       var iEmail = inviteBtn.getAttribute("data-invite-email");
       var iName  = inviteBtn.getAttribute("data-invite-name");
       if (iEmail) inviteTenant(iEmail, iName);
+      return;
+    }
+    // Edit tenant button
+    var editTenBtn = e.target.closest("[data-tenant-id]");
+    if (editTenBtn) {
+      var tid = editTenBtn.getAttribute("data-tenant-id");
+      var cache = window._tenantCache || [];
+      var tenant = cache.find(function(t) { return String(t.id) === String(tid); });
+      if (tenant) openEditTenantModal(tenant);
       return;
     }
     // Set temp password button
