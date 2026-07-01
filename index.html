@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v25.6</div>
+<div class="vbadge">PropManager SC v25.7</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2842,10 +2842,10 @@ async function updateHeroLandlordCard() {
 
     var tenants = tRes.data || [];
     var pays    = pRes.data || [];
-    var paidIds = new Set(pays.filter(function(p){ return p.status === "paid"; }).map(function(p){ return p.tenant_id; }));
+    var paidIds = new Set(pays.filter(function(p){ return p.status === "paid" || p.status === "partial" || p.status === "pending"; }).map(function(p){ return p.tenant_id; }));
 
     var totalRent  = tenants.reduce(function(s,t){ return s + Number(t.monthly_rent||0); }, 0);
-    var collected  = pays.filter(function(p){ return p.status === "paid"; }).reduce(function(s,p){ return s + Number(p.amount||0); }, 0);
+    var collected  = pays.filter(function(p){ return p.status === "paid" || p.status === "partial" || p.status === "pending"; }).reduce(function(s,p){ return s + Number(p.amount||0); }, 0);
     var pct        = totalRent > 0 ? Math.round(collected / totalRent * 100) : 0;
 
     var hInc = document.getElementById("hero-income");
@@ -4440,7 +4440,7 @@ async function generatePnL() {
   var pays = payRes.data || [];
   var exps = expRes.data || [];
 
-  var totalIncome = pays.filter(function(p) { return p.status === "paid"; }).reduce(function(s,p) { return s + Number(p.amount); }, 0);
+  var totalIncome = pays.filter(function(p) { return p.status === "paid" || p.status === "partial" || p.status === "pending"; }).reduce(function(s,p) { return s + Number(p.amount); }, 0);
   var totalExp = exps.reduce(function(s,e) { return s + Number(e.amount); }, 0);
   var netProfit = totalIncome - totalExp;
   var margin = totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : 0;
@@ -4463,7 +4463,7 @@ async function generatePnL() {
   html += "<div style='padding:14px 16px'>";
   html += "<table style='width:100%;border-collapse:collapse'>";
   html += "<tr style='background:rgba(15,30,53,.04)'><td style='padding:8px 9px;font-weight:500;font-size:13px'>INCOME</td><td></td></tr>";
-  html += "<tr><td style='padding:6px 9px;font-size:12.5px'>Rental income (" + pays.filter(function(p){return p.status==="paid";}).length + " payments)</td><td style='padding:6px 9px;font-size:12.5px;color:#2d7a4f;text-align:right'>$" + totalIncome.toLocaleString() + "</td></tr>";
+  html += "<tr><td style='padding:6px 9px;font-size:12.5px'>Rental income (" + pays.filter(function(p){return p.status==="paid"||p.status==="partial"||p.status==="pending";}).length + " payments)</td><td style='padding:6px 9px;font-size:12.5px;color:#2d7a4f;text-align:right'>$" + totalIncome.toLocaleString() + "</td></tr>";
   html += "<tr style='border-top:1px solid rgba(15,30,53,.1);font-weight:500'><td style='padding:7px 9px;font-size:13px'>Total income</td><td style='padding:7px 9px;color:#2d7a4f;font-size:13px;text-align:right'>$" + totalIncome.toLocaleString() + "</td></tr>";
   html += "<tr style='background:rgba(15,30,53,.04)'><td style='padding:8px 9px;font-weight:500;font-size:13px'>EXPENSES</td><td></td></tr>";
   html += catRows;
@@ -8404,7 +8404,7 @@ function loadPortalPaymentTab() {
     </select>
     <label class="mo-lbl">Status</label>
     <select class="mo-inp" id="ap-status">
-      <option value="paid">Paid</option>
+      <option value="paid" selected>Paid</option>
       <option value="late">Late</option>
       <option value="partial">Partial</option>
     </select>
@@ -8471,7 +8471,7 @@ function loadPortalPaymentTab() {
     </select>
     <label class="mo-lbl">Status</label>
     <select class="mo-inp" id="ep-status">
-      <option value="paid">Paid</option>
+      <option value="paid" selected>Paid</option>
       <option value="late">Late</option>
       <option value="partial">Partial</option>
     </select>
@@ -9507,10 +9507,10 @@ async function updateHeroLandlordCard() {
 
     var tenants = tRes.data || [];
     var pays    = pRes.data || [];
-    var paidIds = new Set(pays.filter(function(p){ return p.status === "paid"; }).map(function(p){ return p.tenant_id; }));
+    var paidIds = new Set(pays.filter(function(p){ return p.status === "paid" || p.status === "partial" || p.status === "pending"; }).map(function(p){ return p.tenant_id; }));
 
     var totalRent  = tenants.reduce(function(s,t){ return s + Number(t.monthly_rent||0); }, 0);
-    var collected  = pays.filter(function(p){ return p.status === "paid"; }).reduce(function(s,p){ return s + Number(p.amount||0); }, 0);
+    var collected  = pays.filter(function(p){ return p.status === "paid" || p.status === "partial" || p.status === "pending"; }).reduce(function(s,p){ return s + Number(p.amount||0); }, 0);
     var pct        = totalRent > 0 ? Math.round(collected / totalRent * 100) : 0;
 
     var hInc = document.getElementById("hero-income");
@@ -11099,7 +11099,7 @@ async function generatePnL() {
   var pays = payRes.data || [];
   var exps = expRes.data || [];
 
-  var totalIncome = pays.filter(function(p) { return p.status === "paid"; }).reduce(function(s,p) { return s + Number(p.amount); }, 0);
+  var totalIncome = pays.filter(function(p) { return p.status === "paid" || p.status === "partial" || p.status === "pending"; }).reduce(function(s,p) { return s + Number(p.amount); }, 0);
   var totalExp = exps.reduce(function(s,e) { return s + Number(e.amount); }, 0);
   var netProfit = totalIncome - totalExp;
   var margin = totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : 0;
@@ -11122,7 +11122,7 @@ async function generatePnL() {
   html += "<div style='padding:14px 16px'>";
   html += "<table style='width:100%;border-collapse:collapse'>";
   html += "<tr style='background:rgba(15,30,53,.04)'><td style='padding:8px 9px;font-weight:500;font-size:13px'>INCOME</td><td></td></tr>";
-  html += "<tr><td style='padding:6px 9px;font-size:12.5px'>Rental income (" + pays.filter(function(p){return p.status==="paid";}).length + " payments)</td><td style='padding:6px 9px;font-size:12.5px;color:#2d7a4f;text-align:right'>$" + totalIncome.toLocaleString() + "</td></tr>";
+  html += "<tr><td style='padding:6px 9px;font-size:12.5px'>Rental income (" + pays.filter(function(p){return p.status==="paid"||p.status==="partial"||p.status==="pending";}).length + " payments)</td><td style='padding:6px 9px;font-size:12.5px;color:#2d7a4f;text-align:right'>$" + totalIncome.toLocaleString() + "</td></tr>";
   html += "<tr style='border-top:1px solid rgba(15,30,53,.1);font-weight:500'><td style='padding:7px 9px;font-size:13px'>Total income</td><td style='padding:7px 9px;color:#2d7a4f;font-size:13px;text-align:right'>$" + totalIncome.toLocaleString() + "</td></tr>";
   html += "<tr style='background:rgba(15,30,53,.04)'><td style='padding:8px 9px;font-weight:500;font-size:13px'>EXPENSES</td><td></td></tr>";
   html += catRows;
@@ -15154,7 +15154,7 @@ async function setTenantPassword() {
     </select>
     <label class="mo-lbl">Status</label>
     <select class="mo-inp" id="ap-status">
-      <option value="paid">Paid</option>
+      <option value="paid" selected>Paid</option>
       <option value="late">Late</option>
       <option value="partial">Partial</option>
     </select>
@@ -15221,7 +15221,7 @@ async function setTenantPassword() {
     </select>
     <label class="mo-lbl">Status</label>
     <select class="mo-inp" id="ep-status">
-      <option value="paid">Paid</option>
+      <option value="paid" selected>Paid</option>
       <option value="late">Late</option>
       <option value="partial">Partial</option>
     </select>
