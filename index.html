@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v25.9</div>
+<div class="vbadge">PropManager SC v26.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -5665,7 +5665,7 @@ function renderVacancyListing() {
 
   // Photos — display using existing vac-main-img element (DOM only, no onclick=)
   var photos = (d.photos && d.photos.length)
-    ? d.photos
+    ? (_vacancyPhotos && _vacancyPhotos.length ? _vacancyPhotos : d.photos)
     : (_vacancyPhotos && _vacancyPhotos.length ? _vacancyPhotos : []);
   var mainImg = document.getElementById("vac-main-img");
   var noPhoto = document.getElementById("vac-no-photo");
@@ -5825,9 +5825,9 @@ function handleVacancyPhotosFromArray(arr, triggerBtn) {
     return;
   }
 
-  var slots = Math.max(0, 10 - _vacancyPhotos.length);
+  var slots = Math.max(0, 4 - _vacancyPhotos.length);
   var toAdd = goodFiles.slice(0, slots);
-  if (!toAdd.length) { alert("Maximum 10 photos already added."); return; }
+  if (!toAdd.length) { alert("Maximum 4 photos already added."); return; }
 
   var loaded = 0;
   var succeeded = 0;
@@ -5969,9 +5969,12 @@ function saveVacancyListing() {
   // Then push to Supabase for sharing
   if (sb) {
     var vPayload = {};
-    ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status","photos"].forEach(function(k){
+    ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status"].forEach(function(k){
       if (_vacancyData[k] !== undefined) vPayload[k] = _vacancyData[k];
     });
+    // Photos stored in localStorage only — base64 is too large for Supabase rows
+    // Store photo count so landlord dashboard can show "X photos"
+    vPayload.photos = (_vacancyPhotos||[]).map(function(p,i){ return "photo_" + i; });
     // Always include description even if key was 'desc' only
     if (!vPayload.description && _vacancyData.desc) {
       vPayload.description = _vacancyData.desc;
@@ -6015,9 +6018,12 @@ function markAsRented() {
   // Then push to Supabase for sharing
   if (sb) {
     var vPayload = {};
-    ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status","photos"].forEach(function(k){
+    ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status"].forEach(function(k){
       if (_vacancyData[k] !== undefined) vPayload[k] = _vacancyData[k];
     });
+    // Photos stored in localStorage only — base64 is too large for Supabase rows
+    // Store photo count so landlord dashboard can show "X photos"
+    vPayload.photos = (_vacancyPhotos||[]).map(function(p,i){ return "photo_" + i; });
     // Always include description even if key was 'desc' only
     if (!vPayload.description && _vacancyData.desc) {
       vPayload.description = _vacancyData.desc;
@@ -8310,16 +8316,16 @@ async function uploadVacancyPhotos(files) {
   if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = "<i class='ti ti-loader'></i> Uploading..."; }
   if (statusEl) statusEl.textContent = "";
 
-  // Cap total photos at 6
-  if (_vacancyPhotos.length >= 6) {
-    if (statusEl) { statusEl.style.color="#c0392b"; statusEl.textContent = "Max 6 photos allowed. Remove some first."; }
+  // Cap total photos at 4 — keeps Supabase row well under 1MB limit
+  if (_vacancyPhotos.length >= 4) {
+    if (statusEl) { statusEl.style.color="#c0392b"; statusEl.textContent = "Max 4 photos allowed. Remove some first."; }
     if (btnEl)    { btnEl.disabled=false; btnEl.innerHTML="<i class='ti ti-upload'></i> Upload photos"; }
     return;
   }
 
   var uploaded = 0;
   var failed   = 0;
-  var MAX_PHOTOS = 6;
+  var MAX_PHOTOS = 4;
 
   for (var i = 0; i < files.length; i++) {
     if (_vacancyPhotos.length >= MAX_PHOTOS) { failed++; continue; }
@@ -8351,24 +8357,37 @@ async function uploadVacancyPhotos(files) {
         var img2 = new Image();
         img2.onload = function() {
           try {
-            // Aggressively resize — max 600px, 0.5 quality = ~30-50KB per photo
-            var MAX = 600;
-            var sw  = img2.naturalWidth  || 800;
-            var sh  = img2.naturalHeight || 600;
-            var scale = Math.min(MAX/sw, MAX/sh, 1);
+            // Three-pass compression — target < 60KB per photo
+            var sw = img2.naturalWidth  || 800;
+            var sh = img2.naturalHeight || 600;
             var cv = document.createElement("canvas");
-            cv.width  = Math.floor(sw * scale);
-            cv.height = Math.floor(sh * scale);
+
+            // Pass 1: 400px max, 35% quality
+            var scale1 = Math.min(400/sw, 400/sh, 1);
+            cv.width  = Math.max(1, Math.floor(sw * scale1));
+            cv.height = Math.max(1, Math.floor(sh * scale1));
             cv.getContext("2d").drawImage(img2, 0, 0, cv.width, cv.height);
-            var out = cv.toDataURL("image/jpeg", 0.50);
-            // Safety check — if still > 150KB skip it
-            if (out.length > 200000) {
-              // Try even harder
-              cv.width  = Math.floor(cv.width  * 0.6);
-              cv.height = Math.floor(cv.height * 0.6);
+            var out = cv.toDataURL("image/jpeg", 0.35);
+
+            // Pass 2: if still > 80KB, go to 280px / 25%
+            if (out.length > 80000) {
+              var scale2 = Math.min(280/sw, 280/sh, 1);
+              cv.width  = Math.max(1, Math.floor(sw * scale2));
+              cv.height = Math.max(1, Math.floor(sh * scale2));
               cv.getContext("2d").drawImage(img2, 0, 0, cv.width, cv.height);
-              out = cv.toDataURL("image/jpeg", 0.40);
+              out = cv.toDataURL("image/jpeg", 0.25);
             }
+
+            // Pass 3: if STILL > 80KB, drop to 180px / 20%
+            if (out.length > 80000) {
+              var scale3 = Math.min(180/sw, 180/sh, 1);
+              cv.width  = Math.max(1, Math.floor(sw * scale3));
+              cv.height = Math.max(1, Math.floor(sh * scale3));
+              cv.getContext("2d").drawImage(img2, 0, 0, cv.width, cv.height);
+              out = cv.toDataURL("image/jpeg", 0.20);
+            }
+
+            console.log("Photo " + (i+1) + " compressed to " + Math.round(out.length/1024) + "KB");
             _vacancyPhotos.push(out);
             uploaded++;
           } catch(e2) { failed++; }
@@ -12468,7 +12487,7 @@ function renderVacancyListing() {
 
   // Photos — display using existing vac-main-img element (DOM only, no onclick=)
   var photos = (d.photos && d.photos.length)
-    ? d.photos
+    ? (_vacancyPhotos && _vacancyPhotos.length ? _vacancyPhotos : d.photos)
     : (_vacancyPhotos && _vacancyPhotos.length ? _vacancyPhotos : []);
   var mainImg = document.getElementById("vac-main-img");
   var noPhoto = document.getElementById("vac-no-photo");
@@ -12628,9 +12647,9 @@ function handleVacancyPhotosFromArray(arr, triggerBtn) {
     return;
   }
 
-  var slots = Math.max(0, 10 - _vacancyPhotos.length);
+  var slots = Math.max(0, 4 - _vacancyPhotos.length);
   var toAdd = goodFiles.slice(0, slots);
-  if (!toAdd.length) { alert("Maximum 10 photos already added."); return; }
+  if (!toAdd.length) { alert("Maximum 4 photos already added."); return; }
 
   var loaded = 0;
   var succeeded = 0;
@@ -12772,9 +12791,12 @@ function saveVacancyListing() {
   // Then push to Supabase for sharing
   if (sb) {
     var vPayload = {};
-    ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status","photos"].forEach(function(k){
+    ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status"].forEach(function(k){
       if (_vacancyData[k] !== undefined) vPayload[k] = _vacancyData[k];
     });
+    // Photos stored in localStorage only — base64 is too large for Supabase rows
+    // Store photo count so landlord dashboard can show "X photos"
+    vPayload.photos = (_vacancyPhotos||[]).map(function(p,i){ return "photo_" + i; });
     // Always include description even if key was 'desc' only
     if (!vPayload.description && _vacancyData.desc) {
       vPayload.description = _vacancyData.desc;
@@ -12818,9 +12840,12 @@ function markAsRented() {
   // Then push to Supabase for sharing
   if (sb) {
     var vPayload = {};
-    ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status","photos"].forEach(function(k){
+    ["address","rent","deposit","beds","baths","sqft","type","description","avail","amenities","status"].forEach(function(k){
       if (_vacancyData[k] !== undefined) vPayload[k] = _vacancyData[k];
     });
+    // Photos stored in localStorage only — base64 is too large for Supabase rows
+    // Store photo count so landlord dashboard can show "X photos"
+    vPayload.photos = (_vacancyPhotos||[]).map(function(p,i){ return "photo_" + i; });
     // Always include description even if key was 'desc' only
     if (!vPayload.description && _vacancyData.desc) {
       vPayload.description = _vacancyData.desc;
