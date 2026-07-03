@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v25.8</div>
+<div class="vbadge">PropManager SC v25.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -7574,6 +7574,14 @@ document.addEventListener("DOMContentLoaded", function() {
     }
     if (e.target.closest("#apply-latefee-btn")) {
       applyLateFeesToAll(); return;
+    }
+    if (e.target.closest("#late-fee-btn")) { openLateFeeModal(); return; }
+    if (e.target.closest("#save-latefee-btn")) { saveLateFeeSchedule(); return; }
+    if (e.target.closest("#add-fee-tier-btn")) { addFeeTier(); return; }
+    if (e.target.closest("#apply-latefee-btn")) { applyLateFeesToAll(); return; }
+    if (e.target.closest("[data-del-tier]")) {
+      var ti = parseInt(e.target.closest("[data-del-tier]").getAttribute("data-del-tier"));
+      if (!isNaN(ti)) { _feeSchedule.splice(ti,1); renderFeeTiers(); } return;
     }
     if (e.target.closest("#gen-pnl-btn")) {
       if (typeof generatePnL === "function") generatePnL();
