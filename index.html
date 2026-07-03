@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v26.0</div>
+<div class="vbadge">PropManager SC v26.1</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -5798,71 +5798,91 @@ function handleVacancyPhotos(files) {
 }
 
 function handleVacancyPhotosFromArray(arr, triggerBtn) {
-  // arr is already a plain JS Array of File objects — safe to use async
-  var heicFiles = arr.filter(function(f) {
-    var name = (f.name || "").toLowerCase();
-    return name.endsWith(".heic") || name.endsWith(".heif") || f.type === "image/heic";
-  });
+  // Filter out HEIC files — canvas cannot decode them
   var goodFiles = arr.filter(function(f) {
     var name = (f.name || "").toLowerCase();
     return !name.endsWith(".heic") && !name.endsWith(".heif") && f.type !== "image/heic";
   });
-
-  if (heicFiles.length > 0) {
+  var heicCount = arr.length - goodFiles.length;
+  if (heicCount > 0) {
     var previewEl = document.getElementById("ve-photo-preview");
     var warnMsg = document.createElement("div");
     warnMsg.style.cssText = "background:#fdf3e0;border:1px solid rgba(160,96,16,.2);border-radius:7px;padding:10px 13px;font-size:12.5px;color:#a06010;margin-bottom:9px";
-    warnMsg.textContent = heicFiles.length + " HEIC photo(s) skipped. On iPhone: Settings > Camera > Formats > Most Compatible, then re-take as JPG.";
+    warnMsg.textContent = heicCount + " HEIC photo(s) skipped. iPhone users: Settings → Camera → Formats → Most Compatible, then retake as JPG.";
     if (previewEl && previewEl.parentNode) previewEl.parentNode.insertBefore(warnMsg, previewEl);
     setTimeout(function() { if (warnMsg.parentNode) warnMsg.parentNode.removeChild(warnMsg); }, 8000);
   }
-
-  if (!goodFiles.length) {
-    if (triggerBtn) {
-      triggerBtn.innerHTML = "<i class='ti ti-x'></i> No valid photos — use JPG/PNG";
-      setTimeout(function() { triggerBtn.innerHTML = "<i class='ti ti-photo-plus'></i> Add photos"; triggerBtn.style.background=""; triggerBtn.style.borderColor=""; }, 3000);
-    }
-    return;
-  }
+  if (!goodFiles.length) return;
 
   var slots = Math.max(0, 4 - _vacancyPhotos.length);
   var toAdd = goodFiles.slice(0, slots);
-  if (!toAdd.length) { alert("Maximum 4 photos already added."); return; }
+  if (!toAdd.length) { alert("Maximum 4 photos already added. Remove one first."); return; }
 
-  var loaded = 0;
-  var succeeded = 0;
+  var loaded = 0; var succeeded = 0;
+  if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.innerHTML = "<i class='ti ti-loader'></i> Compressing..."; }
 
-  toAdd.forEach(function(file) {
+  toAdd.forEach(function(file, idx) {
     var reader = new FileReader();
-    reader.onload = function(e) {
-      if (e.target && e.target.result) {
-        _vacancyPhotos.push(e.target.result);
-        succeeded++;
-      }
-      loaded++;
-      if (loaded === toAdd.length) {
-        renderEditPhotoPreview();
-        updatePhotoCount();
-        // Reset trigger button
-        if (triggerBtn) {
-          triggerBtn.innerHTML = "<i class='ti ti-check'></i> " + succeeded + " photo" + (succeeded > 1 ? "s" : "") + " added!";
-          triggerBtn.style.background = "#2d7a4f";
-          triggerBtn.style.borderColor = "#2d7a4f";
-          setTimeout(function() {
-            triggerBtn.innerHTML = "<i class='ti ti-photo-plus'></i> Add photos";
-            triggerBtn.style.background = "";
-            triggerBtn.style.borderColor = "";
-          }, 2500);
-        }
-
-      }
+    reader.onload = function(ev) {
+      if (!ev.target || !ev.target.result) { loaded++; if (loaded===toAdd.length) _doneLoading(); return; }
+      var img = new Image();
+      img.onload = function() {
+        try {
+          // Three-pass compression — target < 60KB
+          var sw = img.naturalWidth || 800, sh = img.naturalHeight || 600;
+          var cv = document.createElement("canvas");
+          // Pass 1: 400px / 35%
+          var s1 = Math.min(400/sw, 400/sh, 1);
+          cv.width = Math.max(1, Math.floor(sw*s1));
+          cv.height = Math.max(1, Math.floor(sh*s1));
+          cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+          var out = cv.toDataURL("image/jpeg", 0.35);
+          // Pass 2: 280px / 25%
+          if (out.length > 80000) {
+            var s2 = Math.min(280/sw, 280/sh, 1);
+            cv.width = Math.max(1, Math.floor(sw*s2));
+            cv.height = Math.max(1, Math.floor(sh*s2));
+            cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+            out = cv.toDataURL("image/jpeg", 0.25);
+          }
+          // Pass 3: 180px / 20%
+          if (out.length > 80000) {
+            var s3 = Math.min(180/sw, 180/sh, 1);
+            cv.width = Math.max(1, Math.floor(sw*s3));
+            cv.height = Math.max(1, Math.floor(sh*s3));
+            cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+            out = cv.toDataURL("image/jpeg", 0.20);
+          }
+          _vacancyPhotos.push(out);
+          succeeded++;
+        } catch(e2) {}
+        loaded++;
+        if (loaded === toAdd.length) _doneLoading();
+      };
+      img.onerror = function() { loaded++; if (loaded===toAdd.length) _doneLoading(); };
+      img.src = ev.target.result;
     };
-    reader.onerror = function() {
-      loaded++;
-      if (loaded === toAdd.length) { renderEditPhotoPreview(); updatePhotoCount(); }
-    };
+    reader.onerror = function() { loaded++; if (loaded===toAdd.length) _doneLoading(); };
     reader.readAsDataURL(file);
   });
+
+  function _doneLoading() {
+    renderVacancyPhotoPreview();
+    renderEditPhotoPreview();
+    updatePhotoCount();
+    if (triggerBtn) {
+      triggerBtn.disabled = false;
+      triggerBtn.innerHTML = succeeded > 0
+        ? "<i class='ti ti-check'></i> " + succeeded + " photo" + (succeeded>1?"s":"") + " added!"
+        : "<i class='ti ti-x'></i> Upload failed — use JPG/PNG";
+      triggerBtn.style.background   = succeeded > 0 ? "#2d7a4f" : "";
+      triggerBtn.style.borderColor  = succeeded > 0 ? "#2d7a4f" : "";
+      setTimeout(function() {
+        triggerBtn.innerHTML = "<i class='ti ti-photo-plus'></i> Add photos";
+        triggerBtn.style.background = ""; triggerBtn.style.borderColor = "";
+      }, 2500);
+    }
+  }
 }
 
 function renderEditPhotoPreview() {
@@ -12620,71 +12640,91 @@ function handleVacancyPhotos(files) {
 }
 
 function handleVacancyPhotosFromArray(arr, triggerBtn) {
-  // arr is already a plain JS Array of File objects — safe to use async
-  var heicFiles = arr.filter(function(f) {
-    var name = (f.name || "").toLowerCase();
-    return name.endsWith(".heic") || name.endsWith(".heif") || f.type === "image/heic";
-  });
+  // Filter out HEIC files — canvas cannot decode them
   var goodFiles = arr.filter(function(f) {
     var name = (f.name || "").toLowerCase();
     return !name.endsWith(".heic") && !name.endsWith(".heif") && f.type !== "image/heic";
   });
-
-  if (heicFiles.length > 0) {
+  var heicCount = arr.length - goodFiles.length;
+  if (heicCount > 0) {
     var previewEl = document.getElementById("ve-photo-preview");
     var warnMsg = document.createElement("div");
     warnMsg.style.cssText = "background:#fdf3e0;border:1px solid rgba(160,96,16,.2);border-radius:7px;padding:10px 13px;font-size:12.5px;color:#a06010;margin-bottom:9px";
-    warnMsg.textContent = heicFiles.length + " HEIC photo(s) skipped. On iPhone: Settings > Camera > Formats > Most Compatible, then re-take as JPG.";
+    warnMsg.textContent = heicCount + " HEIC photo(s) skipped. iPhone users: Settings → Camera → Formats → Most Compatible, then retake as JPG.";
     if (previewEl && previewEl.parentNode) previewEl.parentNode.insertBefore(warnMsg, previewEl);
     setTimeout(function() { if (warnMsg.parentNode) warnMsg.parentNode.removeChild(warnMsg); }, 8000);
   }
-
-  if (!goodFiles.length) {
-    if (triggerBtn) {
-      triggerBtn.innerHTML = "<i class='ti ti-x'></i> No valid photos — use JPG/PNG";
-      setTimeout(function() { triggerBtn.innerHTML = "<i class='ti ti-photo-plus'></i> Add photos"; triggerBtn.style.background=""; triggerBtn.style.borderColor=""; }, 3000);
-    }
-    return;
-  }
+  if (!goodFiles.length) return;
 
   var slots = Math.max(0, 4 - _vacancyPhotos.length);
   var toAdd = goodFiles.slice(0, slots);
-  if (!toAdd.length) { alert("Maximum 4 photos already added."); return; }
+  if (!toAdd.length) { alert("Maximum 4 photos already added. Remove one first."); return; }
 
-  var loaded = 0;
-  var succeeded = 0;
+  var loaded = 0; var succeeded = 0;
+  if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.innerHTML = "<i class='ti ti-loader'></i> Compressing..."; }
 
-  toAdd.forEach(function(file) {
+  toAdd.forEach(function(file, idx) {
     var reader = new FileReader();
-    reader.onload = function(e) {
-      if (e.target && e.target.result) {
-        _vacancyPhotos.push(e.target.result);
-        succeeded++;
-      }
-      loaded++;
-      if (loaded === toAdd.length) {
-        renderEditPhotoPreview();
-        updatePhotoCount();
-        // Reset trigger button
-        if (triggerBtn) {
-          triggerBtn.innerHTML = "<i class='ti ti-check'></i> " + succeeded + " photo" + (succeeded > 1 ? "s" : "") + " added!";
-          triggerBtn.style.background = "#2d7a4f";
-          triggerBtn.style.borderColor = "#2d7a4f";
-          setTimeout(function() {
-            triggerBtn.innerHTML = "<i class='ti ti-photo-plus'></i> Add photos";
-            triggerBtn.style.background = "";
-            triggerBtn.style.borderColor = "";
-          }, 2500);
-        }
-
-      }
+    reader.onload = function(ev) {
+      if (!ev.target || !ev.target.result) { loaded++; if (loaded===toAdd.length) _doneLoading(); return; }
+      var img = new Image();
+      img.onload = function() {
+        try {
+          // Three-pass compression — target < 60KB
+          var sw = img.naturalWidth || 800, sh = img.naturalHeight || 600;
+          var cv = document.createElement("canvas");
+          // Pass 1: 400px / 35%
+          var s1 = Math.min(400/sw, 400/sh, 1);
+          cv.width = Math.max(1, Math.floor(sw*s1));
+          cv.height = Math.max(1, Math.floor(sh*s1));
+          cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+          var out = cv.toDataURL("image/jpeg", 0.35);
+          // Pass 2: 280px / 25%
+          if (out.length > 80000) {
+            var s2 = Math.min(280/sw, 280/sh, 1);
+            cv.width = Math.max(1, Math.floor(sw*s2));
+            cv.height = Math.max(1, Math.floor(sh*s2));
+            cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+            out = cv.toDataURL("image/jpeg", 0.25);
+          }
+          // Pass 3: 180px / 20%
+          if (out.length > 80000) {
+            var s3 = Math.min(180/sw, 180/sh, 1);
+            cv.width = Math.max(1, Math.floor(sw*s3));
+            cv.height = Math.max(1, Math.floor(sh*s3));
+            cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height);
+            out = cv.toDataURL("image/jpeg", 0.20);
+          }
+          _vacancyPhotos.push(out);
+          succeeded++;
+        } catch(e2) {}
+        loaded++;
+        if (loaded === toAdd.length) _doneLoading();
+      };
+      img.onerror = function() { loaded++; if (loaded===toAdd.length) _doneLoading(); };
+      img.src = ev.target.result;
     };
-    reader.onerror = function() {
-      loaded++;
-      if (loaded === toAdd.length) { renderEditPhotoPreview(); updatePhotoCount(); }
-    };
+    reader.onerror = function() { loaded++; if (loaded===toAdd.length) _doneLoading(); };
     reader.readAsDataURL(file);
   });
+
+  function _doneLoading() {
+    renderVacancyPhotoPreview();
+    renderEditPhotoPreview();
+    updatePhotoCount();
+    if (triggerBtn) {
+      triggerBtn.disabled = false;
+      triggerBtn.innerHTML = succeeded > 0
+        ? "<i class='ti ti-check'></i> " + succeeded + " photo" + (succeeded>1?"s":"") + " added!"
+        : "<i class='ti ti-x'></i> Upload failed — use JPG/PNG";
+      triggerBtn.style.background   = succeeded > 0 ? "#2d7a4f" : "";
+      triggerBtn.style.borderColor  = succeeded > 0 ? "#2d7a4f" : "";
+      setTimeout(function() {
+        triggerBtn.innerHTML = "<i class='ti ti-photo-plus'></i> Add photos";
+        triggerBtn.style.background = ""; triggerBtn.style.borderColor = "";
+      }, 2500);
+    }
+  }
 }
 
 function renderEditPhotoPreview() {
