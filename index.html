@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v26.1</div>
+<div class="vbadge">PropManager SC v26.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4918,7 +4918,7 @@ function renderLFTenantRows() {
 
   var rows = tenants.filter(function(t) { return Number(t.monthly_rent||0) > 0; }).map(function(t) {
     var daysLate = Math.floor((now - new Date(now.getFullYear(), now.getMonth(), 1)) / 86400000);
-    var hasPaid  = paidIds.has(t.id);
+    var hasPaid  = paidIds.has(String(t.id));
     var fee      = hasPaid ? 0 : calcLateFee(Number(t.monthly_rent||0), daysLate);
     var color    = hasPaid ? "#2d7a4f" : fee > 0 ? "#c0392b" : "#a06010";
     var status   = hasPaid ? "Current" : fee > 0 ? "$" + fee + " fee due" : "Grace period";
@@ -4970,23 +4970,47 @@ async function chargeLateFee(tenantId, tenantName, amount) {
 }
 
 async function applyLateFeesToAll() {
-  var tenants  = window._tenantCache || [];
-  var payments = window._paymentCache || [];
-  var now      = new Date();
-  var ms       = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
-  var paidIds  = new Set(payments.filter(function(p) {
-    return p.payment_date && p.payment_date.startsWith(ms);
-  }).map(function(p) { return p.tenant_id; }));
+  if (!sb) { alert("Not connected to database."); return; }
+  var apOk = document.getElementById("lf-apply-ok");
+  if (apOk) { apOk.style.display = "block"; apOk.innerHTML = "<i class='ti ti-loader'></i> Loading payments..."; }
 
+  var tenants = window._tenantCache || [];
+  if (!tenants.length) { alert("No tenants found. Visit the Dashboard first."); return; }
+
+  // Always fetch fresh payments from Supabase — do not rely on cache
+  var now   = new Date();
+  var ms    = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+  var month = now.toLocaleDateString("en-US",{month:"long",year:"numeric"});
+
+  // Days since 1st — this is how late rent is
   var daysLate = Math.floor((now - new Date(now.getFullYear(), now.getMonth(), 1)) / 86400000);
-  var charged  = 0;
-  var month    = now.toLocaleDateString("en-US",{month:"long",year:"numeric"});
+  console.log("Days since 1st:", daysLate, "Month:", ms);
+
+  var payRes = await sb.from("payments").select("tenant_id,payment_date,status,method")
+    .gte("payment_date", ms + "-01")
+    .lte("payment_date", ms + "-31");
+
+  var paidIds = new Set();
+  if (payRes.data) {
+    payRes.data.forEach(function(p) {
+      // Count as paid unless it's itself a late fee
+      if (p.method !== "Late fee") paidIds.add(String(p.tenant_id));
+    });
+  }
+  console.log("Paid tenants this month:", Array.from(paidIds));
+
+  var charged = 0;
+  var skipped = [];
 
   for (var i = 0; i < tenants.length; i++) {
     var t   = tenants[i];
-    var fee = paidIds.has(t.id) ? 0 : calcLateFee(Number(t.monthly_rent||0), daysLate);
-    if (fee > 0 && sb) {
-      await sb.from("payments").insert({
+    if (!t.monthly_rent || Number(t.monthly_rent) <= 0) continue; // skip $0 rent
+    var alreadyPaid = paidIds.has(String(t.id));
+    var fee = alreadyPaid ? 0 : calcLateFee(Number(t.monthly_rent), daysLate);
+    console.log(t.full_name, "- paid:", alreadyPaid, "daysLate:", daysLate, "fee:", fee);
+
+    if (fee > 0) {
+      var res = await sb.from("payments").insert({
         tenant_id:    t.id,
         property_id:  t.property_id || null,
         amount:       fee,
@@ -4995,13 +5019,23 @@ async function applyLateFeesToAll() {
         status:       "late",
         notes:        month + " late fee — " + daysLate + " days overdue"
       });
-      charged++;
+      if (!res.error) charged++;
+      else console.warn("Late fee insert error:", res.error.message);
+    } else {
+      skipped.push(t.full_name + (alreadyPaid ? " (paid)" : " (grace)"));
     }
   }
-  var apOk = document.getElementById("lf-apply-ok");
-  if (apOk) { apOk.style.display = "block"; apOk.innerHTML = "<i class='ti ti-check'></i> " + charged + " late fee" + (charged!==1?"s":"") + " applied and logged."; }
+
+  if (apOk) {
+    apOk.style.display = "block";
+    apOk.style.background = charged > 0 ? "#eaf5ee" : "#fdf3e0";
+    apOk.style.borderColor = charged > 0 ? "rgba(45,122,79,.3)" : "rgba(160,96,16,.3)";
+    apOk.style.color = charged > 0 ? "#2d7a4f" : "#a06010";
+    apOk.innerHTML = charged > 0
+      ? "<i class='ti ti-check'></i> " + charged + " late fee" + (charged!==1?"s":"") + " applied and logged."
+      : "<i class='ti ti-info-circle'></i> 0 fees applied. Skipped: " + skipped.join(", ");
+  }
   if (charged > 0) { loadDashboardData(); renderLFTenantRows(); }
-  if (charged === 0) alert("No overdue tenants found — all accounts are current or within the grace period.");
 }
 
 function renderFeeTiers() {
@@ -5055,7 +5089,7 @@ function saveLateFeeSchedule() {
 }
 
 function calcLateFee(rent, daysLate) {
-  if (daysLate < 6) return 0; // Grace period
+  if (daysLate <= 5) return 0; // 5-day grace period (days 1-5 free, fees start day 6)
   var total = 0;
   var sorted = _feeSchedule.slice().sort(function(a,b){ return a.days - b.days; });
   for (var i = 0; i < sorted.length; i++) {
@@ -11760,7 +11794,7 @@ function renderLFTenantRows() {
 
   var rows = tenants.filter(function(t) { return Number(t.monthly_rent||0) > 0; }).map(function(t) {
     var daysLate = Math.floor((now - new Date(now.getFullYear(), now.getMonth(), 1)) / 86400000);
-    var hasPaid  = paidIds.has(t.id);
+    var hasPaid  = paidIds.has(String(t.id));
     var fee      = hasPaid ? 0 : calcLateFee(Number(t.monthly_rent||0), daysLate);
     var color    = hasPaid ? "#2d7a4f" : fee > 0 ? "#c0392b" : "#a06010";
     var status   = hasPaid ? "Current" : fee > 0 ? "$" + fee + " fee due" : "Grace period";
@@ -11812,23 +11846,47 @@ async function chargeLateFee(tenantId, tenantName, amount) {
 }
 
 async function applyLateFeesToAll() {
-  var tenants  = window._tenantCache || [];
-  var payments = window._paymentCache || [];
-  var now      = new Date();
-  var ms       = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
-  var paidIds  = new Set(payments.filter(function(p) {
-    return p.payment_date && p.payment_date.startsWith(ms);
-  }).map(function(p) { return p.tenant_id; }));
+  if (!sb) { alert("Not connected to database."); return; }
+  var apOk = document.getElementById("lf-apply-ok");
+  if (apOk) { apOk.style.display = "block"; apOk.innerHTML = "<i class='ti ti-loader'></i> Loading payments..."; }
 
+  var tenants = window._tenantCache || [];
+  if (!tenants.length) { alert("No tenants found. Visit the Dashboard first."); return; }
+
+  // Always fetch fresh payments from Supabase — do not rely on cache
+  var now   = new Date();
+  var ms    = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+  var month = now.toLocaleDateString("en-US",{month:"long",year:"numeric"});
+
+  // Days since 1st — this is how late rent is
   var daysLate = Math.floor((now - new Date(now.getFullYear(), now.getMonth(), 1)) / 86400000);
-  var charged  = 0;
-  var month    = now.toLocaleDateString("en-US",{month:"long",year:"numeric"});
+  console.log("Days since 1st:", daysLate, "Month:", ms);
+
+  var payRes = await sb.from("payments").select("tenant_id,payment_date,status,method")
+    .gte("payment_date", ms + "-01")
+    .lte("payment_date", ms + "-31");
+
+  var paidIds = new Set();
+  if (payRes.data) {
+    payRes.data.forEach(function(p) {
+      // Count as paid unless it's itself a late fee
+      if (p.method !== "Late fee") paidIds.add(String(p.tenant_id));
+    });
+  }
+  console.log("Paid tenants this month:", Array.from(paidIds));
+
+  var charged = 0;
+  var skipped = [];
 
   for (var i = 0; i < tenants.length; i++) {
     var t   = tenants[i];
-    var fee = paidIds.has(t.id) ? 0 : calcLateFee(Number(t.monthly_rent||0), daysLate);
-    if (fee > 0 && sb) {
-      await sb.from("payments").insert({
+    if (!t.monthly_rent || Number(t.monthly_rent) <= 0) continue; // skip $0 rent
+    var alreadyPaid = paidIds.has(String(t.id));
+    var fee = alreadyPaid ? 0 : calcLateFee(Number(t.monthly_rent), daysLate);
+    console.log(t.full_name, "- paid:", alreadyPaid, "daysLate:", daysLate, "fee:", fee);
+
+    if (fee > 0) {
+      var res = await sb.from("payments").insert({
         tenant_id:    t.id,
         property_id:  t.property_id || null,
         amount:       fee,
@@ -11837,13 +11895,23 @@ async function applyLateFeesToAll() {
         status:       "late",
         notes:        month + " late fee — " + daysLate + " days overdue"
       });
-      charged++;
+      if (!res.error) charged++;
+      else console.warn("Late fee insert error:", res.error.message);
+    } else {
+      skipped.push(t.full_name + (alreadyPaid ? " (paid)" : " (grace)"));
     }
   }
-  var apOk = document.getElementById("lf-apply-ok");
-  if (apOk) { apOk.style.display = "block"; apOk.innerHTML = "<i class='ti ti-check'></i> " + charged + " late fee" + (charged!==1?"s":"") + " applied and logged."; }
+
+  if (apOk) {
+    apOk.style.display = "block";
+    apOk.style.background = charged > 0 ? "#eaf5ee" : "#fdf3e0";
+    apOk.style.borderColor = charged > 0 ? "rgba(45,122,79,.3)" : "rgba(160,96,16,.3)";
+    apOk.style.color = charged > 0 ? "#2d7a4f" : "#a06010";
+    apOk.innerHTML = charged > 0
+      ? "<i class='ti ti-check'></i> " + charged + " late fee" + (charged!==1?"s":"") + " applied and logged."
+      : "<i class='ti ti-info-circle'></i> 0 fees applied. Skipped: " + skipped.join(", ");
+  }
   if (charged > 0) { loadDashboardData(); renderLFTenantRows(); }
-  if (charged === 0) alert("No overdue tenants found — all accounts are current or within the grace period.");
 }
 
 function renderFeeTiers() {
@@ -11897,7 +11965,7 @@ function saveLateFeeSchedule() {
 }
 
 function calcLateFee(rent, daysLate) {
-  if (daysLate < 6) return 0; // Grace period
+  if (daysLate <= 5) return 0; // 5-day grace period (days 1-5 free, fees start day 6)
   var total = 0;
   var sorted = _feeSchedule.slice().sort(function(a,b){ return a.days - b.days; });
   for (var i = 0; i < sorted.length; i++) {
