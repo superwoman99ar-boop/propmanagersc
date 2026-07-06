@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v26.4</div>
+<div class="vbadge">PropManager SC v26.5</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3505,7 +3505,7 @@ function renderTenantTable(tenants) {
   if (!tenants.length) { el.innerHTML = "<div class='empty'>No tenants yet. Add tenants to get started.</div>"; return; }
   var rows = tenants.map(function(t) {
     var p = t.properties;
-    var ini = t.initials || t.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
+    var ini = t.initials || (t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase() || "?";
     // Real balance: rent owed + late fees - payments made this month
     var now = new Date();
     var ms  = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
@@ -3534,7 +3534,7 @@ function renderTenantList(tenants) {
   if (!tenants.length) { el.innerHTML = "<div class='empty'>No tenants yet. Click Add tenant above.</div>"; return; }
   var rows = tenants.map(function(t) {
     var p = t.properties;
-    var ini = t.initials || t.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
+    var ini = t.initials || (t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase() || "?";
     // Real balance: rent owed + late fees - payments made this month
     var now = new Date();
     var ms  = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
@@ -10414,7 +10414,7 @@ function renderTenantTable(tenants) {
   if (!tenants.length) { el.innerHTML = "<div class='empty'>No tenants yet. Add tenants to get started.</div>"; return; }
   var rows = tenants.map(function(t) {
     var p = t.properties;
-    var ini = t.initials || t.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
+    var ini = t.initials || (t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase() || "?";
     // Real balance: rent owed + late fees - payments made this month
     var now = new Date();
     var ms  = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
@@ -10443,7 +10443,7 @@ function renderTenantList(tenants) {
   if (!tenants.length) { el.innerHTML = "<div class='empty'>No tenants yet. Click Add tenant above.</div>"; return; }
   var rows = tenants.map(function(t) {
     var p = t.properties;
-    var ini = t.initials || t.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
+    var ini = t.initials || (t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase() || "?";
     // Real balance: rent owed + late fees - payments made this month
     var now = new Date();
     var ms  = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
