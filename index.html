@@ -295,8 +295,9 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </style>
 </head>
 <body>
+<div id="diag-banner" style="display:none;position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:#c0392b;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-family:monospace;z-index:99999;max-width:90vw;word-break:break-all"></div>
 
-<div class="vbadge">PropManager SC v26.6</div>
+<div class="vbadge">PropManager SC v26.7-diag</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1876,7 +1877,13 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <script src="https://js.stripe.com/v3/" defer></script>
 
-<script>
+<script>window.onerror = function(msg, src, line, col, err) {
+  var d = document.getElementById("diag-banner");
+  if (d) { d.style.display="block"; d.textContent = "JS ERR line " + line + ": " + msg; }
+  console.error("Global error:", msg, src, line);
+  return false;
+};
+
 // ============================================================
 // ALL JAVASCRIPT - NO STRING BUILDING, NO ONCLICK ATTRIBUTES
 // ALL EVENTS ATTACHED VIA addEventListener
@@ -2034,6 +2041,7 @@ function on(id, evt, fn) {
 
 // ---- ATTACH ALL BUTTON EVENTS ----
 function attachEvents() {
+  try {
   try {
   // Logo
   var logo = document.getElementById("logo");
@@ -2750,11 +2758,12 @@ function attachEvents() {
     });
   });
   } catch(ae_err) { console.error("attachEvents:", ae_err && ae_err.message ? ae_err.message : ae_err); }
+  } catch(err) {
+    console.error("attachEvents crash:", err);
+    var d = document.getElementById("diag-banner");
+    if (d) { d.style.display="block"; d.textContent = "LOGIN ERROR: " + err.message; }
+  }
 }
-
-// ---- AUTH ----
-// showNavUser defined below with role support
-
 function showNavUser(initials, name, role) {
   role = role || "public";
 
