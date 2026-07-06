@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v26.5</div>
+<div class="vbadge">PropManager SC v26.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2800,11 +2800,11 @@ function showNavUser(initials, name, role) {
     if (pubCard) {
       pubCard.style.display = "block";
       var tIni = currentTenant.initials ||
-        currentTenant.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
+        currentTenan(t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
       pubCard.innerHTML =
         "<div class='hc-head'>" +
         "<div style='width:34px;height:34px;border-radius:50%;background:" + (currentTenant.color||"#dbe8ff") + ";color:" + (currentTenant.text_color||"#0C447C") + ";display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700'>" + tIni + "</div>" +
-        "<div><div class='hc-t'>Welcome, " + currentTenant.full_name.split(" ")[0] + "</div><div class='hc-s'>Your tenant portal</div></div>" +
+        "<div><div class='hc-t'>Welcome, " + (currentTenant.full_name||"Tenant").split(" ")[0] + "</div><div class='hc-s'>Your tenant portal</div></div>" +
         "<div class='live-pill'><span class='live-dot'></span> Active</div></div>" +
         "<div class='hc-grid' style='margin-top:14px'>" +
         "<div class='hc-tile'><div class='hc-tile-l'>Monthly rent</div><div class='hc-tile-v'>$" + Number(currentTenant.monthly_rent||0).toLocaleString() + "</div><div class='hc-tile-s' style='color:" + (currentTenant.status==="current"?"#7ddba0":"#f5a59c") + "'>" + (currentTenant.status==="current"?"Current":"Overdue") + "</div></div>" +
@@ -2856,10 +2856,10 @@ async function updateHeroLandlordCard() {
         .filter(function(t){ return Number(t.monthly_rent||0) > 0; })
         .map(function(t) {
           var paid  = paidIds.has(t.id);
-          var ini   = t.initials || t.full_name.split(" ").map(function(w){ return w[0]; }).join("").slice(0,2).toUpperCase();
+          var ini   = t.initials || (t.full_name||"?").split(" ").map(function(w){ return w[0]||""; }).join("").slice(0,2).toUpperCase();
           var addr  = t.properties ? t.properties.address.replace(", Gaffney SC","").replace(", Spartanburg SC","") : "";
-          var fName = t.full_name.split(" ")[0];
-          var lName = t.full_name.split(" ").slice(-1)[0];
+          var fName = (t.full_name||"Tenant").split(" ")[0];
+          var lName = (t.full_name||"").split(" ").slice(-1)[0]||"";
           return "<div class='rent-row'>" +
             "<div class='r-av' style='background:" + (t.color||"rgba(255,255,255,.1)") + ";color:" + (t.text_color||"rgba(255,255,255,.7)") + "'>" + ini + "</div>" +
             "<div class='r-name'>" + fName + " " + lName + " · " + addr + "</div>" +
@@ -3066,7 +3066,7 @@ async function loadTenantProfile() {
     if (!currentTenant.stripe_payment_link && currentTenant.email) {
       currentTenant.stripe_payment_link = STRIPE_LINK_MAP[currentTenant.email] || null;
     }
-    var ini = currentTenant.full_name.split(" ").map(function(w) { return w[0]; }).join("").slice(0,2).toUpperCase();
+    var ini = (currentTenant.full_name||"?").split(" ").map(function(w) { return w[0]||""; }).join("").slice(0,2).toUpperCase();
     showNavUser(ini, currentTenant.full_name, "tenant");
     document.getElementById("portal-av").textContent = ini;
     document.getElementById("portal-name").textContent = currentTenant.full_name;
@@ -4739,7 +4739,7 @@ async function loadTenantPreview(tenantId) {
   window._previewTenant = tenant;
 
   // Update sidebar info
-  var ini = tenant.initials || tenant.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
+  var ini = tenant.initials || tenan(t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
   document.getElementById("pv-av").textContent = ini;
   document.getElementById("pv-av").style.background = tenant.color || "#dbe8ff";
   document.getElementById("pv-av").style.color = tenant.text_color || "#0C447C";
@@ -7256,7 +7256,7 @@ function updateSmsTemplate() {
   if (toSel && toSel.value !== "all" && window._tenantCache) {
     var t = window._tenantCache.find(function(x) { return x.phone === toSel.value || x.id === toSel.value; });
     if (t) {
-      tpl = tpl.replace("[Name]", t.full_name.split(" ")[0]).replace("[Amount]", "$" + Number(t.monthly_rent||0).toLocaleString());
+      tpl = tpl.replace("[Name]", (t.full_name||"Tenant").split(" ")[0]).replace("[Amount]", "$" + Number(t.monthly_rent||0).toLocaleString());
     }
   }
   msgEl.value = tpl;
@@ -9771,10 +9771,10 @@ async function updateHeroLandlordCard() {
         .filter(function(t){ return Number(t.monthly_rent||0) > 0; })
         .map(function(t) {
           var paid  = paidIds.has(t.id);
-          var ini   = t.initials || t.full_name.split(" ").map(function(w){ return w[0]; }).join("").slice(0,2).toUpperCase();
+          var ini   = t.initials || (t.full_name||"?").split(" ").map(function(w){ return w[0]||""; }).join("").slice(0,2).toUpperCase();
           var addr  = t.properties ? t.properties.address.replace(", Gaffney SC","").replace(", Spartanburg SC","") : "";
-          var fName = t.full_name.split(" ")[0];
-          var lName = t.full_name.split(" ").slice(-1)[0];
+          var fName = (t.full_name||"Tenant").split(" ")[0];
+          var lName = (t.full_name||"").split(" ").slice(-1)[0]||"";
           return "<div class='rent-row'>" +
             "<div class='r-av' style='background:" + (t.color||"rgba(255,255,255,.1)") + ";color:" + (t.text_color||"rgba(255,255,255,.7)") + "'>" + ini + "</div>" +
             "<div class='r-name'>" + fName + " " + lName + " · " + addr + "</div>" +
@@ -9971,7 +9971,7 @@ async function loadTenantProfile() {
     if (!currentTenant.stripe_payment_link && currentTenant.email) {
       currentTenant.stripe_payment_link = STRIPE_LINK_MAP[currentTenant.email] || null;
     }
-    var ini = currentTenant.full_name.split(" ").map(function(w) { return w[0]; }).join("").slice(0,2).toUpperCase();
+    var ini = (currentTenant.full_name||"?").split(" ").map(function(w) { return w[0]||""; }).join("").slice(0,2).toUpperCase();
     showNavUser(ini, currentTenant.full_name, "tenant");
     document.getElementById("portal-av").textContent = ini;
     document.getElementById("portal-name").textContent = currentTenant.full_name;
@@ -11644,7 +11644,7 @@ async function loadTenantPreview(tenantId) {
   window._previewTenant = tenant;
 
   // Update sidebar info
-  var ini = tenant.initials || tenant.full_name.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase();
+  var ini = tenant.initials || tenan(t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
   document.getElementById("pv-av").textContent = ini;
   document.getElementById("pv-av").style.background = tenant.color || "#dbe8ff";
   document.getElementById("pv-av").style.color = tenant.text_color || "#0C447C";
@@ -14161,7 +14161,7 @@ function updateSmsTemplate() {
   if (toSel && toSel.value !== "all" && window._tenantCache) {
     var t = window._tenantCache.find(function(x) { return x.phone === toSel.value || x.id === toSel.value; });
     if (t) {
-      tpl = tpl.replace("[Name]", t.full_name.split(" ")[0]).replace("[Amount]", "$" + Number(t.monthly_rent||0).toLocaleString());
+      tpl = tpl.replace("[Name]", (t.full_name||"Tenant").split(" ")[0]).replace("[Amount]", "$" + Number(t.monthly_rent||0).toLocaleString());
     }
   }
   msgEl.value = tpl;
