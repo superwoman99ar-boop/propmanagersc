@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v27.5</div>
+<div class="vbadge">PropManager SC v27.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3037,6 +3037,28 @@ async function loadTenantProfile() {
 // ---- PORTAL DATA ----
 async function loadPortalHome() {
   if (!currentTenant) return;
+  // Show late fee info if tenant is overdue
+  var now = new Date();
+  var daysLate = now.getDate();
+  var ms = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+  if (sb && daysLate >= 6) {
+    sb.from("payments").select("id").gte("payment_date", ms + "-01")
+      .eq("tenant_id", currentTenant.id).then(function(res) {
+        var hasPaid = res.data && res.data.filter(function(p){ return true; }).length > 0;
+        var feeEl = document.getElementById("portal-latefee-notice");
+        if (feeEl) {
+          if (!hasPaid && daysLate >= 6) {
+            var fee = calcLateFee(Number(currentTenant.monthly_rent||0), daysLate);
+            feeEl.style.display = "block";
+            feeEl.innerHTML = "<i class='ti ti-alert-triangle' style='color:#c0392b'></i> " +
+              "<strong>Late fee notice:</strong> Your rent is " + daysLate + " days overdue. " +
+              "A $" + fee + " late fee has been applied. Please pay immediately to avoid additional fees.";
+          } else {
+            feeEl.style.display = "none";
+          }
+        }
+      });
+  }
   var rent = currentTenant.monthly_rent || 0;
   document.getElementById("ph-rent").textContent = "$" + rent.toLocaleString();
   document.getElementById("py-amount").textContent = "$" + rent.toLocaleString();
@@ -7603,8 +7625,10 @@ function loadSharedSettings() {
         if (row.key === "sms_settings" && typeof _smsSettings !== "undefined") {
           Object.assign(_smsSettings, val);
         }
-        if (row.key === "fee_schedule" && typeof _feeSchedule !== "undefined") {
-          Object.assign(_feeSchedule, val);
+        if (row.key === "fee_schedule" && Array.isArray(val) && val.length > 0) {
+          _feeSchedule = val;
+          // Also update localStorage so it persists
+          try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(val)); } catch(e) {}
         }
       } catch(e) {}
     });
@@ -9630,6 +9654,28 @@ async function loadTenantProfile() {
 // ---- PORTAL DATA ----
 async function loadPortalHome() {
   if (!currentTenant) return;
+  // Show late fee info if tenant is overdue
+  var now = new Date();
+  var daysLate = now.getDate();
+  var ms = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+  if (sb && daysLate >= 6) {
+    sb.from("payments").select("id").gte("payment_date", ms + "-01")
+      .eq("tenant_id", currentTenant.id).then(function(res) {
+        var hasPaid = res.data && res.data.filter(function(p){ return true; }).length > 0;
+        var feeEl = document.getElementById("portal-latefee-notice");
+        if (feeEl) {
+          if (!hasPaid && daysLate >= 6) {
+            var fee = calcLateFee(Number(currentTenant.monthly_rent||0), daysLate);
+            feeEl.style.display = "block";
+            feeEl.innerHTML = "<i class='ti ti-alert-triangle' style='color:#c0392b'></i> " +
+              "<strong>Late fee notice:</strong> Your rent is " + daysLate + " days overdue. " +
+              "A $" + fee + " late fee has been applied. Please pay immediately to avoid additional fees.";
+          } else {
+            feeEl.style.display = "none";
+          }
+        }
+      });
+  }
   var rent = currentTenant.monthly_rent || 0;
   document.getElementById("ph-rent").textContent = "$" + rent.toLocaleString();
   document.getElementById("py-amount").textContent = "$" + rent.toLocaleString();
@@ -14199,8 +14245,10 @@ function loadSharedSettings() {
         if (row.key === "sms_settings" && typeof _smsSettings !== "undefined") {
           Object.assign(_smsSettings, val);
         }
-        if (row.key === "fee_schedule" && typeof _feeSchedule !== "undefined") {
-          Object.assign(_feeSchedule, val);
+        if (row.key === "fee_schedule" && Array.isArray(val) && val.length > 0) {
+          _feeSchedule = val;
+          // Also update localStorage so it persists
+          try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(val)); } catch(e) {}
         }
       } catch(e) {}
     });
