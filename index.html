@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v27.3</div>
+<div class="vbadge">PropManager SC v27.4</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2039,6 +2039,8 @@ function attachEvents() {
   var logo = document.getElementById("logo");
   if (logo) { logo.addEventListener("click", function() { goPage("home"); }); }
 
+  
+  console.log("[AE] Reached: // Nav buttons");
   // Nav buttons
   on("nb-home", "click", function() { goPage("home"); });
   on("nb-dashboard", "click", function() {
@@ -2087,6 +2089,8 @@ function attachEvents() {
   on("btn-tenant-login", "click", function() { openMo("tenant"); });
   on("btn-landlord-login", "click", function() { openMo("landlord"); });
 
+  
+  console.log("[AE] Reached: // Hero buttons");
   // Hero buttons
   on("hero-tenant-btn", "click", function() { openMo("tenant"); });
   var heroPLogin = document.getElementById("hero-portal-login-btn");
@@ -2417,11 +2421,15 @@ function attachEvents() {
   on("home-msg-card", "click", function() { goPortal("ms"); });
   on("pay-now-link", "click", function() { goPortal("py"); });
 
+  
+  console.log("[AE] Reached: // Pay tabs");
   // Pay tabs — use global delegation so they work after tenant login
   on("pay-tab-full", "click", function() { swPayTab("full"); });
   on("pay-tab-flex", "click", function() { swPayTab("flex"); });
   // Flex / Livable / Till moved to global delegation — see document click handler
 
+  
+  console.log("[AE] Reached: // Maintenance");
   // Maintenance submit
   on("submit-maint-btn", "click", submitMaintenanceRequest);
 
@@ -2700,6 +2708,8 @@ function attachEvents() {
     document.getElementById("rec-err").style.display = "none";
     openMo("recurring");
   });
+  
+  console.log("[AE] Reached: // Ledger");
   // Ledger filter + sort buttons
   var glFilterBtn = document.getElementById("gl-filter-btn");
   if (glFilterBtn) glFilterBtn.addEventListener("click", applyLedgerFilter);
