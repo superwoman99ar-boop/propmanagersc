@@ -4870,11 +4870,23 @@ async function renderPreviewTab(tab, tenant) {
 
 
 // ---- LATE FEE SCHEDULE ----
-var _feeSchedule = [
-  { days: 6, type: "flat", amount: 80 },
-  { days: 11, type: "flat", amount: 50 },
-  { days: 16, type: "daily", amount: 10 }
-];
+// Load fee schedule from localStorage first (instant), Supabase will update on load
+var _feeSchedule = (function() {
+  try {
+    var saved = localStorage.getItem("propmanager_fee_schedule");
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch(e) {}
+  // Default: Amber's confirmed schedule
+  return [
+    { days: 6,  type: "flat",  amount: 25 },
+    { days: 7,  type: "daily", amount: 5  },
+    { days: 10, type: "flat",  amount: 75 },
+    { days: 11, type: "daily", amount: 5  }
+  ];
+})();
 
 function openLateFeeModal() {
   renderFeeTiers();
@@ -4933,7 +4945,7 @@ function saveLateFeeSchedule() {
 }
 
 function calcLateFee(rent, daysLate) {
-  if (daysLate < 6) return 0; // Grace period
+  if (daysLate < 6) return 0; // 5-day grace: fees start day 6
   var total = 0;
   var sorted = _feeSchedule.slice().sort(function(a,b){ return a.days - b.days; });
   for (var i = 0; i < sorted.length; i++) {
@@ -11491,11 +11503,23 @@ async function renderPreviewTab(tab, tenant) {
 
 
 // ---- LATE FEE SCHEDULE ----
-var _feeSchedule = [
-  { days: 6, type: "flat", amount: 80 },
-  { days: 11, type: "flat", amount: 50 },
-  { days: 16, type: "daily", amount: 10 }
-];
+// Load fee schedule from localStorage first (instant), Supabase will update on load
+var _feeSchedule = (function() {
+  try {
+    var saved = localStorage.getItem("propmanager_fee_schedule");
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch(e) {}
+  // Default: Amber's confirmed schedule
+  return [
+    { days: 6,  type: "flat",  amount: 25 },
+    { days: 7,  type: "daily", amount: 5  },
+    { days: 10, type: "flat",  amount: 75 },
+    { days: 11, type: "daily", amount: 5  }
+  ];
+})();
 
 function openLateFeeModal() {
   renderFeeTiers();
@@ -11554,7 +11578,7 @@ function saveLateFeeSchedule() {
 }
 
 function calcLateFee(rent, daysLate) {
-  if (daysLate < 6) return 0; // Grace period
+  if (daysLate < 6) return 0; // 5-day grace: fees start day 6
   var total = 0;
   var sorted = _feeSchedule.slice().sort(function(a,b){ return a.days - b.days; });
   for (var i = 0; i < sorted.length; i++) {
