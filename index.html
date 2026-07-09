@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v27.8</div>
+<div class="vbadge">PropManager SC v27.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4076,7 +4076,9 @@ function openEditPaymentModal(payment, tenantName) {
   document.getElementById("ep-id").value = payment.id;
   document.getElementById("ep-tenant-name").value = tenantName;
   document.getElementById("ep-amount").value = payment.amount;
-  document.getElementById("ep-date").value = payment.payment_date;
+  var _pd = payment.payment_date || new Date().toISOString().split("T")[0];
+  if (_pd && _pd.length > 10) _pd = _pd.split("T")[0];
+  document.getElementById("ep-date").value = _pd;
   document.getElementById("ep-method").value = payment.method || "ACH";
   document.getElementById("ep-status").value = payment.status || "paid";
   document.getElementById("ep-notes").value = payment.notes || "";
@@ -10854,7 +10856,9 @@ function openEditPaymentModal(payment, tenantName) {
   document.getElementById("ep-id").value = payment.id;
   document.getElementById("ep-tenant-name").value = tenantName;
   document.getElementById("ep-amount").value = payment.amount;
-  document.getElementById("ep-date").value = payment.payment_date;
+  var _pd = payment.payment_date || new Date().toISOString().split("T")[0];
+  if (_pd && _pd.length > 10) _pd = _pd.split("T")[0];
+  document.getElementById("ep-date").value = _pd;
   document.getElementById("ep-method").value = payment.method || "ACH";
   document.getElementById("ep-status").value = payment.status || "paid";
   document.getElementById("ep-notes").value = payment.notes || "";
