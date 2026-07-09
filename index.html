@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v27.7</div>
+<div class="vbadge">PropManager SC v27.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4035,9 +4035,15 @@ async function updateTenant() {
 async function updatePayment() {
   if (!sb) return;
   var id = document.getElementById("ep-id").value;
+  var epDate = document.getElementById("ep-date").value;
+  if (!epDate) {
+    document.getElementById("ep-err").textContent = "Please enter a payment date.";
+    document.getElementById("ep-err").style.display = "block";
+    return;
+  }
   var result = await sb.from("payments").update({
     amount: parseFloat(document.getElementById("ep-amount").value) || 0,
-    payment_date: document.getElementById("ep-date").value,
+    payment_date: epDate,
     method: document.getElementById("ep-method").value,
     status: document.getElementById("ep-status").value,
     notes: document.getElementById("ep-notes").value
@@ -4890,6 +4896,9 @@ var _feeSchedule = (function() {
 
 function openLateFeeModal() {
   renderFeeTiers();
+  renderLFTenantRows();
+  var apOk = document.getElementById("lf-apply-ok");
+  if (apOk) apOk.style.display = "none";
   document.getElementById("lf-ok").classList.remove("on");
   openMo("latefee");
 }
@@ -7422,6 +7431,7 @@ document.addEventListener("DOMContentLoaded", function() {
       return;
     }
     // Generate P&L
+    if (e.target.closest("#apply-latefee-btn")) { applyLateFeesToAll(); return; }
     if (e.target.closest("#gen-pnl-btn")) {
       if (typeof generatePnL === "function") generatePnL();
       else {
@@ -8343,6 +8353,141 @@ function loadPortalPaymentTab() {
   }
   if (typeof selectPayMethod === "function") selectPayMethod("ach");
 }
+
+// ════════════════════════════════════════════════════════════
+// LATE FEE — render tenant rows, charge individual, apply all
+// ════════════════════════════════════════════════════════════
+function renderLFTenantRows() {
+  var el = document.getElementById("lf-tenant-rows");
+  if (!el) return;
+  var tenants = window._tenantCache || [];
+  var now     = new Date();
+  var ms      = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+  var daysLate = now.getDate();
+
+  if (sb) {
+    sb.from("payments").select("tenant_id,payment_date,method")
+      .gte("payment_date", ms + "-01").lte("payment_date", ms + "-31")
+      .then(function(payRes) {
+        var paidIds = new Set();
+        if (payRes.data) payRes.data.forEach(function(p) {
+          if (p.method !== "Late fee") paidIds.add(String(p.tenant_id));
+        });
+        _renderLFRows(el, tenants, paidIds, daysLate);
+      });
+    return;
+  }
+  var payments = window._paymentCache || [];
+  var paidIds = new Set(payments.filter(function(p) {
+    return p.payment_date && p.payment_date.startsWith(ms) && p.method !== "Late fee";
+  }).map(function(p){ return String(p.tenant_id); }));
+  _renderLFRows(el, tenants, paidIds, daysLate);
+}
+
+function _renderLFRows(el, tenants, paidIds, daysLate) {
+  var rows = tenants.filter(function(t){ return Number(t.monthly_rent||0) > 0; }).map(function(t) {
+    var hasPaid = paidIds.has(String(t.id));
+    var fee     = hasPaid ? 0 : calcLateFee(Number(t.monthly_rent||0), daysLate);
+    var color   = hasPaid ? "#2d7a4f" : fee > 0 ? "#c0392b" : "#a06010";
+    var status  = hasPaid ? "Current ✓" : fee > 0 ? "$" + fee + " due" : "Grace period";
+    return "<div style='display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:rgba(15,30,53,.03);border:1px solid rgba(15,30,53,.1);border-radius:7px;margin-bottom:7px'>" +
+      "<span style='font-size:13px;font-weight:500'>" + (t.full_name||"Tenant") + "</span>" +
+      "<div style='display:flex;align-items:center;gap:10px'>" +
+        "<span style='font-size:12px;color:" + color + "'>" + status + "</span>" +
+        (fee > 0 ? "<input type='number' value='" + fee + "' id='lf-amt-" + t.id + "' style='width:72px;padding:4px 7px;border:1px solid rgba(15,30,53,.2);border-radius:5px;font-size:12px;font-family:inherit'>" +
+          "<button class='btn btn-r' style='font-size:11px;padding:3px 9px' data-lf-tenant='" + t.id + "' data-lf-name='" + (t.full_name||"").replace(/'/g,"") + "'>Charge</button>" : "") +
+      "</div></div>";
+  }).join("");
+  el.innerHTML = rows || "<div style='color:#999;font-size:13px;padding:8px'>All tenants are current this month.</div>";
+
+  el.querySelectorAll("[data-lf-tenant]").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      var tid  = btn.getAttribute("data-lf-tenant");
+      var name = btn.getAttribute("data-lf-name");
+      var amt  = parseFloat((document.getElementById("lf-amt-"+tid)||{}).value) || 0;
+      if (amt > 0) chargeLateFee(tid, name, amt);
+    });
+  });
+}
+
+async function chargeLateFee(tenantId, tenantName, amount) {
+  if (!sb || !amount) return;
+  var tenant = (window._tenantCache||[]).find(function(t){ return String(t.id)===String(tenantId); });
+  var now    = new Date();
+  var month  = now.toLocaleDateString("en-US",{month:"long",year:"numeric"});
+  var res    = await sb.from("payments").insert({
+    tenant_id:    tenantId,
+    property_id:  tenant ? tenant.property_id : null,
+    amount:       amount,
+    payment_date: now.toISOString().split("T")[0],
+    method:       "Late fee",
+    status:       "late",
+    notes:        month + " late fee"
+  });
+  if (!res.error) {
+    alert("$" + amount + " late fee charged to " + tenantName + " and logged.");
+    if (typeof loadDashboardData === "function") loadDashboardData();
+    renderLFTenantRows();
+  } else {
+    alert("Error: " + res.error.message);
+  }
+}
+
+async function applyLateFeesToAll() {
+  if (!sb) { alert("Not connected."); return; }
+  var okEl = document.getElementById("lf-apply-ok");
+  if (okEl) { okEl.style.display="block"; okEl.innerHTML="<i class='ti ti-loader'></i> Checking payments..."; }
+
+  var tenants = window._tenantCache || [];
+  if (!tenants.length) { alert("No tenants loaded. Visit Dashboard first."); return; }
+
+  var now     = new Date();
+  var ms      = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+  var month   = now.toLocaleDateString("en-US",{month:"long",year:"numeric"});
+  var daysLate = now.getDate();
+
+  // Fetch fresh payments
+  var payRes = await sb.from("payments").select("tenant_id,payment_date,method,status")
+    .gte("payment_date", ms+"-01").lte("payment_date", ms+"-31");
+
+  var paidIds = new Set();
+  if (payRes.data) payRes.data.forEach(function(p) {
+    if (p.method !== "Late fee") paidIds.add(String(p.tenant_id));
+  });
+
+  var charged = 0; var skipped = [];
+  for (var i=0; i<tenants.length; i++) {
+    var t = tenants[i];
+    if (!t.monthly_rent || Number(t.monthly_rent)<=0) continue;
+    var fee = paidIds.has(String(t.id)) ? 0 : calcLateFee(Number(t.monthly_rent), daysLate);
+    if (fee > 0) {
+      var r = await sb.from("payments").insert({
+        tenant_id:    t.id,
+        property_id:  t.property_id||null,
+        amount:       fee,
+        payment_date: now.toISOString().split("T")[0],
+        method:       "Late fee",
+        status:       "late",
+        notes:        month + " late fee — day " + daysLate
+      });
+      if (!r.error) charged++;
+    } else {
+      skipped.push((t.full_name||"Tenant") + (paidIds.has(String(t.id)) ? " (paid)" : " (grace)"));
+    }
+  }
+
+  if (okEl) {
+    okEl.style.display = "block";
+    okEl.style.background   = charged > 0 ? "#eaf5ee" : "#fdf3e0";
+    okEl.style.borderColor  = charged > 0 ? "rgba(45,122,79,.3)" : "rgba(160,96,16,.3)";
+    okEl.style.color        = charged > 0 ? "#2d7a4f" : "#a06010";
+    okEl.innerHTML = charged > 0
+      ? "<i class='ti ti-check'></i> " + charged + " late fee"+(charged>1?"s":"")+" applied."
+      : "<i class='ti ti-info-circle'></i> 0 fees applied. " + skipped.join(", ");
+  }
+  if (charged > 0) { if (typeof loadDashboardData==="function") loadDashboardData(); renderLFTenantRows(); }
+}
+
 </script>
 
 <!-- LOG PAYMENT MODAL -->
@@ -10668,9 +10813,15 @@ async function updateTenant() {
 async function updatePayment() {
   if (!sb) return;
   var id = document.getElementById("ep-id").value;
+  var epDate = document.getElementById("ep-date").value;
+  if (!epDate) {
+    document.getElementById("ep-err").textContent = "Please enter a payment date.";
+    document.getElementById("ep-err").style.display = "block";
+    return;
+  }
   var result = await sb.from("payments").update({
     amount: parseFloat(document.getElementById("ep-amount").value) || 0,
-    payment_date: document.getElementById("ep-date").value,
+    payment_date: epDate,
     method: document.getElementById("ep-method").value,
     status: document.getElementById("ep-status").value,
     notes: document.getElementById("ep-notes").value
@@ -11523,6 +11674,9 @@ var _feeSchedule = (function() {
 
 function openLateFeeModal() {
   renderFeeTiers();
+  renderLFTenantRows();
+  var apOk = document.getElementById("lf-apply-ok");
+  if (apOk) apOk.style.display = "none";
   document.getElementById("lf-ok").classList.remove("on");
   openMo("latefee");
 }
@@ -14054,6 +14208,7 @@ document.addEventListener("DOMContentLoaded", function() {
       return;
     }
     // Generate P&L
+    if (e.target.closest("#apply-latefee-btn")) { applyLateFeesToAll(); return; }
     if (e.target.closest("#gen-pnl-btn")) {
       if (typeof generatePnL === "function") generatePnL();
       else {
