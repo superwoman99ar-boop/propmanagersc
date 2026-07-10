@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v27.9</div>
+<div class="vbadge">PropManager SC v28.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3497,8 +3497,17 @@ function renderTenantList(tenants) {
   var rows = tenants.map(function(t) {
     var p = t.properties;
     var ini = t.initials || (t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
-    var bal = t.status === "overdue" ? "<span style='color:#c0392b;font-weight:500'>$" + ((t.monthly_rent||0)+80) + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
-    var badge = t.status === "current" ? "<span class='badge b-g'>Current</span>" : t.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-a'>Vacating</span>";
+    // Real balance from payments cache
+    var _now = new Date();
+    var _ms  = _now.getFullYear() + "-" + String(_now.getMonth()+1).padStart(2,"0");
+    var _pays = (window._paymentCache||[]).filter(function(p){ return String(p.tenant_id)===String(t.id) && p.payment_date && p.payment_date.startsWith(_ms); });
+    var _paidAmt = _pays.filter(function(p){ return p.method!=="Late fee"; }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
+    var _feeAmt  = _pays.filter(function(p){ return p.method==="Late fee"; }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
+    var _rent    = Number(t.monthly_rent||0);
+    var _bal     = Math.max(0, (_rent + _feeAmt) - _paidAmt);
+    var hasPaidRent = _paidAmt >= _rent;
+    var bal   = _bal > 0 ? "<span style='color:#c0392b;font-weight:500'>$" + _bal.toLocaleString() + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
+    var badge = hasPaidRent ? "<span class='badge b-g'>Current</span>" : _bal > 0 ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-g'>Current</span>";
     return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td><button class='btn' style='font-size:11px;padding:3px 8px' data-tenant-id='" + t.id + "'>Edit</button></td></tr>";
   }).join("");
   el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:23%'>Tenant</th><th style='width:23%'>Address</th><th style='width:11%'>Rent</th><th style='width:14%'>Status</th><th style='width:11%'>Balance</th><th style='width:10%'>Edit</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
@@ -10277,8 +10286,17 @@ function renderTenantList(tenants) {
   var rows = tenants.map(function(t) {
     var p = t.properties;
     var ini = t.initials || (t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
-    var bal = t.status === "overdue" ? "<span style='color:#c0392b;font-weight:500'>$" + ((t.monthly_rent||0)+80) + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
-    var badge = t.status === "current" ? "<span class='badge b-g'>Current</span>" : t.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-a'>Vacating</span>";
+    // Real balance from payments cache
+    var _now = new Date();
+    var _ms  = _now.getFullYear() + "-" + String(_now.getMonth()+1).padStart(2,"0");
+    var _pays = (window._paymentCache||[]).filter(function(p){ return String(p.tenant_id)===String(t.id) && p.payment_date && p.payment_date.startsWith(_ms); });
+    var _paidAmt = _pays.filter(function(p){ return p.method!=="Late fee"; }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
+    var _feeAmt  = _pays.filter(function(p){ return p.method==="Late fee"; }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
+    var _rent    = Number(t.monthly_rent||0);
+    var _bal     = Math.max(0, (_rent + _feeAmt) - _paidAmt);
+    var hasPaidRent = _paidAmt >= _rent;
+    var bal   = _bal > 0 ? "<span style='color:#c0392b;font-weight:500'>$" + _bal.toLocaleString() + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
+    var badge = hasPaidRent ? "<span class='badge b-g'>Current</span>" : _bal > 0 ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-g'>Current</span>";
     return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td><button class='btn' style='font-size:11px;padding:3px 8px' data-tenant-id='" + t.id + "'>Edit</button></td></tr>";
   }).join("");
   el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:23%'>Tenant</th><th style='width:23%'>Address</th><th style='width:11%'>Rent</th><th style='width:14%'>Status</th><th style='width:11%'>Balance</th><th style='width:10%'>Edit</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
