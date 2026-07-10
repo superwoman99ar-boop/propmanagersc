@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v28.0</div>
+<div class="vbadge">PropManager SC v28.1</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3466,7 +3466,7 @@ async function loadDashboardData() {
   if (overdue > 0 && alertEl) {
     var overdueTenants = tenants.filter(function(t) { return t.status === "overdue"; });
     var names = overdueTenants.map(function(t) {
-      return t.full_name + (t.properties ? " — " + t.properties.address : "") + " — $" + ((t.monthly_rent||0)+80).toLocaleString();
+      return t.full_name + (t.properties ? " — " + t.properties.address : "") + " — $" + (Number(t.monthly_rent||0) + calcLateFee(Number(t.monthly_rent||0), new Date().getDate())).toLocaleString();
     }).join(", ");
     var msgEl = document.getElementById("overdue-alert-msg");
     if (msgEl) msgEl.innerHTML = names;
@@ -3483,7 +3483,13 @@ function renderTenantTable(tenants) {
   var rows = tenants.map(function(t) {
     var p = t.properties;
     var ini = t.initials || (t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
-    var bal = t.status === "overdue" ? "<span style='color:#c0392b;font-weight:500'>$" + ((t.monthly_rent||0)+80) + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
+    var // Real balance
+    var _tnow = new Date(); var _tms = _tnow.getFullYear()+"-"+String(_tnow.getMonth()+1).padStart(2,"0");
+    var _tpays = (window._paymentCache||[]).filter(function(p){ return String(p.tenant_id)===String(t.id)&&p.payment_date&&p.payment_date.startsWith(_tms); });
+    var _tpaid = _tpays.filter(function(p){ return p.method!=="Late fee"; }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
+    var _tfee  = _tpays.filter(function(p){ return p.method==="Late fee"; }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
+    var _tbal  = Math.max(0,(Number(t.monthly_rent||0)+_tfee)-_tpaid);
+    bal = _tbal>0 ? "<span style='color:#c0392b;font-weight:500'>$"+_tbal.toLocaleString()+"</span>" : "<span style='color:#2d7a4f'>$0</span>";
     var badge = t.status === "current" ? "<span class='badge b-g'>Current</span>" : t.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-a'>Other</span>";
     return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td></tr>";
   }).join("");
@@ -10255,7 +10261,7 @@ async function loadDashboardData() {
   if (overdue > 0 && alertEl) {
     var overdueTenants = tenants.filter(function(t) { return t.status === "overdue"; });
     var names = overdueTenants.map(function(t) {
-      return t.full_name + (t.properties ? " — " + t.properties.address : "") + " — $" + ((t.monthly_rent||0)+80).toLocaleString();
+      return t.full_name + (t.properties ? " — " + t.properties.address : "") + " — $" + (Number(t.monthly_rent||0) + calcLateFee(Number(t.monthly_rent||0), new Date().getDate())).toLocaleString();
     }).join(", ");
     var msgEl = document.getElementById("overdue-alert-msg");
     if (msgEl) msgEl.innerHTML = names;
@@ -10272,7 +10278,13 @@ function renderTenantTable(tenants) {
   var rows = tenants.map(function(t) {
     var p = t.properties;
     var ini = t.initials || (t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
-    var bal = t.status === "overdue" ? "<span style='color:#c0392b;font-weight:500'>$" + ((t.monthly_rent||0)+80) + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
+    var // Real balance
+    var _tnow = new Date(); var _tms = _tnow.getFullYear()+"-"+String(_tnow.getMonth()+1).padStart(2,"0");
+    var _tpays = (window._paymentCache||[]).filter(function(p){ return String(p.tenant_id)===String(t.id)&&p.payment_date&&p.payment_date.startsWith(_tms); });
+    var _tpaid = _tpays.filter(function(p){ return p.method!=="Late fee"; }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
+    var _tfee  = _tpays.filter(function(p){ return p.method==="Late fee"; }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
+    var _tbal  = Math.max(0,(Number(t.monthly_rent||0)+_tfee)-_tpaid);
+    bal = _tbal>0 ? "<span style='color:#c0392b;font-weight:500'>$"+_tbal.toLocaleString()+"</span>" : "<span style='color:#2d7a4f'>$0</span>";
     var badge = t.status === "current" ? "<span class='badge b-g'>Current</span>" : t.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-a'>Other</span>";
     return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td></tr>";
   }).join("");
