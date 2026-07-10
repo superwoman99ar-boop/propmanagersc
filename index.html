@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v28.1</div>
+<div class="vbadge">PropManager SC v28.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3826,7 +3826,7 @@ function selectNotice(id, name, addr, rent) {
   document.getElementById("nt-name").textContent = name;
   document.getElementById("nt-addr").textContent = addr;
   document.getElementById("nt-rent").textContent = "$" + rent.toLocaleString() + ".00";
-  document.getElementById("nt-total").textContent = "$" + (rent + 80).toLocaleString() + ".00";
+  document.getElementById("nt-total").textContent = "$" + (rent + calcLateFee(rent, new Date().getDate())).toLocaleString() + ".00";
   document.getElementById("nt-date").textContent = new Date().toLocaleDateString("en-US", {month:"long",day:"numeric",year:"numeric"});
   document.getElementById("notice-preview").style.display = "block";
 }
@@ -10621,7 +10621,7 @@ function selectNotice(id, name, addr, rent) {
   document.getElementById("nt-name").textContent = name;
   document.getElementById("nt-addr").textContent = addr;
   document.getElementById("nt-rent").textContent = "$" + rent.toLocaleString() + ".00";
-  document.getElementById("nt-total").textContent = "$" + (rent + 80).toLocaleString() + ".00";
+  document.getElementById("nt-total").textContent = "$" + (rent + calcLateFee(rent, new Date().getDate())).toLocaleString() + ".00";
   document.getElementById("nt-date").textContent = new Date().toLocaleDateString("en-US", {month:"long",day:"numeric",year:"numeric"});
   document.getElementById("notice-preview").style.display = "block";
 }
