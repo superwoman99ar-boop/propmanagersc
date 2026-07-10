@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v28.3</div>
+<div class="vbadge">PropManager SC v28.4</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3481,7 +3481,7 @@ function renderTenantTable(tenants) {
   var rows = tenants.map(function(t) {
     var p = t.properties;
     var ini = t.initials || (t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
-    var // Real balance
+    // Real balance
     var _tnow = new Date(); var _tms = _tnow.getFullYear()+"-"+String(_tnow.getMonth()+1).padStart(2,"0");
     var _tpays = (window._paymentCache||[]).filter(function(p){ return String(p.tenant_id)===String(t.id)&&p.payment_date&&p.payment_date.startsWith(_tms); });
     var _tpaid = _tpays.filter(function(p){ return p.method!=="Late fee"; }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
@@ -10276,7 +10276,7 @@ function renderTenantTable(tenants) {
   var rows = tenants.map(function(t) {
     var p = t.properties;
     var ini = t.initials || (t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
-    var // Real balance
+    // Real balance
     var _tnow = new Date(); var _tms = _tnow.getFullYear()+"-"+String(_tnow.getMonth()+1).padStart(2,"0");
     var _tpays = (window._paymentCache||[]).filter(function(p){ return String(p.tenant_id)===String(t.id)&&p.payment_date&&p.payment_date.startsWith(_tms); });
     var _tpaid = _tpays.filter(function(p){ return p.method!=="Late fee"; }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
