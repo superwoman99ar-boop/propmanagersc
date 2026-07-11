@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v28.5</div>
+<div class="vbadge">PropManager SC v28.6</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3384,12 +3384,13 @@ async function loadDashboardData() {
   if (prRes.data) window._propCache = prRes.data;
   var pRes = await sb.from("payments").select("*").order("payment_date", { ascending: false });
   var mRes = await sb.from("maintenance").select("*, tenants(full_name), properties(address)").order("created_at", { ascending: false });
-  var eRes = await sb.from("expenses").select("*").order("expense_date", { ascending: false });
+  var eRes = { data: [], error: null };
+  try { eRes = await sb.from("expenses").select("*").order("expense_date", { ascending: false }); } catch(e) {}
 
   var tenants = tRes.data || [];
   var payments = pRes.data || [];
   var maints = mRes.data || [];
-  var expenses = eRes.data || [];
+  var expenses = (eRes && eRes.data) ? eRes.data : [];
 
   var totalRent = tenants.reduce(function(s,t) { return s + (t.monthly_rent||0); }, 0);
   var overdue = tenants.filter(function(t) { return t.status === "overdue"; }).length;
@@ -10187,12 +10188,13 @@ async function loadDashboardData() {
   if (prRes.data) window._propCache = prRes.data;
   var pRes = await sb.from("payments").select("*").order("payment_date", { ascending: false });
   var mRes = await sb.from("maintenance").select("*, tenants(full_name), properties(address)").order("created_at", { ascending: false });
-  var eRes = await sb.from("expenses").select("*").order("expense_date", { ascending: false });
+  var eRes = { data: [], error: null };
+  try { eRes = await sb.from("expenses").select("*").order("expense_date", { ascending: false }); } catch(e) {}
 
   var tenants = tRes.data || [];
   var payments = pRes.data || [];
   var maints = mRes.data || [];
-  var expenses = eRes.data || [];
+  var expenses = (eRes && eRes.data) ? eRes.data : [];
 
   var totalRent = tenants.reduce(function(s,t) { return s + (t.monthly_rent||0); }, 0);
   var overdue = tenants.filter(function(t) { return t.status === "overdue"; }).length;
