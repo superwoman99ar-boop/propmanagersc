@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v28.6</div>
+<div class="vbadge">PropManager SC v28.7</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4893,30 +4893,20 @@ async function renderPreviewTab(tab, tenant) {
 
 // ---- LATE FEE SCHEDULE ----
 // Load fee schedule from localStorage first (instant), Supabase will update on load
-var _feeSchedule = (function() {
-  var CORRECT = [
-    { days: 6,  type: "flat",  amount: 25 },
-    { days: 7,  type: "daily", amount: 5  },
-    { days: 10, type: "flat",  amount: 75 },
-    { days: 11, type: "daily", amount: 5  }
-  ];
-  try {
-    var saved = localStorage.getItem("propmanager_fee_schedule");
-    if (saved) {
-      var parsed = JSON.parse(saved);
-      // Validate it matches expected structure (4 tiers with correct amounts)
-      if (Array.isArray(parsed) && parsed.length >= 2 &&
-          parsed[0] && parsed[0].amount && parsed[0].amount !== 80) {
-        return parsed;
-      }
-      // Old/wrong schedule in localStorage - clear it
-      localStorage.removeItem("propmanager_fee_schedule");
-    }
-  } catch(e) {}
-  // Save correct schedule to localStorage
-  try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(CORRECT)); } catch(e) {}
-  return CORRECT;
-})();
+var _feeSchedule = [
+  { days: 6,  type: "flat",  amount: 25 },
+  { days: 7,  type: "daily", amount: 5  },
+  { days: 10, type: "flat",  amount: 50 },
+  { days: 11, type: "daily", amount: 5  }
+];
+// Load from localStorage immediately (overrides default above)
+try {
+  var _savedFee = localStorage.getItem("propmanager_fee_schedule");
+  if (_savedFee) {
+    var _parsedFee = JSON.parse(_savedFee);
+    if (Array.isArray(_parsedFee) && _parsedFee.length > 0) _feeSchedule = _parsedFee;
+  }
+} catch(e) {}
 
 function openLateFeeModal() {
   renderFeeTiers();
@@ -4964,7 +4954,19 @@ function addFeeTier() {
 }
 
 function saveLateFeeSchedule() {
-  // Save to localStorage for persistence
+  // Read current tier values from UI before saving
+  var tierEls = document.querySelectorAll(".fee-tier-row");
+  if (tierEls.length > 0) {
+    var newSchedule = [];
+    tierEls.forEach(function(row) {
+      var days   = parseInt(row.querySelector(".ft-days").value) || 0;
+      var type   = row.querySelector(".ft-type").value || "flat";
+      var amount = parseFloat(row.querySelector(".ft-amount").value) || 0;
+      if (days > 0 && amount > 0) newSchedule.push({ days: days, type: type, amount: amount });
+    });
+    if (newSchedule.length > 0) _feeSchedule = newSchedule;
+  }
+  // Save to both localStorage AND Supabase
   try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(_feeSchedule)); } catch(e) {}
   if (sb) { sb.from("settings").upsert({ key: "fee_schedule", value: JSON.stringify(_feeSchedule) }).then(function(){}); }
   // Show summary
@@ -8900,6 +8902,15 @@ async function applyLateFeesToAll() {
       Day 11: additional $50 (total $130)<br>
       Day 16: additional $50/day until paid
     </div>
+    <hr style="border:none;border-top:1px solid rgba(15,30,53,.1);margin:14px 0">
+    <div style="font-size:12px;font-weight:600;color:#0f1e35;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Apply fee to tenant</div>
+    <div id="lf-tenant-rows" style="margin-bottom:10px"></div>
+    <button class="btn" id="apply-latefee-btn" style="width:100%;justify-content:center;background:#0f1e35;color:#f0c96b;border-color:#0f1e35;margin-bottom:10px">
+      <i class="ti ti-bolt"></i> Apply fees to all overdue tenants
+    </button>
+    <div id="lf-apply-ok" style="display:none;background:#eaf5ee;border:1px solid rgba(45,122,79,.3);border-radius:7px;padding:9px 13px;font-size:13px;color:#2d7a4f;margin-bottom:10px"></div>
+    <hr style="border:none;border-top:1px solid rgba(15,30,53,.1);margin:14px 0">
+    <div style="font-size:12px;font-weight:600;color:#0f1e35;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Fee schedule (global)</div>
     <button class="mo-btn" id="save-latefee-btn">Save fee schedule</button>
     <div class="ok-msg" id="lf-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Late fee schedule saved!</div>
   </div>
@@ -11697,30 +11708,20 @@ async function renderPreviewTab(tab, tenant) {
 
 // ---- LATE FEE SCHEDULE ----
 // Load fee schedule from localStorage first (instant), Supabase will update on load
-var _feeSchedule = (function() {
-  var CORRECT = [
-    { days: 6,  type: "flat",  amount: 25 },
-    { days: 7,  type: "daily", amount: 5  },
-    { days: 10, type: "flat",  amount: 75 },
-    { days: 11, type: "daily", amount: 5  }
-  ];
-  try {
-    var saved = localStorage.getItem("propmanager_fee_schedule");
-    if (saved) {
-      var parsed = JSON.parse(saved);
-      // Validate it matches expected structure (4 tiers with correct amounts)
-      if (Array.isArray(parsed) && parsed.length >= 2 &&
-          parsed[0] && parsed[0].amount && parsed[0].amount !== 80) {
-        return parsed;
-      }
-      // Old/wrong schedule in localStorage - clear it
-      localStorage.removeItem("propmanager_fee_schedule");
-    }
-  } catch(e) {}
-  // Save correct schedule to localStorage
-  try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(CORRECT)); } catch(e) {}
-  return CORRECT;
-})();
+var _feeSchedule = [
+  { days: 6,  type: "flat",  amount: 25 },
+  { days: 7,  type: "daily", amount: 5  },
+  { days: 10, type: "flat",  amount: 50 },
+  { days: 11, type: "daily", amount: 5  }
+];
+// Load from localStorage immediately (overrides default above)
+try {
+  var _savedFee = localStorage.getItem("propmanager_fee_schedule");
+  if (_savedFee) {
+    var _parsedFee = JSON.parse(_savedFee);
+    if (Array.isArray(_parsedFee) && _parsedFee.length > 0) _feeSchedule = _parsedFee;
+  }
+} catch(e) {}
 
 function openLateFeeModal() {
   renderFeeTiers();
@@ -11768,7 +11769,19 @@ function addFeeTier() {
 }
 
 function saveLateFeeSchedule() {
-  // Save to localStorage for persistence
+  // Read current tier values from UI before saving
+  var tierEls = document.querySelectorAll(".fee-tier-row");
+  if (tierEls.length > 0) {
+    var newSchedule = [];
+    tierEls.forEach(function(row) {
+      var days   = parseInt(row.querySelector(".ft-days").value) || 0;
+      var type   = row.querySelector(".ft-type").value || "flat";
+      var amount = parseFloat(row.querySelector(".ft-amount").value) || 0;
+      if (days > 0 && amount > 0) newSchedule.push({ days: days, type: type, amount: amount });
+    });
+    if (newSchedule.length > 0) _feeSchedule = newSchedule;
+  }
+  // Save to both localStorage AND Supabase
   try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(_feeSchedule)); } catch(e) {}
   if (sb) { sb.from("settings").upsert({ key: "fee_schedule", value: JSON.stringify(_feeSchedule) }).then(function(){}); }
   // Show summary
@@ -15568,6 +15581,15 @@ function loadPortalPaymentTab() {
       Day 11: additional $50 (total $130)<br>
       Day 16: additional $50/day until paid
     </div>
+    <hr style="border:none;border-top:1px solid rgba(15,30,53,.1);margin:14px 0">
+    <div style="font-size:12px;font-weight:600;color:#0f1e35;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Apply fee to tenant</div>
+    <div id="lf-tenant-rows" style="margin-bottom:10px"></div>
+    <button class="btn" id="apply-latefee-btn" style="width:100%;justify-content:center;background:#0f1e35;color:#f0c96b;border-color:#0f1e35;margin-bottom:10px">
+      <i class="ti ti-bolt"></i> Apply fees to all overdue tenants
+    </button>
+    <div id="lf-apply-ok" style="display:none;background:#eaf5ee;border:1px solid rgba(45,122,79,.3);border-radius:7px;padding:9px 13px;font-size:13px;color:#2d7a4f;margin-bottom:10px"></div>
+    <hr style="border:none;border-top:1px solid rgba(15,30,53,.1);margin:14px 0">
+    <div style="font-size:12px;font-weight:600;color:#0f1e35;text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">Fee schedule (global)</div>
     <button class="mo-btn" id="save-latefee-btn">Save fee schedule</button>
     <div class="ok-msg" id="lf-ok" style="margin-top:9px"><i class="ti ti-circle-check" style="font-size:17px"></i> Late fee schedule saved!</div>
   </div>
