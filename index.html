@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v28.7</div>
+<div class="vbadge">PropManager SC v28.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -7674,9 +7674,18 @@ function loadSharedSettings() {
           Object.assign(_smsSettings, val);
         }
         if (row.key === "fee_schedule" && Array.isArray(val) && val.length > 0) {
-          _feeSchedule = val;
-          // Also update localStorage so it persists
-          try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(val)); } catch(e) {}
+          // Reject stale schedules with old $80 or $30 defaults
+          var firstAmt = val[0] && val[0].amount;
+          if (firstAmt === 80 || firstAmt === 30) {
+            // Old schedule in Supabase - update it with correct one
+            var fix = [{"days":6,"type":"flat","amount":25},{"days":7,"type":"daily","amount":5},{"days":10,"type":"flat","amount":50},{"days":11,"type":"daily","amount":5}];
+            _feeSchedule = fix;
+            try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(fix)); } catch(e) {}
+            if (sb) sb.from("settings").upsert({key:"fee_schedule", value:JSON.stringify(fix)}).then(function(){});
+          } else {
+            _feeSchedule = val;
+            try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(val)); } catch(e) {}
+          }
         }
       } catch(e) {}
     });
@@ -14488,9 +14497,18 @@ function loadSharedSettings() {
           Object.assign(_smsSettings, val);
         }
         if (row.key === "fee_schedule" && Array.isArray(val) && val.length > 0) {
-          _feeSchedule = val;
-          // Also update localStorage so it persists
-          try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(val)); } catch(e) {}
+          // Reject stale schedules with old $80 or $30 defaults
+          var firstAmt = val[0] && val[0].amount;
+          if (firstAmt === 80 || firstAmt === 30) {
+            // Old schedule in Supabase - update it with correct one
+            var fix = [{"days":6,"type":"flat","amount":25},{"days":7,"type":"daily","amount":5},{"days":10,"type":"flat","amount":50},{"days":11,"type":"daily","amount":5}];
+            _feeSchedule = fix;
+            try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(fix)); } catch(e) {}
+            if (sb) sb.from("settings").upsert({key:"fee_schedule", value:JSON.stringify(fix)}).then(function(){});
+          } else {
+            _feeSchedule = val;
+            try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(val)); } catch(e) {}
+          }
         }
       } catch(e) {}
     });
