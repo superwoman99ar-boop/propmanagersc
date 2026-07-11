@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v28.4</div>
+<div class="vbadge">PropManager SC v28.5</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4893,20 +4893,28 @@ async function renderPreviewTab(tab, tenant) {
 // ---- LATE FEE SCHEDULE ----
 // Load fee schedule from localStorage first (instant), Supabase will update on load
 var _feeSchedule = (function() {
-  try {
-    var saved = localStorage.getItem("propmanager_fee_schedule");
-    if (saved) {
-      var parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch(e) {}
-  // Default: Amber's confirmed schedule
-  return [
+  var CORRECT = [
     { days: 6,  type: "flat",  amount: 25 },
     { days: 7,  type: "daily", amount: 5  },
     { days: 10, type: "flat",  amount: 75 },
     { days: 11, type: "daily", amount: 5  }
   ];
+  try {
+    var saved = localStorage.getItem("propmanager_fee_schedule");
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      // Validate it matches expected structure (4 tiers with correct amounts)
+      if (Array.isArray(parsed) && parsed.length >= 2 &&
+          parsed[0] && parsed[0].amount && parsed[0].amount !== 80) {
+        return parsed;
+      }
+      // Old/wrong schedule in localStorage - clear it
+      localStorage.removeItem("propmanager_fee_schedule");
+    }
+  } catch(e) {}
+  // Save correct schedule to localStorage
+  try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(CORRECT)); } catch(e) {}
+  return CORRECT;
 })();
 
 function openLateFeeModal() {
@@ -11688,20 +11696,28 @@ async function renderPreviewTab(tab, tenant) {
 // ---- LATE FEE SCHEDULE ----
 // Load fee schedule from localStorage first (instant), Supabase will update on load
 var _feeSchedule = (function() {
-  try {
-    var saved = localStorage.getItem("propmanager_fee_schedule");
-    if (saved) {
-      var parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch(e) {}
-  // Default: Amber's confirmed schedule
-  return [
+  var CORRECT = [
     { days: 6,  type: "flat",  amount: 25 },
     { days: 7,  type: "daily", amount: 5  },
     { days: 10, type: "flat",  amount: 75 },
     { days: 11, type: "daily", amount: 5  }
   ];
+  try {
+    var saved = localStorage.getItem("propmanager_fee_schedule");
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      // Validate it matches expected structure (4 tiers with correct amounts)
+      if (Array.isArray(parsed) && parsed.length >= 2 &&
+          parsed[0] && parsed[0].amount && parsed[0].amount !== 80) {
+        return parsed;
+      }
+      // Old/wrong schedule in localStorage - clear it
+      localStorage.removeItem("propmanager_fee_schedule");
+    }
+  } catch(e) {}
+  // Save correct schedule to localStorage
+  try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(CORRECT)); } catch(e) {}
+  return CORRECT;
 })();
 
 function openLateFeeModal() {
