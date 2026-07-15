@@ -2114,12 +2114,7 @@ function attachEvents() {
 
   // Modal closes
   on("close-tenant-mo", "click", function() { closeMo("tenant"); });
-  on("forgot-pass-link", "click", function() {
-    var em = (document.getElementById("t-email")||{}).value||"";
-    var fp = document.getElementById("fp-email");
-    if (fp && em) fp.value = em;
-    openMo("forgotpass");
-  });
+  on("forgot-pass-link", "click", function() { var em=(document.getElementById("t-email")||{}).value||""; var fp=document.getElementById("fp-email"); if(fp&&em)fp.value=em; openMo("forgotpass"); });
   on("send-reset-btn", "click", sendPasswordReset);
   on("close-landlord-mo", "click", function() { closeMo("landlord"); });
   on("close-apply-mo", "click", function() { closeMo("apply"); });
@@ -3521,7 +3516,7 @@ function renderTenantList(tenants) {
     var hasPaidRent = _paidAmt >= _rent;
     var bal   = _bal > 0 ? "<span style='color:#c0392b;font-weight:500'>$" + _bal.toLocaleString() + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
     var badge = hasPaidRent ? "<span class='badge b-g'>Current</span>" : _bal > 0 ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-g'>Current</span>";
-    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + (t.full_name||"?") + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td style='display:flex;gap:4px;flex-wrap:wrap'><button class='btn' style='font-size:11px;padding:3px 7px' data-tenant-id='" + t.id + "'>Edit</button><button class='btn' style='font-size:11px;padding:3px 7px;background:#e6f0fb;border-color:#1a5fa8;color:#1a5fa8' data-invite-email='" + (t.email||"") + "' data-invite-name='" + (t.full_name||"Tenant").replace(/'/g,"") + "' title='Send invite'>✉</button><button class='btn' style='font-size:11px;padding:3px 7px;background:#fdf3e0;border-color:#c9962a;color:#7a4f10' data-setpass-email='" + (t.email||"") + "' data-setpass-name='" + (t.full_name||"Tenant").replace(/'/g,"") + "' title='Set password'>🔑</button></td></tr>";
+    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td><button class='btn' style='font-size:11px;padding:3px 8px' data-tenant-id='" + t.id + "'>Edit</button></td></tr>";
   }).join("");
   el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:23%'>Tenant</th><th style='width:23%'>Address</th><th style='width:11%'>Rent</th><th style='width:14%'>Status</th><th style='width:11%'>Balance</th><th style='width:10%'>Edit</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
   // Attach edit button events
@@ -5769,17 +5764,7 @@ function handleVacancyPhotosFromArray(arr, triggerBtn) {
     var reader = new FileReader();
     reader.onload = function(e) {
       if (e.target && e.target.result) {
-        var img = new Image();
-        img.onload = function() {
-          var cv = document.createElement("canvas");
-          var sw = img.naturalWidth||800; var sh = img.naturalHeight||600;
-          var s1 = Math.min(400/sw,400/sh,1);
-          cv.width=Math.max(1,Math.floor(sw*s1)); cv.height=Math.max(1,Math.floor(sh*s1));
-          cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);
-          var out = cv.toDataURL("image/jpeg",0.35);
-          if (out.length>80000){var s2=Math.min(280/sw,280/sh,1);cv.width=Math.max(1,Math.floor(sw*s2));cv.height=Math.max(1,Math.floor(sh*s2));cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);out=cv.toDataURL("image/jpeg",0.25);}
-          if (out.length>80000){var s3=Math.min(180/sw,180/sh,1);cv.width=Math.max(1,Math.floor(sw*s3));cv.height=Math.max(1,Math.floor(sh*s3));cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);out=cv.toDataURL("image/jpeg",0.20);}
-          _vacancyPhotos.push(out);
+        _vacancyPhotos.push(e.target.result);
         succeeded++;
       }
       loaded++;
@@ -8544,46 +8529,42 @@ async function applyLateFeesToAll() {
 
 
 async function inviteTenant(email, name) {
-  if (!sb || !email) return;
-  if (!confirm("Send portal invite to " + (name||email) + "?\n\nThey will receive an email to set their password.")) return;
-  var res = await sb.auth.resetPasswordForEmail(email, { redirectTo: "https://propmanagersc.com" });
-  if (res.error) alert("Could not send invite: " + res.error.message);
-  else alert("✅ Invite sent to " + email + "!\n\n⚠️ Tell them to check email within 24 hours.");
+  if (!sb||!email) return;
+  if (!confirm("Send portal invite to "+(name||email)+"?")) return;
+  var res = await sb.auth.resetPasswordForEmail(email,{redirectTo:"https://propmanagersc.com"});
+  if (res.error) alert("Error: "+res.error.message);
+  else alert("Invite sent to "+email+"!\nTell them to check email within 24 hours.");
 }
 
 function openSetPassModal(email, name) {
-  var words = ["Rush","Prop","Home","Gate","Safe","Lock"];
-  var pw = words[Math.floor(Math.random()*words.length)] + Math.floor(1000+Math.random()*9000) + "!";
-  var el = document.getElementById("setpass-email");
-  var nl = document.getElementById("setpass-name");
-  var nd = document.getElementById("setpass-email-display");
-  var vl = document.getElementById("setpass-value");
-  if (el) el.value = email||"";
-  if (nl) nl.textContent = name||"";
-  if (nd) nd.textContent = email||"";
-  if (vl) { vl.value = pw; }
-  var ok = document.getElementById("setpass-ok");
-  var er = document.getElementById("setpass-err");
-  if (ok) ok.style.display="none";
-  if (er) er.style.display="none";
+  var words=["Rush","Prop","Home","Gate","Safe","Lock"];
+  var pw=words[Math.floor(Math.random()*words.length)]+Math.floor(1000+Math.random()*9000)+"!";
+  ["setpass-email","setpass-name","setpass-email-display","setpass-value"].forEach(function(id,i){
+    var el=document.getElementById(id);
+    if(!el) return;
+    if(i===0) el.value=email||"";
+    else if(i===1) el.textContent=name||"";
+    else if(i===2) el.textContent=email||"";
+    else el.value=pw;
+  });
+  ["setpass-ok","setpass-err"].forEach(function(id){ var el=document.getElementById(id); if(el) el.style.display="none"; });
   openMo("setpass");
 }
 
 async function setTenantPassword() {
-  var email = (document.getElementById("setpass-email")||{}).value||"";
-  var pw    = (document.getElementById("setpass-value")||{}).value||"";
-  var ok    = document.getElementById("setpass-ok");
-  var er    = document.getElementById("setpass-err");
-  var btn   = document.getElementById("setpass-save-btn");
-  if (er) er.style.display="none";
-  if (pw.length < 8) { if (er) { er.textContent="Password must be 8+ characters."; er.style.display="block"; } return; }
-  if (btn) { btn.disabled=true; btn.textContent="Saving..."; }
-  var res = await sb.auth.resetPasswordForEmail(email, { redirectTo: "https://propmanagersc.com" });
-  if (btn) { btn.disabled=false; btn.innerHTML="<i class='ti ti-check'></i> Set password & save"; }
-  if (res.error) { if (er) { er.textContent=res.error.message; er.style.display="block"; } }
-  else { if (ok) { ok.style.display="block"; ok.classList.add("on"); } try { navigator.clipboard.writeText(pw); } catch(e) {} setTimeout(function(){ closeMo("setpass"); alert("Password reset email sent!\n\nSuggested password copied:\n"+pw+"\n\nShare with tenant by phone."); },1200); }
+  var email=(document.getElementById("setpass-email")||{}).value||"";
+  var pw=(document.getElementById("setpass-value")||{}).value||"";
+  var ok=document.getElementById("setpass-ok");
+  var er=document.getElementById("setpass-err");
+  var btn=document.getElementById("setpass-save-btn");
+  if(er) er.style.display="none";
+  if(pw.length<8){if(er){er.textContent="Password must be 8+ characters.";er.style.display="block";}return;}
+  if(btn){btn.disabled=true;btn.textContent="Saving...";}
+  var res=await sb.auth.resetPasswordForEmail(email,{redirectTo:"https://propmanagersc.com"});
+  if(btn){btn.disabled=false;btn.innerHTML="<i class='ti ti-check'></i> Set password & save";}
+  if(res.error){if(er){er.textContent=res.error.message;er.style.display="block";}}
+  else{if(ok){ok.style.display="block";ok.classList.add("on");}try{navigator.clipboard.writeText(pw);}catch(e){}setTimeout(function(){closeMo("setpass");alert("Reset email sent!\nPassword: "+pw+"\n\nShare with tenant by phone.");},1200);}
 }
-
 </script>
 
 
