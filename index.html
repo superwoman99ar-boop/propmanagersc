@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v29.1</div>
+<div class="vbadge">PropManager SC v29.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3492,7 +3492,12 @@ function renderTenantTable(tenants) {
     var _tfee  = _tpays.filter(function(p){ return p.method==="Late fee"; }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
     var _tbal  = Math.max(0,(Number(t.monthly_rent||0)+_tfee)-_tpaid);
     bal = _tbal>0 ? "<span style='color:#c0392b;font-weight:500'>$"+_tbal.toLocaleString()+"</span>" : "<span style='color:#2d7a4f'>$0</span>";
-    var badge = t.status === "current" ? "<span class='badge b-g'>Current</span>" : t.status === "overdue" ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-a'>Other</span>";
+    // Payment-driven status
+    var _tnow2=new Date(); var _tms2=_tnow2.getFullYear()+"-"+String(_tnow2.getMonth()+1).padStart(2,"0");
+    var _tp2=(window._paymentCache||[]).filter(function(p){return String(p.tenant_id)===String(t.id)&&p.payment_date&&p.payment_date.startsWith(_tms2)&&p.method!=="Late fee";});
+    var _paid2=_tp2.reduce(function(s,p){return s+Number(p.amount||0);},0);
+    var _hasPaid2=_paid2>=Number(t.monthly_rent||0);
+    var badge = _hasPaid2 ? "<span class='badge b-g'>Current</span>" : "<span class='badge b-r'>Overdue</span>";
     return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td></tr>";
   }).join("");
   el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:28%'>Tenant</th><th style='width:28%'>Address</th><th style='width:14%'>Rent</th><th style='width:16%'>Status</th><th style='width:14%'>Balance</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
