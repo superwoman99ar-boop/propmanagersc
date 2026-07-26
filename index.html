@@ -1186,7 +1186,22 @@ footer{background:#0f1e35;padding:44px 20px 26px}
             </div>
 
             <!-- Card option -->
-            <!-- Card payment removed - ACH bank transfer only (no fees) -->
+            <div id="pay-method-card" style="display:none;border:1.5px solid rgba(15,30,53,.15);border-radius:9px;padding:12px 14px;margin-bottom:14px;cursor:pointer;display:flex;align-items:center;gap:11px">
+              <div style="width:34px;height:34px;background:#e6f0fb;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#1a5fa8"><i class="ti ti-credit-card"></i></div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:500">Credit or debit card</div>
+                <div style="font-size:11px;color:#5a5a5a">2.9% + 30&cent; fee &mdash; instant</div>
+              </div>
+              <span class="badge b-b">2.9%</span>
+              <div id="card-check" style="width:18px;height:18px;border-radius:50%;background:rgba(15,30,53,.1);display:flex;align-items:center;justify-content:center"><i class="ti ti-check" style="font-size:11px;color:transparent"></i></div>
+            </div>
+
+            <!-- Stripe card element (shown when card selected) -->
+            <div id="stripe-card-wrap" style="display:none;margin-bottom:14px">
+              <label class="lbl">Card details</label>
+              <div id="stripe-card-element" style="padding:10px 12px;border:1.5px solid rgba(15,30,53,.2);border-radius:7px;background:#fff"></div>
+              <div id="stripe-card-errors" style="color:#c0392b;font-size:12px;margin-top:5px"></div>
+            </div>
 
             <!-- Name on payment -->
             <div style="margin-bottom:14px">
