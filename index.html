@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v29.2</div>
+<div class="vbadge">PropManager SC v29.3</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2117,6 +2117,15 @@ function attachEvents() {
   on("forgot-pass-link", "click", function() { var em=(document.getElementById("t-email")||{}).value||""; var fp=document.getElementById("fp-email"); if(fp&&em)fp.value=em; openMo("forgotpass"); });
   on("send-reset-btn", "click", sendPasswordReset);
   on("close-landlord-mo", "click", function() { closeMo("landlord"); });
+  on("refresh-dash-btn", "click", function() {
+    var btn = document.getElementById("refresh-dash-btn");
+    if (btn) { btn.innerHTML = "<i class='ti ti-loader'></i> Loading..."; btn.disabled = true; }
+    loadDashboardData().then(function() {
+      if (btn) { btn.innerHTML = "<i class='ti ti-refresh'></i> Refresh"; btn.disabled = false; }
+    }).catch(function() {
+      if (btn) { btn.innerHTML = "<i class='ti ti-refresh'></i> Refresh"; btn.disabled = false; }
+    });
+  });
   on("close-apply-mo", "click", function() { closeMo("apply"); });
   on("close-addtenant-mo", "click", function() { closeMo("addtenant"); });
   on("close-expense-mo", "click", function() { closeMo("addexpense"); });
@@ -2141,7 +2150,7 @@ function attachEvents() {
   on("contact-link-from-login", "click", function() { closeMo("tenant"); goPage("contact"); });
 
   // Dashboard sidebar
-  on("di-ov", "click", function() { goDash("ov"); });
+  on("di-ov", "click", function() { goDash("ov"); loadDashboardData(); });
   on("di-pr", "click", function() { goDash("pr"); });
   on("di-tn", "click", function() { goDash("tn"); });
   on("di-rn", "click", function() { goDash("rn"); });
@@ -6366,8 +6375,40 @@ var _lastNotifCheck = null;
 // Tab-click refresh provides sufficient sync for co-landlord updates
 var _realtimeChannel = null;
 function subscribeRealtimeUpdates() {
-  // Disabled to preserve Supabase free tier quota
-  // Re-enable after upgrading Supabase plan
+  // Poll Supabase every 60 seconds for new payments
+  // This keeps the dashboard live without webhooks
+  if (!sb || currentRole !== "landlord") return;
+  
+  // Clear any existing interval
+  if (window._paymentPollInterval) clearInterval(window._paymentPollInterval);
+  
+  // Track last payment count to detect new ones
+  window._lastPaymentCount = (window._paymentCache || []).length;
+  
+  window._paymentPollInterval = setInterval(async function() {
+    if (!sb || currentRole !== "landlord") return;
+    try {
+      var res = await sb.from("payments").select("id,tenant_id,amount,payment_date,method,status")
+        .order("payment_date", { ascending: false }).limit(50);
+      if (res.data) {
+        var newCount = res.data.length;
+        var oldCount = window._lastPaymentCount || 0;
+        if (newCount > oldCount) {
+          // New payment detected — refresh dashboard
+          var diff = newCount - oldCount;
+          window._lastPaymentCount = newCount;
+          window._paymentCache = res.data;
+          loadDashboardData();
+          showInAppNotification("payment", "Payment received", 
+            diff + " new payment" + (diff > 1 ? "s" : "") + " recorded.");
+        }
+      }
+    } catch(e) { /* silent fail */ }
+  }, 60000); // every 60 seconds
+
+  // Also poll notifications
+  if (window._notifPollInterval) clearInterval(window._notifPollInterval);
+  window._notifPollInterval = setInterval(pollForNotifications, 120000);
 }
 
 async function pollForNotifications() {
@@ -7248,6 +7289,12 @@ document.addEventListener("DOMContentLoaded", function() {
   try { attachEvents(); } catch(e) { console.error("attachEvents:", e.message, e.stack); }
   try { initSupabase(); } catch(e) { console.error("initSupabase:", e.message); }
   try { initHomePage(); } catch(e) {}
+  // Refresh dashboard when tab/window becomes visible again
+  document.addEventListener("visibilitychange", function() {
+    if (!document.hidden && currentRole === "landlord") {
+      loadDashboardData();
+    }
+  });
   // Check for password reset flow (from email link)
   checkPasswordResetFlow();
   // Check for ?apply=1 rental application flow
