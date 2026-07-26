@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v29.3</div>
+<div class="vbadge">PropManager SC v29.4</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -1086,18 +1086,30 @@ footer{background:#0f1e35;padding:44px 20px 26px}
               <span class="badge b-a" id="py-status-badge">Due</span>
             </div>
             <div class="card">
+              <div style="background:#eaf5ee;border:1px solid rgba(45,122,79,.3);border-radius:8px;padding:10px 13px;margin-bottom:13px;font-size:12.5px;color:#1a6b3c">
+                <strong>Save money — use bank transfer (ACH)!</strong><br>
+                ACH is completely free. Card payments add a ~3% fee to your payment.
+              </div>
               <div style="font-size:13px;font-weight:500;margin-bottom:14px">Step 1 of 2 &mdash; Choose payment method</div>
 
-              <div id="pay-method-ach" style="border:2px solid #0f1e35;border-radius:9px;padding:12px 14px;margin-bottom:9px;cursor:pointer;display:flex;align-items:center;gap:11px">
+              <div style="font-size:11px;font-weight:600;color:#2d7a4f;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">⭐ Preferred payment method</div>
+              <div id="pay-method-ach" style="border:2px solid #2d7a4f;border-radius:9px;padding:12px 14px;margin-bottom:9px;cursor:pointer;display:flex;align-items:center;gap:11px;background:#f5fbf7">
                 <div style="width:34px;height:34px;background:#eaf5ee;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#2d7a4f"><i class="ti ti-building-bank"></i></div>
-                <div style="flex:1"><div style="font-size:13px;font-weight:500">Bank account (ACH)</div><div style="font-size:11px;color:#5a5a5a">Free &mdash; 3-5 business days</div></div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:600">Bank account (ACH) — FREE</div>
+                  <div style="font-size:11px;color:#5a5a5a">Connect your bank once &mdash; takes 3-5 business days to clear</div>
+                </div>
                 <span class="badge b-g">No fee</span>
-                <div id="ach-check" style="width:18px;height:18px;border-radius:50%;background:#0f1e35;display:flex;align-items:center;justify-content:center"><i class="ti ti-check" style="font-size:11px;color:#f0c96b"></i></div>
+                <div id="ach-check" style="width:18px;height:18px;border-radius:50%;background:#2d7a4f;display:flex;align-items:center;justify-content:center"><i class="ti ti-check" style="font-size:11px;color:#fff"></i></div>
               </div>
 
               <div id="pay-method-card" style="border:1.5px solid rgba(15,30,53,.15);border-radius:9px;padding:12px 14px;margin-bottom:14px;cursor:pointer;display:flex;align-items:center;gap:11px">
                 <div style="width:34px;height:34px;background:#e6f0fb;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;color:#1a5fa8"><i class="ti ti-credit-card"></i></div>
-                <div style="flex:1"><div style="font-size:13px;font-weight:500">Credit or debit card</div><div style="font-size:11px;color:#5a5a5a">2.9% + 30&cent; fee &mdash; instant</div></div>
+                <div style="flex:1">
+                    <div style="font-size:13px;font-weight:500">Credit or debit card</div>
+                    <div style="font-size:11px;color:#c0392b">⚠️ 2.9% + 30¢ processing fee applies &mdash; instant</div>
+                    <div style="font-size:10px;color:#999">e.g. on $1,100 rent = ~$32 fee charged to you</div>
+                  </div>
                 <span class="badge b-b">2.9%</span>
                 <div id="card-check" style="width:18px;height:18px;border-radius:50%;background:rgba(15,30,53,.1);display:flex;align-items:center;justify-content:center"><i class="ti ti-check" style="font-size:11px;color:transparent"></i></div>
               </div>
