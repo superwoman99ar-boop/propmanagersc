@@ -7156,14 +7156,40 @@ async function sendSmsMessage() {
     return;
   }
 
-  // Note: Direct Twilio API calls from browser require a backend proxy for CORS
-  // Show instructions for now, wire backend when Netlify Functions are set up
-  showOk("sms-send-ok");
-  document.getElementById("sms-send-ok").nextElementSibling && null;
   var btn = document.getElementById("send-sms-btn");
-  if (btn) {
-    btn.innerHTML = "<i class='ti ti-check'></i> Sending to " + targets.length + " tenant(s)...";
-    setTimeout(function() { btn.innerHTML = "<i class='ti ti-send'></i> Send text"; }, 3000);
+  if (btn) { btn.disabled = true; btn.innerHTML = "<i class='ti ti-loader'></i> Sending to " + targets.length + " tenant(s)..."; }
+
+  try {
+    var resp = await fetch(SUPA_URL + "/functions/v1/send-sms", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + SUPA_KEY,
+        "apikey": SUPA_KEY
+      },
+      body: JSON.stringify({
+        message: msg,
+        targets: targets.map(function(t) { return { phone: t.phone, name: t.full_name }; })
+      })
+    });
+    var data = await resp.json();
+
+    if (!resp.ok || data.error) {
+      errEl.style.display = "block";
+      errEl.textContent = data.error || "Failed to send texts. Please try again.";
+    } else {
+      showOk("sms-send-ok");
+      var okEl2 = document.getElementById("sms-send-ok");
+      if (okEl2) {
+        okEl2.innerHTML = "<i class='ti ti-circle-check' style='font-size:17px'></i> Sent " + data.sent + " of " + (data.sent + data.failed) + " text(s)!" +
+          (data.failed ? " (" + data.failed + " failed — check phone numbers)" : "");
+      }
+    }
+  } catch (e) {
+    errEl.style.display = "block";
+    errEl.textContent = "Could not reach the SMS service. Please try again.";
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = "<i class='ti ti-send'></i> Send text"; }
   }
 }
 
