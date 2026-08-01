@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v29.7</div>
+<div class="vbadge">PropManager SC v29.8</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2247,6 +2247,20 @@ function attachEvents() {
     if (btn) { openMo("quickmaint"); return; }
     var btn2 = e.target.closest("#quick-message-btn");
     if (btn2) { openMo("quickmsg"); return; }
+    // Tenant invite button
+    var _ib = e.target.closest("[data-invite-email]");
+    if (_ib) { inviteTenant(_ib.getAttribute("data-invite-email"), _ib.getAttribute("data-invite-name")); return; }
+    // Set password button
+    var _spb = e.target.closest("[data-setpass-email]");
+    if (_spb) { openSetPassModal(_spb.getAttribute("data-setpass-email"), _spb.getAttribute("data-setpass-name")); return; }
+    // Edit tenant button
+    var _etb = e.target.closest("[data-tenant-id]");
+    if (_etb && !_etb.hasAttribute("data-invite-email") && !_etb.hasAttribute("data-setpass-email")) {
+      var tid = _etb.getAttribute("data-tenant-id");
+      var ten = (window._tenantCache||[]).find(function(t){ return String(t.id)===String(tid); });
+      if (ten) openEditTenantModal(ten);
+      return;
+    }
   });
 
   // Quick maintenance modal
