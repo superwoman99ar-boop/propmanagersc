@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v29.8</div>
+<div class="vbadge">PropManager SC v29.9</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -3517,18 +3517,14 @@ function renderTenantList(tenants) {
   var rows = tenants.map(function(t) {
     var p = t.properties;
     var ini = t.initials || (t.full_name||"?").split(" ").map(function(w){return w[0]||"";}).join("").slice(0,2).toUpperCase();
-    // Real balance from payments cache
-    var _now = new Date();
-    var _ms  = _now.getFullYear() + "-" + String(_now.getMonth()+1).padStart(2,"0");
-    var _pays = (window._paymentCache||[]).filter(function(p){ return String(p.tenant_id)===String(t.id) && p.payment_date && p.payment_date.startsWith(_ms); });
-    var _paidAmt = _pays.filter(function(p){ return p.method!=="Late fee"; }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
-    var _feeAmt  = _pays.filter(function(p){ return p.method==="Late fee"; }).reduce(function(s,p){ return s+Number(p.amount||0); },0);
-    var _rent    = Number(t.monthly_rent||0);
-    var _bal     = Math.max(0, (_rent + _feeAmt) - _paidAmt);
-    var hasPaidRent = _paidAmt >= _rent;
+    // Running balance across ALL months
+    var _allPays = (window._paymentCache||[]).filter(function(p){ return String(p.tenant_id)===String(t.id); });
+    var _rb      = calcRunningBalance(t, _allPays);
+    var _bal     = _rb.totalOwed;
+    var hasPaidRent = _bal === 0;
     var bal   = _bal > 0 ? "<span style='color:#c0392b;font-weight:500'>$" + _bal.toLocaleString() + "</span>" : "<span style='color:#2d7a4f'>$0</span>";
-    var badge = hasPaidRent ? "<span class='badge b-g'>Current</span>" : _bal > 0 ? "<span class='badge b-r'>Overdue</span>" : "<span class='badge b-g'>Current</span>";
-    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td><button class='btn' style='font-size:11px;padding:3px 8px' data-tenant-id='" + t.id + "'>Edit</button> <button class='btn' style='font-size:11px;padding:3px 7px;background:#e6f0fb;border-color:#1a5fa8;color:#1a5fa8' data-invite-email='" + (t.email||"" )+ "' data-invite-name='" + (t.full_name||"Tenant").replace(/'/g,"") + "' title='Send portal invite'>✉</button> <button class='btn' style='font-size:11px;padding:3px 7px;background:#fdf3e0;border-color:#c9962a;color:#7a4f10' data-setpass-email='" + (t.email||"") + "' data-setpass-name='" + (t.full_name||"Tenant").replace(/'/g,"") + "' title='Set password'>🔑</button></td></tr>";
+    var badge = hasPaidRent ? "<span class='badge b-g'>Current</span>" : "<span class='badge b-r'>Overdue</span>";
+    return "<tr><td><span class='av' style='background:" + (t.color||"#dbe8ff") + ";color:" + (t.text_color||"#0C447C") + "'>" + ini + "</span>" + t.full_name + "</td><td>" + (p ? p.address : "—") + "</td><td>$" + (t.monthly_rent||0).toLocaleString() + "</td><td>" + badge + "</td><td>" + bal + "</td><td><button class='btn' style='font-size:11px;padding:3px 8px' data-tenant-id='" + t.id + "'>Edit</button> <button class='btn' style='font-size:11px;padding:3px 7px;background:#fef2f2;border-color:#c0392b;color:#c0392b' onclick='showBalanceBreakdown("" + t.id + "")' title='View balance breakdown'>$</button> <button class='btn' style='font-size:11px;padding:3px 7px;background:#e6f0fb;border-color:#1a5fa8;color:#1a5fa8' data-invite-email='" + (t.email||"" )+ "' data-invite-name='" + (t.full_name||"Tenant").replace(/'/g,"") + "' title='Send portal invite'>✉</button> <button class='btn' style='font-size:11px;padding:3px 7px;background:#fdf3e0;border-color:#c9962a;color:#7a4f10' data-setpass-email='" + (t.email||"") + "' data-setpass-name='" + (t.full_name||"Tenant").replace(/'/g,"") + "' title='Set password'>🔑</button></td></tr>";
   }).join("");
   el.innerHTML = "<div style='overflow-x:auto'><table><thead><tr><th style='width:23%'>Tenant</th><th style='width:23%'>Address</th><th style='width:11%'>Rent</th><th style='width:14%'>Status</th><th style='width:11%'>Balance</th><th style='width:10%'>Edit</th></tr></thead><tbody>" + rows + "</tbody></table></div>";
   // Attach edit button events
@@ -4995,7 +4991,7 @@ function saveLateFeeSchedule() {
 }
 
 function calcLateFee(rent, daysLate) {
-  if (daysLate < 6) return 0; // 5-day grace: fees start day 6
+  if (daysLate < 6) return 0;
   var total = 0;
   var sorted = _feeSchedule.slice().sort(function(a,b){ return a.days - b.days; });
   for (var i = 0; i < sorted.length; i++) {
@@ -5008,6 +5004,72 @@ function calcLateFee(rent, daysLate) {
     }
   }
   return Math.round(total);
+}
+
+// Calculate total owed for a tenant who is multiple months behind
+// Returns { totalOwed, breakdown }
+function calcRunningBalance(tenant, payments) {
+  var now     = new Date();
+  var rent    = Number(tenant.monthly_rent || 0);
+  if (!rent) return { totalOwed: 0, breakdown: [] };
+
+  // Find earliest unpaid month — start from Jan 2026 or first lease month
+  var startYear  = 2026;
+  var startMonth = 0; // January
+
+  // Build paid months from payment records
+  var paidMonths = {};
+  (payments || []).forEach(function(p) {
+    if (!p.payment_date || p.method === "Late fee") return;
+    var d = new Date(p.payment_date);
+    var key = d.getFullYear() + "-" + d.getMonth();
+    if (!paidMonths[key]) paidMonths[key] = 0;
+    paidMonths[key] += Number(p.amount || 0);
+  });
+
+  var breakdown  = [];
+  var totalOwed  = 0;
+
+  // Check each month from start to current
+  for (var y = startYear; y <= now.getFullYear(); y++) {
+    var mStart = (y === startYear) ? startMonth : 0;
+    var mEnd   = (y === now.getFullYear()) ? now.getMonth() : 11;
+    for (var m = mStart; m <= mEnd; m++) {
+      var key     = y + "-" + m;
+      var paidAmt = paidMonths[key] || 0;
+      var monthRent = rent;
+      var unpaid  = Math.max(0, monthRent - paidAmt);
+      if (unpaid <= 0) continue; // paid in full
+
+      // Calculate days late for this month
+      var dueDate  = new Date(y, m, 1);
+      var daysLate = Math.floor((now - dueDate) / 86400000);
+      var lateFee  = daysLate >= 6 ? calcLateFee(monthRent, Math.min(daysLate, 60)) : 0;
+
+      // Check if late fee already charged for this month
+      var alreadyCharged = 0;
+      (payments || []).forEach(function(p) {
+        if (p.method === "Late fee" && p.payment_date) {
+          var pd = new Date(p.payment_date);
+          if (pd.getFullYear() === y && pd.getMonth() === m) {
+            alreadyCharged += Number(p.amount || 0);
+          }
+        }
+      });
+      var feeOwed = Math.max(0, lateFee - alreadyCharged);
+
+      var monthName = new Date(y, m, 1).toLocaleDateString("en-US", {month:"long", year:"numeric"});
+      breakdown.push({
+        month:     monthName,
+        rent:      unpaid,
+        lateFee:   feeOwed,
+        daysLate:  daysLate,
+        total:     unpaid + feeOwed
+      });
+      totalOwed += unpaid + feeOwed;
+    }
+  }
+  return { totalOwed: Math.round(totalOwed), breakdown: breakdown };
 }
 
 // ---- LEASE RENEWAL ----
@@ -8641,6 +8703,40 @@ async function setTenantPassword() {
   if(res.error){if(er){er.textContent=res.error.message;er.style.display="block";}}
   else{if(ok){ok.style.display="block";ok.classList.add("on");}try{navigator.clipboard.writeText(pw);}catch(e){}setTimeout(function(){closeMo("setpass");alert("Reset email sent!\nPassword: "+pw+"\n\nShare with tenant by phone.");},1200);}
 }
+
+function showBalanceBreakdown(tenantId) {
+  var tenant   = (window._tenantCache||[]).find(function(t){ return String(t.id)===String(tenantId); });
+  if (!tenant) return;
+  var payments = (window._paymentCache||[]).filter(function(p){ return String(p.tenant_id)===String(tenantId); });
+  var rb       = calcRunningBalance(tenant, payments);
+
+  document.getElementById("balance-tenant-name").textContent = tenant.full_name + " — Full balance breakdown";
+  document.getElementById("balance-total").textContent = "$" + rb.totalOwed.toLocaleString();
+
+  var rows = rb.breakdown.map(function(b) {
+    return "<div style='padding:10px 12px;border:1px solid rgba(15,30,53,.1);border-radius:7px;margin-bottom:8px'>" +
+      "<div style='display:flex;justify-content:space-between;margin-bottom:4px'>" +
+        "<strong style='font-size:13px'>" + b.month + "</strong>" +
+        "<strong style='color:#c0392b'>$" + b.total.toLocaleString() + "</strong>" +
+      "</div>" +
+      "<div style='font-size:12px;color:#5a5a5a;display:flex;gap:16px'>" +
+        "<span>Rent: $" + b.rent.toLocaleString() + "</span>" +
+        (b.lateFee > 0 ? "<span style='color:#c0392b'>Late fee: $" + b.lateFee.toLocaleString() + "</span>" : "") +
+        "<span>" + b.daysLate + " days overdue</span>" +
+      "</div>" +
+    "</div>";
+  }).join("");
+
+  document.getElementById("balance-breakdown-rows").innerHTML = rows ||
+    "<div style='color:#2d7a4f;text-align:center;padding:12px'>All paid — no balance due.</div>";
+
+  window._breakdownTenantId = tenantId;
+  var applyBtn = document.getElementById("apply-all-fees-btn");
+  if (applyBtn) applyBtn.style.display = rb.breakdown.length > 0 ? "flex" : "none";
+  document.getElementById("balance-ok").style.display = "none";
+  openMo("balance");
+}
+
 </script>
 
 
@@ -9726,5 +9822,22 @@ async function setTenantPassword() {
   </div>
 </div>
 
+<!-- BALANCE BREAKDOWN MODAL -->
+<div class="mo-overlay" id="mo-balance">
+  <div class="mo-box" style="max-width:500px">
+    <button class="mo-close" id="close-balance-mo"><i class="ti ti-x"></i></button>
+    <div class="mo-title"><i class="ti ti-calculator" style="color:#c0392b;margin-right:7px"></i>Balance Breakdown</div>
+    <div class="mo-sub" id="balance-tenant-name"></div>
+    <div id="balance-breakdown-rows" style="margin-bottom:14px"></div>
+    <div style="background:#fef2f2;border:1px solid rgba(192,57,43,.2);border-radius:8px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+      <strong style="font-size:14px">Total Due</strong>
+      <strong style="font-size:18px;color:#c0392b" id="balance-total"></strong>
+    </div>
+    <button class="mo-btn" id="apply-all-fees-btn" style="margin-top:12px;background:#c0392b;border-color:#c0392b">
+      <i class="ti ti-bolt"></i> Apply all outstanding fees to ledger
+    </button>
+    <div class="ok-msg" id="balance-ok" style="margin-top:9px;display:none"><i class="ti ti-circle-check"></i> Fees logged to ledger!</div>
+  </div>
+</div>
 </body>
 </html>
