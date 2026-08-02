@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v30.2</div>
+<div class="vbadge">PropManager SC v30.3</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -5009,66 +5009,67 @@ function calcLateFee(rent, daysLate) {
   return Math.round(total);
 }
 
-// Calculate total owed for a tenant who is multiple months behind
+// Calculate total owed for a tenant — only counts from their first recorded payment
 // Returns { totalOwed, breakdown }
 function calcRunningBalance(tenant, payments) {
-  var now     = new Date();
-  var rent    = Number(tenant.monthly_rent || 0);
+  var now  = new Date();
+  var rent = Number(tenant.monthly_rent || 0);
   if (!rent) return { totalOwed: 0, breakdown: [] };
 
-  // Find earliest unpaid month — start from Jan 2026 or first lease month
-  var startYear  = 2026;
-  var startMonth = 0; // January
-
-  // Build paid months from payment records
+  // Build paid months map (exclude late fees)
   var paidMonths = {};
+  var firstPaymentDate = null;
   (payments || []).forEach(function(p) {
     if (!p.payment_date || p.method === "Late fee") return;
     var d = new Date(p.payment_date);
     var key = d.getFullYear() + "-" + d.getMonth();
     if (!paidMonths[key]) paidMonths[key] = 0;
     paidMonths[key] += Number(p.amount || 0);
+    // Track earliest payment to know lease start
+    if (!firstPaymentDate || d < firstPaymentDate) firstPaymentDate = d;
   });
 
-  var breakdown  = [];
-  var totalOwed  = 0;
+  // Only check months where we have payment history
+  // Start from the month of the first payment, or current month if no payments
+  if (!firstPaymentDate) {
+    // No payment history at all - only check current month
+    firstPaymentDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  }
 
-  // Check each month from start to current
+  var startYear  = firstPaymentDate.getFullYear();
+  var startMonth = firstPaymentDate.getMonth();
+
+  var breakdown = [];
+  var totalOwed = 0;
+
   for (var y = startYear; y <= now.getFullYear(); y++) {
     var mStart = (y === startYear) ? startMonth : 0;
     var mEnd   = (y === now.getFullYear()) ? now.getMonth() : 11;
     for (var m = mStart; m <= mEnd; m++) {
       var key     = y + "-" + m;
       var paidAmt = paidMonths[key] || 0;
-      var monthRent = rent;
-      var unpaid  = Math.max(0, monthRent - paidAmt);
-      if (unpaid <= 0) continue; // paid in full
+      var unpaid  = Math.max(0, rent - paidAmt);
+      if (unpaid <= 0) continue; // fully paid
 
-      // Calculate days late for this month
       var dueDate  = new Date(y, m, 1);
       var daysLate = Math.floor((now - dueDate) / 86400000);
-      var lateFee  = daysLate >= 6 ? calcLateFee(monthRent, Math.min(daysLate, 60)) : 0;
+      if (daysLate < 0) continue; // future month
 
-      // Check if late fee already charged for this month
+      var lateFee = daysLate >= 6 ? calcLateFee(rent, Math.min(daysLate, 90)) : 0;
+
+      // Subtract any late fees already logged for this month
       var alreadyCharged = 0;
       (payments || []).forEach(function(p) {
         if (p.method === "Late fee" && p.payment_date) {
           var pd = new Date(p.payment_date);
-          if (pd.getFullYear() === y && pd.getMonth() === m) {
+          if (pd.getFullYear() === y && pd.getMonth() === m)
             alreadyCharged += Number(p.amount || 0);
-          }
         }
       });
       var feeOwed = Math.max(0, lateFee - alreadyCharged);
 
       var monthName = new Date(y, m, 1).toLocaleDateString("en-US", {month:"long", year:"numeric"});
-      breakdown.push({
-        month:     monthName,
-        rent:      unpaid,
-        lateFee:   feeOwed,
-        daysLate:  daysLate,
-        total:     unpaid + feeOwed
-      });
+      breakdown.push({ month: monthName, rent: unpaid, lateFee: feeOwed, daysLate: daysLate, total: unpaid + feeOwed });
       totalOwed += unpaid + feeOwed;
     }
   }
