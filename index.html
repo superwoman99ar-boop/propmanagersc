@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v30.1</div>
+<div class="vbadge">PropManager SC v30.2</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -4910,7 +4910,7 @@ async function renderPreviewTab(tab, tenant) {
 var _feeSchedule = [
   { days: 6,  type: "flat",  amount: 25 },
   { days: 7,  type: "daily", amount: 5  },
-  { days: 10, type: "flat",  amount: 50 },
+  { days: 10, type: "flat",  amount: 75 },
   { days: 11, type: "daily", amount: 5  }
 ];
 // Load from localStorage immediately (overrides default above)
@@ -7822,7 +7822,7 @@ function loadSharedSettings() {
           var firstAmt = val[0] && val[0].amount;
           if (firstAmt === 80 || firstAmt === 30) {
             // Old schedule in Supabase - update it with correct one
-            var fix = [{"days":6,"type":"flat","amount":25},{"days":7,"type":"daily","amount":5},{"days":10,"type":"flat","amount":50},{"days":11,"type":"daily","amount":5}];
+            var fix = [{"days":6,"type":"flat","amount":25},{"days":7,"type":"daily","amount":5},{"days":10,"type":"flat","amount":75},{"days":11,"type":"daily","amount":5}];
             _feeSchedule = fix;
             try { localStorage.setItem("propmanager_fee_schedule", JSON.stringify(fix)); } catch(e) {}
             if (sb) sb.from("settings").upsert({key:"fee_schedule", value:JSON.stringify(fix)}).then(function(){});
