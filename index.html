@@ -296,7 +296,7 @@ footer{background:#0f1e35;padding:44px 20px 26px}
 </head>
 <body>
 
-<div class="vbadge">PropManager SC v29.9</div>
+<div class="vbadge">PropManager SC v30.0</div>
 
 <nav>
   <div class="logo" id="logo">
@@ -2247,6 +2247,9 @@ function attachEvents() {
     if (btn) { openMo("quickmaint"); return; }
     var btn2 = e.target.closest("#quick-message-btn");
     if (btn2) { openMo("quickmsg"); return; }
+    // Balance breakdown button
+    var _bb = e.target.closest("[data-balance-id]");
+    if (_bb) { showBalanceBreakdown(_bb.getAttribute("data-balance-id")); return; }
     // Tenant invite button
     var _ib = e.target.closest("[data-invite-email]");
     if (_ib) { inviteTenant(_ib.getAttribute("data-invite-email"), _ib.getAttribute("data-invite-name")); return; }
